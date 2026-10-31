@@ -150,15 +150,16 @@ function mapView() {
   const shipNeed = nx ? nx.price - SS.tradeValue() : 0, shipPct = nx ? (S.loan > 0 ? pct(S.loanStart - S.loan, S.loanStart) : pct(S.cash, shipNeed)) : 100;
   const meter = (lbl, val, p, cls = '') => `<div class="mm ${cls}"><small>${lbl}</small><b>${val}</b><div class="track"><i style="width:${p}%"></i></div></div>`;
   const done = S.goals.filter(g => g.done).length, sickN = SS.crewList().filter(id => S.crew[id].sick || S.crew[id].down || S.crew[id].hunger).length;
-  return `<section class="map-wrap" id="mapWrap"><canvas id="mapCanvas" aria-label="İstasyon haritası"></canvas>
+  return `<section class="map-wrap">
     <div class="map-top">${meter('Rex yarışı', `${fmt(mine)} / ${fmt(rx)}`, pct(mine, rx), mine >= rx ? 'win' : '')}${meter(nx ? nx.name : 'Filo', nx ? (S.loan > 0 ? `borç ${fmt(S.loan)}` : `${fmt(S.cash)} / ${fmt(shipNeed)}`) : 'tamam', shipPct)}${meter(SS.rank().name, nr ? `${fmt(nr.at - S.stats.earned)} kaldı` : 'zirve', nr ? pct(S.stats.earned - SS.rank().at, nr.at - SS.rank().at) : 100)}</div>
+    <div class="map-area" id="mapWrap"><canvas id="mapCanvas" aria-label="İstasyon haritası"></canvas>
     ${S.time >= 1380 ? `<div class="map-alert">Saat geç: eve dön ve uyu</div>` : ''}
     ${SS.LOCS.map(l => {
       const here = l.id === S.loc, c = SS.travelCost(l.id), open = l.id === 'home' || SS.isOpen(l.id, S.time + c.min);
       const st = SS.tutStep(), aim = st && st.to === l.id && !here;
       return `<button class="node ${here ? 'here' : ''} ${open ? '' : 'closed'} ${aim ? 'aim' : ''}" style="left:${l.x * 100}%;top:${l.y * 100}%" data-act="go" data-to="${l.id}" aria-label="${l.name}, ${here ? 'buradasın' : open ? `${c.min} dakika` : 'kapalı'}">
         <span class="n-name">${l.name}</span><span class="n-cost">${here ? 'Buradasın' : open ? `${c.min} dk · ${c.energy} en` : `Kapalı · ${SS.openLabel(l.id)}`}</span></button>`;
-    }).join('')}
+    }).join('')}</div>
     <div class="map-bottom">
       ${S.decision ? `<button class="qb hot" data-act="mapPanel" data-p="decision"><b>!</b><span>Karar</span></button>` : ''}
       <button class="qb" data-act="mapPanel" data-p="goals"><b>${done}/3</b><span>Hedefler</span></button>
@@ -188,6 +189,7 @@ function startMap() {
   clearTimeout(mapTimer);
   const wrap = document.getElementById('mapWrap'), cv = document.getElementById('mapCanvas'); if (!cv) return;
   const W = Math.max(200, wrap.clientWidth), H = Math.max(200, wrap.clientHeight);
+  wrap.classList.toggle('compact', H < 460);
   const { ctx, pixel } = SS.Art.setup(cv, W, H, .55);
   const locs = SS.LOCS.map(l => ({ ...l, isOpen: l.id === 'home' || SS.isOpen(l.id) }));
   const t0 = performance.now(), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;

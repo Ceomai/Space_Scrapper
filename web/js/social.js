@@ -16,7 +16,7 @@ SS.dailyData = () => { try { return JSON.parse(localStorage.getItem(DKEY)) || { 
 const saveDaily = d => { try { localStorage.setItem(DKEY, JSON.stringify(d)); } catch (e) {} };
 
 /* ---------- sonuç ızgarası ---------- */
-const EMO = { crystal: '💎', slime: '💎', sat: '🛰️', part: '⚙️', plate: '🔩', bolts: '🔩', rock: '🪨', boulder: '🪨', box: '📦', bug: '🐞', debris: '▫️' };
+const EMO = { gold: '🪙', ice: '🧊', jelly: '🪼', egg: '🥚', amber: '🟠', crystal: '💎', slime: '💎', sat: '🛰️', part: '⚙️', plate: '🔩', bolts: '🔩', rock: '🪨', boulder: '🪨', box: '📦', bug: '🐞', debris: '▫️' };
 SS.gridOf = got => got.filter(g => g.kind).map(g => EMO[g.kind] || '▫️').join('');
 
 /* ---------- meydan okuma kodu ---------- */

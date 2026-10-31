@@ -5,6 +5,130 @@ const { rnd, rint, pick, clamp } = SS;
 const TAU = Math.PI * 2;
 
 /* =====================================================================
+   HURDA AVI ÇEŞİTLİLİĞİ — saha koşulları, yaratıklar, arka plan sahneleri
+   ===================================================================== */
+Object.assign(SS.ITEMS, {
+  gold:  { name: 'Altın Damarlı Kaya',  cat: 'mineral', r: 18, val: 210, wt: 3.8, size: 2 },
+  ice:   { name: 'Buz Kometi Parçası',  cat: 'mineral', r: 14, val: 60,  wt: 1.1, size: 1 },
+  jelly: { name: 'Nebula Denizanası',   cat: 'bio',     r: 15, val: 170, wt: .8,  size: 1 },
+  egg:   { name: 'Uzaylı Yumurtası',    cat: 'bio',     r: 13, val: 260, wt: 1.4, size: 1 },
+  amber: { name: 'Balina Amberi',       cat: 'bio',     r: 12, val: 420, wt: 1,   size: 1 },
+  mimic: { name: 'Taklitçi Kutu',       cat: null,      r: 16, val: 0,   wt: 1.5, size: 0 },
+});
+const DEEP_KINDS = ['jelly', 'egg', 'amber'];
+// Her dalışta bir saha koşulu seçilir; bölgeye göre ağırlıklar değişir
+const HUNT_VARIANTS = [
+  { id: 'calm', name: 'Sakin saha', hint: 'Bugün uzay sessiz. Acele etmeden topla.', w: { belt: 3, yard: 2, gas: 2, pirate: 1, lost: 1 } },
+  { id: 'drift', name: 'Akıntı', hint: 'Güneş rüzgârı her şeyi yana sürüklüyor. Hedefi önden karşıla.', w: { belt: 2, yard: 2, gas: 2, pirate: 1, lost: 1 } },
+  { id: 'dark', name: 'Karanlık bölge', hint: 'Işık yalnızca kancanın etrafında. Kristaller hafifçe parlar.', w: { belt: 1, yard: 2, gas: 1, pirate: 1, lost: 2 } },
+  { id: 'storm', name: 'Meteor yağmuru', hint: 'Kırmızı oklar meteor habercisi. Halata çarparsa yük düşer.', w: { belt: 2, yard: 1, gas: 1, pirate: 1, lost: 1 } },
+  { id: 'eels', name: 'Yılan yuvası', hint: 'Yıldız yılanları yükü kapar. Geçmelerini bekle.', w: { belt: 0, yard: 2, gas: 2, pirate: 1, lost: 2 } },
+  { id: 'whale', name: 'Balina göçü', hint: 'Bir uzay balinası geçiyor; arkasında değerli amber bırakabilir.', w: { belt: 1, yard: 0, gas: 2, pirate: 0, lost: 1 }, deep: 1 },
+  { id: 'raiders', name: 'Korsan dronları', hint: 'Dronlar değerli parçaları çalmaya çalışır. Kancayla düşür.', w: { belt: 0, yard: 1, gas: 0, pirate: 3, lost: 1 } },
+  { id: 'rich', name: 'Zengin damar', hint: 'Altın damarlı kayalar var; tanklar da her zamankinden çok.', w: { belt: 1.5, yard: 1, gas: 1, pirate: 1.5, lost: 1 },
+    mix: m => { m.gold = (m.gold || 0) + 2; m.tank = (m.tank || 0) + 1; } },
+  { id: 'frozen', name: 'Buz kuşağı', hint: 'Buz kometi parçaları hafif ve hızlı toplanır.', w: { belt: 2, yard: 0, gas: 1, pirate: 0, lost: 0 },
+    mix: m => { m.ice = (m.ice || 0) + 5; m.rock = Math.max(0, (m.rock || 0) - 2); } },
+  { id: 'nursery', name: 'Yuva', hint: 'Denizanaları parlarken dokunma, çarpar. Yumurtalar çok değerli.', w: { belt: 0, yard: 0, gas: 3, pirate: 0, lost: 2 }, deep: 1,
+    mix: m => { m.jelly = (m.jelly || 0) + 3; m.egg = (m.egg || 0) + 2; m.slime = Math.max(0, (m.slime || 0) - 1); } },
+];
+const ZONE_EXTRA = { belt: { gold: .5, ice: 1 }, yard: { mimic: .6, gold: .4 }, gas: { jelly: 1, ice: .5 }, pirate: { mimic: .7, gold: 1 }, lost: { egg: 1, mimic: .5, jelly: .5 } };
+function pickVariant(zoneId, deepOK) {
+  if (SS._forceVariant) return HUNT_VARIANTS.find(v => v.id === SS._forceVariant);
+  const L = HUNT_VARIANTS.filter(v => (v.w[zoneId] || 0) > 0 && (!v.deep || deepOK));
+  let r = Math.random() * L.reduce((a, v) => a + v.w[zoneId], 0);
+  for (const v of L) { r -= v.w[zoneId]; if (r <= 0) return v; }
+  return L[0];
+}
+const SCENE_HUES = [['#ff9a5c', '#7a2e3b'], ['#7ee0ff', '#1d3b78'], ['#c49bff', '#3d1f6e'], ['#9cf08a', '#1f5b46'], ['#ffd36b', '#7a4b1d']];
+function mkScene(zoneId) {
+  const [a, b] = pick(SCENE_HUES);
+  return { planet: Math.random() < .7 ? { x: rnd(.1, .9), y: rnd(.18, .45), r: rnd(18, 54), a, b, ring: Math.random() < .45, tilt: rnd(-.5, .5) } : null,
+    moon: Math.random() < .5 ? { x: rnd(.05, .95), y: rnd(.2, .35), r: rnd(5, 10) } : null,
+    comet: Math.random() < .5 ? { x: rnd(.2, .9), y: rnd(.18, .3), ang: rnd(2.4, 2.9), len: rnd(40, 90) } : null,
+    station: zoneId !== 'lost' && Math.random() < .35 ? { x: rnd(.15, .85), y: rnd(.22, .4) } : null,
+    aurora: Math.random() < .35 ? { y: rnd(.3, .6), hue: pick([a, b]) } : null,
+    snow: Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), s: rnd(.4, 1.2) })) };
+}
+function drawScene(c, W, H, t, P, sc, V) {
+  if (sc.aurora) { c.globalAlpha = .12; c.fillStyle = sc.aurora.hue; c.beginPath(); c.moveTo(0, sc.aurora.y * H);
+    for (let x = 0; x <= W; x += 20) c.lineTo(x, sc.aurora.y * H + Math.sin(x * .02 + t * .4) * 18); c.lineTo(W, sc.aurora.y * H + 70); c.lineTo(0, sc.aurora.y * H + 70); c.fill(); c.globalAlpha = 1; }
+  if (sc.planet) { const p = sc.planet, x = p.x * W, y = p.y * H, gr = c.createRadialGradient(x - p.r * .35, y - p.r * .35, p.r * .1, x, y, p.r);
+    gr.addColorStop(0, p.a); gr.addColorStop(1, p.b); c.globalAlpha = .55; c.fillStyle = gr; c.beginPath(); c.arc(x, y, p.r, 0, TAU); c.fill();
+    if (p.ring) { c.strokeStyle = p.a; c.lineWidth = 2; c.beginPath(); c.ellipse(x, y, p.r * 1.7, p.r * .35, p.tilt, 0, TAU); c.stroke(); }
+    c.globalAlpha = 1; }
+  if (sc.moon) { c.globalAlpha = .5; c.fillStyle = P.metalL; c.beginPath(); c.arc(sc.moon.x * W, sc.moon.y * H, sc.moon.r, 0, TAU); c.fill(); c.globalAlpha = 1; }
+  if (sc.comet) { const k = sc.comet, x = k.x * W, y = k.y * H, gr = c.createLinearGradient(x, y, x - Math.cos(k.ang) * k.len, y - Math.sin(k.ang) * k.len);
+    gr.addColorStop(0, 'rgba(255,255,255,.7)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c.strokeStyle = gr; c.lineWidth = 2;
+    c.beginPath(); c.moveTo(x, y); c.lineTo(x - Math.cos(k.ang) * k.len, y - Math.sin(k.ang) * k.len); c.stroke(); }
+  if (sc.station) { const x = sc.station.x * W, y = sc.station.y * H; c.globalAlpha = .4; c.fillStyle = P.metalD;
+    c.fillRect(x - 18, y - 2, 36, 4); c.fillRect(x - 3, y - 10, 6, 20); c.beginPath(); c.arc(x, y, 6, 0, TAU); c.fill();
+    if (Math.sin(t * 3) > 0) { c.fillStyle = P.bad; c.fillRect(x - 1, y - 12, 2, 2); } c.globalAlpha = 1; }
+  if (V.id === 'frozen') { c.fillStyle = '#ffffff'; for (const s of sc.snow) { c.globalAlpha = .25 + s.s * .3; c.fillRect(s.x * W, ((s.y * H + t * 14 * s.s) % H), 1.5 * s.s, 1.5 * s.s); } c.globalAlpha = 1;
+    c.fillStyle = 'rgba(160,220,255,.08)'; c.fillRect(0, 0, W, H); }
+  if (V.id === 'storm') { c.fillStyle = 'rgba(255,90,60,.06)'; c.fillRect(0, 0, W, H); }
+}
+// Yeni eşyaların çizimi
+const itemBase = SS.Art.item;
+SS.Art.item = (c, it, t, P) => {
+  const { x, y, r } = it;
+  switch (it.kind) {
+    case 'gold': itemBase(c, { ...it, kind: 'rock' }, t, P);
+      c.save(); c.translate(x, y); c.rotate(it.rot || 0); c.strokeStyle = P.accent === P.warn ? '#ffd35a' : '#ffd35a'; c.lineWidth = 2.2;
+      c.beginPath(); c.moveTo(-r * .6, -r * .2); c.lineTo(-r * .1, r * .1); c.lineTo(r * .5, -r * .3); c.moveTo(-r * .2, r * .5); c.lineTo(r * .3, r * .3); c.stroke();
+      const sp = .5 + .5 * Math.sin(t * 4 + (it.seed || 0)); c.fillStyle = '#fff6c4'; c.globalAlpha = sp; c.fillRect(r * .3 - 1, -r * .4, 3, 3); c.globalAlpha = 1; c.restore(); return;
+    case 'ice': c.save(); c.translate(x, y); c.rotate(it.rot || 0);
+      c.fillStyle = 'rgba(190,240,255,.9)'; c.beginPath(); c.moveTo(0, -r); c.lineTo(r * .9, -r * .2); c.lineTo(r * .6, r * .8); c.lineTo(-r * .5, r * .9); c.lineTo(-r, 0); c.closePath(); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.85)'; c.beginPath(); c.moveTo(-r * .3, -r * .5); c.lineTo(r * .2, -r * .6); c.lineTo(-r * .1, -r * .1); c.fill();
+      c.strokeStyle = 'rgba(80,170,220,.8)'; c.lineWidth = 1; c.stroke(); c.restore(); return;
+    case 'jelly': { const ch = it.charged, bob = Math.sin(t * 2 + (it.seed || 0)) * 2;
+      if (ch) { c.globalAlpha = .35; c.fillStyle = P.crystal; c.beginPath(); c.arc(x, y + bob, r * 1.8, 0, TAU); c.fill(); c.globalAlpha = 1; }
+      c.strokeStyle = ch ? P.crystal : P.slime; c.lineWidth = 1.6;
+      for (let i = -2; i <= 2; i++) { c.beginPath(); c.moveTo(x + i * 4, y + bob + 2); c.quadraticCurveTo(x + i * 4 + Math.sin(t * 4 + i) * 4, y + bob + 12, x + i * 4 + Math.sin(t * 3 + i) * 3, y + bob + 20); c.stroke(); }
+      c.fillStyle = ch ? 'rgba(126,243,255,.85)' : 'rgba(193,123,255,.75)'; c.beginPath(); c.ellipse(x, y + bob, r, r * .75, 0, Math.PI, TAU); c.quadraticCurveTo(x, y + bob + 6, x - r, y + bob); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.6)'; c.beginPath(); c.ellipse(x - r * .35, y + bob - r * .35, r * .25, r * .15, -.5, 0, TAU); c.fill(); return; }
+    case 'egg': { const gl = .4 + .3 * Math.sin(t * 2.5 + (it.seed || 0));
+      c.globalAlpha = gl; c.fillStyle = P.slime; c.beginPath(); c.arc(x, y, r * 1.5, 0, TAU); c.fill(); c.globalAlpha = 1;
+      c.fillStyle = '#e9f2d0'; c.beginPath(); c.ellipse(x, y, r * .8, r, it.rot || 0, 0, TAU); c.fill();
+      c.fillStyle = P.slimeD; [[-3, -4], [3, 1], [-2, 5], [4, -6]].forEach(([a, b]) => { c.beginPath(); c.arc(x + a, y + b, 1.8, 0, TAU); c.fill(); }); return; }
+    case 'amber': { const gr = c.createRadialGradient(x - 3, y - 3, 1, x, y, r); gr.addColorStop(0, '#ffe7a1'); gr.addColorStop(1, '#d9781e');
+      c.fillStyle = gr; c.beginPath(); c.ellipse(x, y, r, r * .8, it.rot || 0, 0, TAU); c.fill();
+      c.globalAlpha = .5 + .5 * Math.sin(t * 3); c.fillStyle = '#fff'; c.fillRect(x - 4, y - 5, 2, 2); c.globalAlpha = 1; return; }
+    case 'mimic': itemBase(c, { ...it, kind: 'box' }, t, P);
+      if (it.teeth) { c.save(); c.translate(x, y); c.fillStyle = '#fff'; for (let i = -r + 2; i < r - 2; i += 5) { c.beginPath(); c.moveTo(i, r * .1); c.lineTo(i + 2.5, r * .45); c.lineTo(i + 5, r * .1); c.fill(); }
+        c.fillStyle = P.bad; c.fillRect(-r * .5, -r * .45, 3, 3); c.fillRect(r * .3, -r * .45, 3, 3); c.restore(); } return;
+  }
+  itemBase(c, it, t, P);
+};
+// Yaratıklar ve tehlikeler
+const segDist = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy || 1, k = clamp(((px - ax) * dx + (py - ay) * dy) / l, 0, 1); return Math.hypot(px - ax - k * dx, py - ay - k * dy); };
+function drawEel(c, e, t, P) {
+  c.lineCap = 'round';
+  for (let i = 9; i >= 0; i--) { const x = e.x - e.dir * i * 7, y = e.y + Math.sin(t * 6 - i * .7 + e.ph) * 6, w = 9 - i * .6;
+    c.fillStyle = i % 2 ? P.crystal2 : P.slime; c.beginPath(); c.arc(x, y, w, 0, TAU); c.fill(); }
+  c.fillStyle = '#fff'; c.beginPath(); c.arc(e.x + e.dir * 3, e.y + Math.sin(t * 6 + e.ph) * 6 - 3, 2.6, 0, TAU); c.fill();
+  c.fillStyle = P.space0; c.beginPath(); c.arc(e.x + e.dir * 3.6, e.y + Math.sin(t * 6 + e.ph) * 6 - 3, 1.2, 0, TAU); c.fill();
+}
+function drawDrone(c, d, t, P) {
+  c.save(); c.translate(d.x, d.y);
+  c.strokeStyle = P.metalL; c.lineWidth = 1.5; c.beginPath(); c.moveTo(-14, -6); c.lineTo(14, -6); c.stroke();
+  c.fillStyle = P.metalL; c.globalAlpha = .6; [-14, 14].forEach(x => { c.beginPath(); c.ellipse(x, -7, 6, 1.6 + Math.abs(Math.sin(t * 30)) * 1.2, 0, 0, TAU); c.fill(); }); c.globalAlpha = 1;
+  c.fillStyle = P.tankD; c.beginPath(); c.arc(0, 0, 8, 0, TAU); c.fill(); c.fillStyle = P.bad; c.beginPath(); c.arc(0, 1, 3, 0, TAU); c.fill();
+  c.strokeStyle = P.metal; c.lineWidth = 2; c.beginPath(); c.moveTo(-4, 7); c.lineTo(-6, 13); c.moveTo(4, 7); c.lineTo(6, 13); c.stroke();
+  if (d.hover > 0 && !d.carry) { c.strokeStyle = P.bad; c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 14, -Math.PI / 2, -Math.PI / 2 + TAU * Math.min(1, d.hover / 2.6)); c.stroke(); }
+  c.restore();
+  if (d.carry) SS.Art.item(c, { ...d.carry, x: d.x, y: d.y + 18 }, t, P);
+}
+function drawWhale(c, w, t, P) {
+  c.save(); c.translate(w.x, w.y); c.globalAlpha = .55;
+  c.fillStyle = P.metalD; c.beginPath(); c.ellipse(0, 0, 90, 32, 0, 0, TAU); c.fill();
+  c.beginPath(); c.moveTo(-80, 0); c.lineTo(-130, -26 + Math.sin(t * 1.5) * 8); c.lineTo(-122, 0); c.lineTo(-130, 26 + Math.sin(t * 1.5) * 8); c.closePath(); c.fill();
+  c.fillStyle = P.metal; c.beginPath(); c.ellipse(10, 12, 70, 14, 0, 0, Math.PI); c.fill();
+  c.fillStyle = P.crystal; c.globalAlpha = .7; for (let i = 0; i < 6; i++) { c.beginPath(); c.arc(-50 + i * 20, -14 + Math.sin(i) * 4, 2, 0, TAU); c.fill(); }
+  c.fillStyle = '#fff'; c.globalAlpha = .8; c.beginPath(); c.arc(60, -6, 3.5, 0, TAU); c.fill();
+  c.restore(); c.globalAlpha = 1;
+}
+/* =====================================================================
    HURDA AVI — sallanan kanca (Gold Miner mekaniği)
    ===================================================================== */
 G.scrap = (zoneId, onEnd, ct) => {
@@ -22,6 +146,8 @@ G.scrap = (zoneId, onEnd, ct) => {
   const hook = { phase: 0, angle: 0, len: MIN, st: 'swing', held: null };
   const fx = SS.FX.make(), stars = SS.Art.makeStars(70, W, H);
   const got = []; let items = [], time = 0, timeMax = 0, lost = 0, shake = 0, endT = -1;
+  let V = HUNT_VARIANTS[0], scene = null, actors = [], warns = [], meteorT = 3, eelT = 2, droneT = 3, intro = 3.2;
+  const deepOK = daily || !SS.hasLic || SS.hasLic('scrap2');
   const zm = daily ? Z.mult : Z.mult * (S.flags.scrapBoost || 1) * (sniffed ? 1.3 : 1);
   const reach = daily ? 11 : 6 + SS.lvl('magnet') * 5;
   const extendSp = daily ? 7.9 : 6.5 + (SS.lvl('claw') + (B.oil ? 1 : 0)) * 1.4;
@@ -43,6 +169,9 @@ G.scrap = (zoneId, onEnd, ct) => {
     const T = SS.ITEMS[kind];
     const it = { kind, x, y, r: T.r, wt: T.wt, rot: rnd(-.5, .5), seed: Math.random() * 10 };
     if (kind === 'rock' || kind === 'boulder') it.poly = Array.from({ length: 9 }, () => rnd(.78, 1.08));
+    if (kind === 'gold') it.poly = Array.from({ length: 9 }, () => rnd(.8, 1.06));
+    if (kind === 'jelly') it.by = y;
+    if (kind === 'mimic' && radarOn) it.tag = 'TAKLİTÇİ';
     if (T.move) { it.vx = (Math.random() < .5 ? -1 : 1) * rnd(.6, 1.2); }
     if (kind === 'box') { it.box = rollBox(); if (radarOn) it.tag = it.box.label; }
     return it;
@@ -55,8 +184,12 @@ G.scrap = (zoneId, onEnd, ct) => {
     if (B.bait) mix.slime = (mix.slime || 0) + 2;
     if (sniffed) mix.crystal = (mix.crystal || 0) + 1;
     mix.tank = daily ? (mix.tank || 0) + 1 : Math.round((mix.tank || 0) * SS.M().hazard);
-    const order = ['sat', 'boulder', 'plate', 'part', 'box', 'crystal', 'rock', 'bolts', 'tank', 'bug', 'slime'];
-    const ranges = { sat: [300, 575], boulder: [290, 575], crystal: [380, 585], slime: [330, 560], tank: [260, 560] };
+    for (const [k, n] of Object.entries(ZONE_EXTRA[zoneId] || {})) if (Math.random() < n) mix[k] = (mix[k] || 0) + 1;
+    if (V.mix) V.mix(mix);
+    if (!deepOK) DEEP_KINDS.forEach(k => { mix[k] = 0; });
+    if (daily) mix.mimic = 0;
+    const order = ['sat', 'boulder', 'gold', 'plate', 'part', 'box', 'mimic', 'egg', 'crystal', 'rock', 'ice', 'bolts', 'tank', 'bug', 'jelly', 'slime'];
+    const ranges = { sat: [300, 575], boulder: [290, 575], crystal: [380, 585], slime: [330, 560], tank: [260, 560], gold: [330, 580], egg: [380, 585], jelly: [220, 520], mimic: [250, 560] };
     const add = (kind, n) => {
       const T = SS.ITEMS[kind], [y0, y1] = ranges[kind] || [175, 585];
       for (let i = 0; i < n; i++) for (let k = 0; k < 150; k++) {
@@ -89,6 +222,13 @@ G.scrap = (zoneId, onEnd, ct) => {
     hit.filter(o => o.kind === 'tank').forEach(blowTank);
   }
   function grab(it) {
+    const P0 = SS.Art.P();
+    if ((it.kind === 'jelly' && it.charged) || it.kind === 'mimic') {
+      hook.st = 'retract'; const loss = it.kind === 'mimic' ? 4 : 3; time = Math.max(.5, time - loss); shake = 8; SS.sfx('bad');
+      if (it.kind === 'mimic') { items = items.filter(o => o !== it); SS.FX.burst(fx, it.x, it.y, [P0.box, P0.bad], 24, 4); const d = daily ? 0 : SS.hurt(4, 'Taklitçi kutu'); SS.FX.text(fx, it.x, it.y - 12, 'Taklitçi ısırdı!', P0.bad, `-${loss} sn${d ? ` · -${d} sağlık` : ''}`); }
+      else { SS.FX.burst(fx, it.x, it.y, [P0.crystal, '#fff'], 20, 3.5); SS.FX.text(fx, it.x, it.y - 12, 'Çarpıldın!', P0.crystal, `-${loss} sn`); }
+      return;
+    }
     items = items.filter(o => o !== it); hook.st = 'retract';
     if (it.kind === 'tank') {
       blowTank(it);
@@ -152,7 +292,11 @@ G.scrap = (zoneId, onEnd, ct) => {
   };
   g.init = () => {
     timeMax = time = daily ? 45 : SS.M().jobTime + SS.moraleTime();
-    if (daily) { const r0 = Math.random; Math.random = SS.mulberry(ct.seed); try { spawn(); } finally { Math.random = r0; } } else spawn();
+    const setup = () => { V = pickVariant(zoneId, deepOK); scene = mkScene(zoneId); spawn(); };
+    if (daily) { const r0 = Math.random; Math.random = SS.mulberry(ct.seed); try { setup(); } finally { Math.random = r0; } } else setup();
+    if (V.id === 'drift') for (const it of items) if (!it.vx) it.vx = (it.y % 2 < 1 ? -1 : 1) * rnd(.22, .42) / Math.max(1, it.wt * .5);
+    if (V.id === 'whale') actors.push({ type: 'whale', x: -150, y: rnd(270, 400), vx: .55, dropped: false });
+    const tEl = document.querySelector('#mini .mini-title'); if (tEl) tEl.textContent = `${g.title} · ${V.name}`;
     updCtl();
     if (zoneId === 'lost' && !S.lostVisited) { S.lostVisited = true; SS.unlockChapter('lost'); }
   };
@@ -173,6 +317,12 @@ G.scrap = (zoneId, onEnd, ct) => {
     time -= dt;
     if (time <= 0) { time = 0; endT = .6; return; }
     for (const it of items) if (it.vx) { it.x += it.vx * f; if (it.x < 22 || it.x > W - 22) { it.vx *= -1; it.x = clamp(it.x, 22, W - 22); } }
+    intro = Math.max(0, intro - dt);
+    for (const it of items) {
+      if (it.kind === 'jelly') { it.y = it.by + Math.sin(g.t * .9 + it.seed) * 14; it.charged = Math.sin(g.t * 1.7 + it.seed * 2) > .45; }
+      else if (it.kind === 'mimic') it.teeth = Math.sin(g.t * 1.3 + it.seed) > .82;
+    }
+    stepActors(dt, f);
     if (hook.st === 'swing') { hook.phase += .032 * f; hook.angle = 1.2 * Math.sin(hook.phase); }
     else if (hook.st === 'extend') {
       hook.len += extendSp * f; const p = tip();
@@ -193,6 +343,8 @@ G.scrap = (zoneId, onEnd, ct) => {
   g.draw = (c, P, t) => {
     if (shake > 0) c.translate(rnd(-shake, shake) * .5, rnd(-shake, shake) * .5);
     SS.Art.space(c, W, H, t, zoneId, stars, P);
+    if (scene) drawScene(c, W, H, t, P, scene, V);
+    for (const a of actors) if (a.type === 'whale') drawWhale(c, a, t, P);
     for (const it of items) { if (isTarget(it)) { c.strokeStyle = P.good; c.lineWidth = 2; c.globalAlpha = .45 + .45 * Math.sin(t * 6); c.beginPath(); c.arc(it.x, it.y, it.r + 7, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1; } SS.Art.item(c, it, t, P); }
     const bob = Math.sin(t * 1.6) * 2;
     SS.Art.ship(c, OX, 58 + bob, 1, t, P, { tier: S.tier });
@@ -201,6 +353,14 @@ G.scrap = (zoneId, onEnd, ct) => {
     c.fillStyle = P.metalD; c.beginPath(); c.arc(OX, OY, 5, 0, TAU); c.fill();
     if (hook.held) SS.Art.item(c, hook.held, t, P);
     SS.Art.claw(c, p.x, p.y, hook.angle, hook.held ? .12 : .55, P);
+    for (const a of actors) { if (a.type === 'eel') drawEel(c, a, t, P); else if (a.type === 'drone') drawDrone(c, a, t, P);
+      else if (a.type === 'meteor') { c.fillStyle = P.flame; c.globalAlpha = .5; c.beginPath(); c.arc(a.x - a.vx * 2, a.y - a.vy * 2, 6, 0, TAU); c.fill(); c.globalAlpha = 1; c.fillStyle = P.rockD || P.metalD; c.beginPath(); c.arc(a.x, a.y, 5, 0, TAU); c.fill(); } }
+    for (const w of warns) { c.fillStyle = P.bad; c.globalAlpha = .5 + .5 * Math.sin(t * 20); c.beginPath(); c.moveTo(w.x - 7, 112); c.lineTo(w.x + 7, 112); c.lineTo(w.x, 124); c.fill(); c.globalAlpha = 1; }
+    if (V.id === 'dark') {
+      const R = radarOn ? 150 : 105, dg = c.createRadialGradient(p.x, p.y, R * .35, p.x, p.y, R);
+      dg.addColorStop(0, 'rgba(0,0,0,0)'); dg.addColorStop(1, 'rgba(4,3,12,.93)'); c.fillStyle = dg; c.fillRect(0, 108, W, H - 108);
+      for (const it of items) if (it.kind === 'crystal' || it.kind === 'slime' || it.kind === 'egg' || it.kind === 'gold') { c.globalAlpha = .3 + .3 * Math.sin(t * 3 + it.seed); c.fillStyle = it.kind === 'gold' ? '#ffd35a' : P.crystal; c.fillRect(it.x - 1.5, it.y - 1.5, 3, 3); c.globalAlpha = 1; }
+    }
     SS.FX.draw(fx, c);
     // süre çubuğu
     c.fillStyle = P.ui; c.fillRect(10, 8, W - 20, 6);
@@ -214,7 +374,54 @@ G.scrap = (zoneId, onEnd, ct) => {
       c.fillStyle = P.accent; c.fillText(it.tag, it.x, it.y - it.r - 14);
     }
     SS.FX.drawText(fx, c, P);
+    if (intro > 0) { c.globalAlpha = Math.min(1, intro); c.textAlign = 'center'; c.fillStyle = P.ui; c.fillRect(20, 250, W - 40, 62);
+      c.fillStyle = P.accent; c.font = SS.tfont(20); c.fillText(V.name, W / 2, 272); c.fillStyle = P.text; c.font = SS.tfont(12);
+      const words = V.hint.split(' '), lines = ['']; for (const wd of words) { if (c.measureText(lines[lines.length - 1] + ' ' + wd).width > W - 70) lines.push(wd); else lines[lines.length - 1] += (lines[lines.length - 1] ? ' ' : '') + wd; }
+      lines.slice(0, 2).forEach((l, i) => c.fillText(l, W / 2, 292 + i * 15)); c.globalAlpha = 1; }
   };
+  function cutRope(why) {
+    const P = SS.Art.P(), p = tip();
+    if (hook.held && hook.held.kind !== 'debris') { const it = hook.held; it.x = p.x; it.y = clamp(p.y + 10, 160, H - 20); items.push(it); }
+    hook.held = null; hook.st = 'retract'; shake = 6; SS.sfx('bad'); SS.FX.text(fx, p.x, p.y - 10, why, P.bad);
+  }
+  function stepActors(dt, f) {
+    const P = SS.Art.P(), p = tip(), ropeOut = hook.st !== 'swing' && hook.len > MIN + 6;
+    if (V.id === 'storm') {
+      meteorT -= dt; if (meteorT <= 0) { meteorT = rnd(2.2, 3.6); warns.push({ x: rnd(40, W - 40), t: .9 }); }
+      for (const w of warns) { w.t -= dt; if (w.t <= 0) { const dir = w.x < W / 2 ? 1 : -1; actors.push({ type: 'meteor', x: w.x, y: 120, vx: dir * rnd(1.2, 2.4), vy: rnd(5, 6.5) }); } }
+      warns = warns.filter(w => w.t > 0);
+    }
+    if (V.id === 'eels') { eelT -= dt; if (eelT <= 0 && actors.filter(a => a.type === 'eel').length < 2) { eelT = rnd(4, 7); const dir = Math.random() < .5 ? 1 : -1; actors.push({ type: 'eel', x: dir > 0 ? -60 : W + 60, y: rnd(210, 540), dir, sp: rnd(1.3, 2), ph: Math.random() * 6 }); } }
+    if (V.id === 'raiders') { droneT -= dt; if (droneT <= 0 && actors.filter(a => a.type === 'drone').length < 2) { droneT = rnd(5, 8); actors.push({ type: 'drone', x: Math.random() < .5 ? -20 : W + 20, y: rnd(130, 200), hover: 0, carry: null, tgt: null }); } }
+    for (const a of actors) {
+      if (a.type === 'meteor') {
+        a.x += a.vx * f; a.y += a.vy * f;
+        if (ropeOut && segDist(a.x, a.y, OX, OY, p.x, p.y) < 7) { a.dead = true; SS.FX.burst(fx, a.x, a.y, [P.flame, P.bad], 14, 3); cutRope('Meteor halata çarptı!'); }
+        if (a.y > H + 20) a.dead = true;
+      } else if (a.type === 'eel') {
+        a.x += a.dir * a.sp * f; const hy = a.y + Math.sin(g.t * 6 + a.ph) * 6;
+        if (hook.st === 'extend' && Math.hypot(p.x - a.x, p.y - hy) < 18) { hook.st = 'retract'; SS.FX.text(fx, a.x, hy - 14, 'Yılan kancayı itti', P.crystal2); SS.sfx('bad'); }
+        else if (hook.st === 'retract' && hook.held && hook.held.kind !== 'debris' && segDist(a.x, hy, OX, OY, p.x, p.y) < 12) { const it = hook.held; hook.held = null; SS.FX.text(fx, a.x, hy - 14, 'Yılan kaptı!', P.bad, SS.ITEMS[it.kind] ? SS.ITEMS[it.kind].name : ''); SS.FX.burst(fx, a.x, hy, [P.slime, P.crystal2], 18, 3); SS.sfx('bad'); }
+        if (a.x < -90 || a.x > W + 90) a.dead = true;
+      } else if (a.type === 'whale') {
+        a.x += a.vx * f;
+        if (!a.dropped && a.x > W * .55) { a.dropped = true; const it = mk('amber', a.x - 40, clamp(a.y + 50, 300, 560)); items.push(it); SS.FX.text(fx, a.x - 40, a.y + 30, 'Balina amber bıraktı', P.accent); }
+        if (a.x > W + 200) a.dead = true;
+      } else if (a.type === 'drone') {
+        if (Math.hypot(p.x - a.x, p.y - a.y) < 20 && hook.st !== 'swing') {
+          a.dead = true; SS.FX.burst(fx, a.x, a.y, [P.bad, P.flame, P.metalL], 30, 4.5); SS.FX.text(fx, a.x, a.y - 14, 'Dron düştü!', P.good); SS.sfx('boom'); shake = 6;
+          if (a.carry) { a.carry.x = a.x; a.carry.y = clamp(a.y + 20, 180, H - 20); items.push(a.carry); }
+          if (hook.st === 'extend') hook.st = 'retract'; continue;
+        }
+        if (a.carry) { a.y -= 1.6 * f; if (a.y < -30) a.dead = true; continue; }
+        if (!a.tgt || !items.includes(a.tgt)) { const vals = items.filter(o => ['crystal', 'part', 'sat', 'gold', 'egg', 'slime', 'relic', 'amber', 'plate'].includes(o.kind)); a.tgt = vals.length ? pick(vals) : null; a.hover = 0; if (!a.tgt) { a.y -= f; if (a.y < -30) a.dead = true; continue; } }
+        const dx = a.tgt.x - a.x, dy = a.tgt.y - 22 - a.y, d = Math.hypot(dx, dy);
+        if (d > 3) { a.x += dx / d * Math.min(d, 1.25 * f); a.y += dy / d * Math.min(d, 1.25 * f); a.hover = 0; }
+        else { a.hover += dt; if (a.hover > 2.6) { a.carry = a.tgt; items = items.filter(o => o !== a.tgt); SS.FX.text(fx, a.x, a.y - 14, 'Dron çaldı!', P.bad); SS.sfx('bad'); } }
+      }
+    }
+    actors = actors.filter(a => !a.dead);
+  }
   g.onEnd = onEnd;
   SS.Stage.open(g);
 };

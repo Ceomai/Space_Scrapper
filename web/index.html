@@ -178,22 +178,23 @@ main>*{flex-shrink:0}
 :root[data-style="pixel"] .dock button{font-size:15px}
 
 /* ---------- harita ---------- */
-.map-wrap{position:relative;width:100%;border:1px solid var(--line2);background:var(--space,#000);overflow:hidden;flex:1 1 auto;min-height:0}
+.map-wrap{position:relative;width:100%;border:1px solid var(--line2);background:var(--surface);overflow:hidden;flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+.map-area{position:relative;flex:1 1 auto;min-height:0;overflow:hidden;background:var(--space,#000)}
 main.v-map{padding:0;gap:0;overflow:hidden}
 main.v-map>.map-wrap{border:0}
-.map-wrap canvas{position:absolute;inset:0;width:100%;height:100%}
-.map-top{position:absolute;top:8px;left:8px;right:8px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;z-index:2}
+.map-area canvas{position:absolute;inset:0;width:100%;height:100%}
+.map-top{flex:0 0 auto;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:6px 8px;background:var(--surface);border-bottom:1px solid var(--line2)}
 .mm{background:color-mix(in srgb,var(--surface) 82%,transparent);border:1px solid var(--line2);padding:4px 6px;display:flex;flex-direction:column;gap:2px;min-width:0;backdrop-filter:blur(3px)}
 .mm small{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mm b{font-family:var(--mono);font-weight:400;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mm .track{height:4px} .mm.win .track i{background:var(--good)}
 :root[data-style="pixel"] .mm small{font-size:14px} :root[data-style="pixel"] .mm b{font-size:15px}
-.map-alert{position:absolute;top:66px;left:50%;transform:translateX(-50%);z-index:2;background:var(--bad);color:var(--btn-ink);font-family:var(--mono);font-size:12px;padding:3px 10px;white-space:nowrap}
+.map-alert{position:absolute;top:6px;left:50%;transform:translateX(-50%);z-index:2;background:var(--bad);color:var(--btn-ink);font-family:var(--mono);font-size:12px;padding:3px 10px;white-space:nowrap}
 .bubble{position:absolute;left:8px;right:8px;bottom:62px;z-index:3;display:flex;gap:8px;align-items:center;text-align:left;background:color-mix(in srgb,var(--surface) 92%,transparent);border:1px solid var(--accent2);padding:6px 8px;color:var(--ink);font:inherit;font-size:13.5px;font-style:italic;cursor:pointer}
 .bubble span{flex:1;min-width:0}
 .bubble i{font-style:normal;font-size:18px;color:var(--muted);padding:0 4px}
 :root[data-style="pixel"] .bubble{font-size:17px;font-style:normal}
-.map-bottom{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;display:flex;gap:6px}
+.map-bottom{flex:0 0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:5px;padding:6px 8px;background:var(--surface);border-top:1px solid var(--line2)}
 .qb{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:color-mix(in srgb,var(--surface) 88%,transparent);border:1px solid var(--line2);color:var(--ink);padding:8px 4px;cursor:pointer;font-family:var(--mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;
   clip-path:polygon(7px 0,100% 0,100% calc(100% - 7px),calc(100% - 7px) 100%,0 100%,0 7px)}
 .qb b{font-weight:400;font-size:14px;color:var(--accent2)}
@@ -414,6 +415,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .grid-emoji{font-size:22px;letter-spacing:2px;line-height:1.3;word-break:break-all}
 .code-in{width:100%;padding:9px;background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit;text-transform:uppercase}
 .qb.daily b{color:var(--accent)}
+.map-bottom .qb{flex-direction:column;gap:1px;padding:5px 2px;min-width:0;background:var(--surface2)}
+.map-bottom .qb.hot{background:var(--accent)}
+.map-area.compact .node .n-cost{display:none}
+.map-area.compact .node{transform:translate(-50%,16px);padding:1px 5px}
+.map-area.compact .node .n-name{font-size:9.5px}
+.map-bottom .qb span{font-size:10px;letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+:root[data-style="pixel"] .map-bottom .qb span{font-size:13px}
+.map-top .mm{background:var(--surface2)}
 .wheel-box{position:relative;width:min(240px,62vw);aspect-ratio:1;margin:4px auto}
 .wheel-box canvas{width:100%;height:100%;display:block}
 .wheel-pin{position:absolute;left:50%;top:-6px;transform:translateX(-50%);width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-top:18px solid var(--accent);filter:drop-shadow(0 2px 2px rgba(0,0,0,.4))}
