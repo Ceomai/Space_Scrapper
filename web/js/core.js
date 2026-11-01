@@ -20,7 +20,7 @@ SS.M = () => {
   return {
     interest: bank ? SS.BANK.interest : R.interest,
     installment: bank ? Math.max(300, Math.round(S.loanBase * SS.BANK.rate / 10) * 10) : R.installment,
-    deadline: S.lender === 'krell' ? (S.deadlineOverride || R.deadline) : 0, strikesMax: R.strikesMax,
+    deadline: S.lender === 'krell' ? (S.deadlineOverride || R.deadline) : S.lender === 'bank' ? (S.bankDeadline || 0) : 0, strikesMax: R.strikesMax,
     cm, oxygen: Math.round(12 * cm), dock: Math.round(100 * cm), rent: Math.round(480 * cm),
     hungerDrop: cm < 1 ? 20 : cm > 1 ? 30 : 25, foodMult: cm, hospital: Math.round(350 * cm * cm),
     priceMult: SS.dv('market'), hazard: hz, dmg: hz < 1 ? .5 : hz > 1 ? 1 : .75, jobTime: hz < 1 ? 55 : hz > 1 ? 46 : 50,
@@ -332,7 +332,7 @@ SS.newDay = notes => {
   const m = SS.M();
   if (m.deadline && S.loan > 0) {
     const left = m.deadline - S.day + 1;
-    if (left === 28 || left === 7) notes.push(`Krell'in süresinin bitmesine ${left} gün kaldı.`);
+    if (left === 28 || left === 7 || left === 3) notes.push(S.lender === 'bank' ? `Banka kredisinin süresi ${left} gün sonra doluyor. Kalan borç ${fmt(S.loan)}; dolarsa banka ${SS.SHIPS[S.tier].name}'ya el koyar.` : `Krell'in süresinin bitmesine ${left} gün kaldı.`);
   }
   movers.sort((x, y) => y[1] - x[1]);
   S.bulletin = {
@@ -483,8 +483,8 @@ SS.sleep = (sel) => {
   SS.mood(SS.HOMES[S.home].morale + (S.loan > 0 && SS.hard() ? -2 : 0) + (S.arrears > 0 ? -5 : 0));
   if (S.health <= 0) SS.hospital('Açlık ve yorgunluk');
   S.day++; S.time = 420; S.loc = 'home'; S.view = 'map'; S.weekEarned = S.day % 7 === 1 ? 0 : S.weekEarned;
-  if (S.strikes >= m.strikesMax) S.over = 'evict';
-  else if (m.deadline && S.day > m.deadline && S.loan > 0 && S.lender === 'krell') S.over = 'deadline';
+  if (S.strikes >= m.strikesMax) S.over = S.lender === 'bank' ? 'repo' : S.lender === 'krell' ? 'evict' : 'evict_station';
+  else if (m.deadline && S.day > m.deadline && S.loan > 0) S.over = S.lender === 'krell' ? 'deadline' : 'bankdue';
   if (!S.over) SS.newDay(notes);
   SS.checkAch();
   return { R, notes };
@@ -495,6 +495,7 @@ SS.loanCheck = () => {
   if (S.loan > 0) return;
   S.loan = 0;
   if (S.lender === 'krell' && !S.won) { S.won = true; SS.unlockChapter('free'); }
+  if (S.lender === 'bank') { S.bankDeadline = 0; SS.notes.push(SS.fun() ? 'Banka kredisi kapandı! Temsilci sana bir kalem hediye etti. Kalem yazmıyor.' : 'Banka kredisi kapandı. Gemi artık tamamen senin.'); SS.mood(10); }
   S.lender = null;
 };
 SS.payLoan = n => {
@@ -524,6 +525,8 @@ SS.buyShip = useBank => {
     if (!useBank || S.cash < cost * .2) return false;
     const debt = cost - S.cash; S.cash = 0;
     S.lender = 'bank'; S.loan = S.loanStart = S.loanBase = debt;
+    // Banka kredisinin de süresi var: Martı 112, Balina 140 gün; yeni kredi gecikme sayacını sıfırlar
+    S.bankDeadline = S.day + (nx.id === 'marti' ? 112 : 140); S.strikes = 0;
   }
   S.tier++;
   S.ship = SS.blankShip(); S.upSpent = 0;

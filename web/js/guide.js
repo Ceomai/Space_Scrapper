@@ -93,12 +93,12 @@ function zonesSec() {
 function shipSec() {
   const r = SS.SHIP.map(u => row(u.name, u.costs.map(c => fmt(window.S ? SS.upCost(u, 0) / u.costs[0] * c : c)).join(' / '), u.desc, 'geliştirme hangar ' + u.group));
   SS.SHIPS.forEach((s, i) => r.push(row(s.name, i ? fmt(s.price) : 'başlangıç', `${s.desc} Ambar ${s.cargo}, tank ${s.tank}. Takasta ${fmt(s.trade)} + geliştirmelere harcadığının %35'i düşülür.`, 'gemi tersane')));
-  r.push(row('Yeni gemiye geçiş', '', 'Geliştirmeler yeni gemiye taşınmaz; yeni gemi kendi taban seviyeleriyle gelir. Nakit ya da en az %20 peşinatla banka kredisiyle alınır.', 'tersane banka'));
+  r.push(row('Yeni gemiye geçiş', '', 'Geliştirmeler yeni gemiye taşınmaz; yeni gemi kendi taban seviyeleriyle gelir. Nakit ya da en az %20 peşinatla banka kredisiyle alınır. Banka kredisinin süresi Martı için 112, Balina için 140 gündür; 3 gecikmede ya da süre dolunca banka gemiye el koyar ve oyun biter.', 'tersane banka'));
   return sec('ship', 'Gemi ve geliştirmeler', 'Geliştirme fiyatları her yeni gemide %60 artar.', r);
 }
 function academySec() {
   const r = SS.LIC_ORDER.map(id => { const L = SS.LICENSES[id]; return row(L.name, `${L.lessons} ders · ${fmt(Math.round(L.fee * cm()))}/ders`, `${L.desc}${L.req ? ` Önce: ${SS.LICENSES[L.req].name}.` : ''}`, 'lisans akademi'); });
-  SS.SKILLS.forEach(s => r.push(row(s.name, `${fmt(SS.trainCost(0))}'den başlar`, `${s.desc} Seviye başına: ${SS.SKILL_FX[s.id](1)}. En fazla 5 seviye; her eğitim ${SS.DUR.train / 60} saat, ${SS.COST.train} enerji.`, 'beceri akademi')));
+  SS.SKILLS.forEach(s => r.push(row(s.name, `${fmt(window.S ? SS.trainCost(0) : 250)}'den başlar`, `${s.desc} Seviye başına: ${SS.SKILL_FX[s.id](1)}. En fazla 5 seviye; her eğitim ${SS.DUR.train / 60} saat, ${SS.COST.train} enerji.`, 'beceri akademi')));
   return sec('academy', 'Akademi', `Ders ${SS.LESSON.mins / 60} saat ve ${SS.LESSON.energy} enerji sürer; günde her lisanstan bir ders alınır. Son ders 3 soruluk sınav: 2 doğru gerekir, kalırsan ertesi gün tekrar girersin.`, r);
 }
 function homeSec() {
@@ -131,8 +131,9 @@ function costsSec() {
     row('Kira', `${fmt(M.rent)} × ev`, 'Her 28 günde, zorunlu. Daire ×1,6, Ev ×2,4.', 'ay'),
     row('Ev aidatı', [140, 300].map(v => fmt(v * c)).join(' / '), 'Her 28 günde; Daire ve İstasyon Evi için.', 'ay'),
     row('Bahçe ve atölye bakımı', `${fmt(60 * c)} her biri`, 'Her 28 günde.', 'ay'),
-    row('Krell taksiti', fmt(M.installment), `Her 28 günde; aylık faiz %${Math.round(M.interest * 100)}. ${SS.RULES.deadline}. güne kadar borç bitmeli.`, 'ay borç'),
-    row('Gecikme', '', 'Zorunlu ödemeye para yetmezse kalan %10 cezayla gecikmiş borca yazılır ve bir gecikme sayılır. 3 gecikmede oyun biter.', 'gecikme'),
+    row('Krell taksiti', fmt(SS.RULES.installment), `Her 28 günde; aylık faiz %${Math.round(SS.RULES.interest * 100)}. ${SS.RULES.deadline}. güne kadar borç bitmeli.`, 'ay borç'),
+    row('Banka taksiti', 'kredinin %6\'sı', 'Yeni gemiyi krediyle alırsan her 28 günde; aylık faiz %1. Süre: Martı 112, Balina 140 gün. Kredi başlayınca gecikme sayacı sıfırlanır.', 'ay banka borç'),
+    row('Gecikme', '', 'Zorunlu ödemeye para yetmezse kalan %10 cezayla gecikmiş borca yazılır ve bir gecikme sayılır. 3 gecikmede oyun biter: Krell borcundayken istasyondan atılırsın, banka kredisindeyken banka gemine el koyar, borcun yokken istasyon gemini çeker.', 'gecikme'),
   ];
   return sec('costs', 'Masraflar', 'Hepsi akşam defterinde listelenir; zorunlu olanlar otomatik düşer.', r);
 }

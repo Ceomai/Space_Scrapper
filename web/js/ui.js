@@ -99,8 +99,8 @@ function rulesHtml() {
     <li><span>Oyun biter</span><b>${R.strikesMax} gecikmede</b></li></ul></div>`;
 }
 function overModal() {
-  const text = SS.tx(SS.ENDINGS[S.over]) || '';
-  SS.modal(`<p class="eyebrow">Oyun bitti · Gün ${S.day}</p><h2>${S.over === 'evict' ? 'İstasyondan atıldın' : 'Süre doldu'}</h2>${para(text)}
+  const text = (SS.endingText ? SS.endingText() : SS.tx(SS.ENDINGS[S.over])) || '';
+  SS.modal(`<p class="eyebrow">Oyun bitti · Gün ${S.day} · ${SS.SHIPS[S.tier].name}</p><h2>${(SS.ENDING_TITLES || {})[S.over] || 'Oyun bitti'}</h2>${para(text)}
     <ul class="kv"><li><span>Toplam kazanç</span><b>${fmt(S.stats.earned)}</b></li><li><span>Rütbe</span><b>${SS.rank().name}</b></li><li><span>Kalan borç</span><b>${fmt(S.loan)}</b></li>
     <li><span>Bulunan eser</span><b>${Object.keys(S.album).length}/12</b></li></ul>
     <div class="row">${btn('Yeni hayata başla', 'wipe', {}, 'primary')}</div>`);
@@ -352,7 +352,7 @@ function hangarView() {
       <ul class="kv"><li><span>Fiyat</span><b>${fmt(nx.price)}</b></li><li><span>${T.name} satış değeri</span><b>−${fmt(trade)}</b></li><li><span>Ödenecek</span><b>${fmt(cost)}</b></li>
       <li><span>Ambar / tank</span><b>${nx.cargo} / ${nx.tank}</b></li><li class="wrapv"><span>Hazır geliştirmeler</span><b>${Object.entries(nx.base).filter(([, v]) => v).map(([k, v]) => SS.SHIP.find(u => u.id === k).name + ' ' + v).join(', ')}</b></li></ul>
       ${block ? `<div class="alert">${block}</div>` : `<div class="row">${btn('Nakit öde', 'buyShip', { b: 0 }, 'primary', !canCash)}${btn('Banka kredisiyle al', 'buyShip', { b: 1 }, 'ghost', canCash || !canBank)}</div>
-      <small>Banka en az %20 peşinat ister (${fmt(cost * .2)}). Kredi: aylık %1 faiz, taksit kredinin %6'sı, süre yok. Geliştirmeler yeni gemide sıfırlanır.</small>`}`, { code: 'TR' });
+      <small>Banka en az %20 peşinat ister (${fmt(cost * .2)}). Kredi: aylık %1 faiz, taksit kredinin %6'sı; süre Gezgin Martı için 112, Demir Balina için 140 gün. 3 gecikmede ya da süre dolunca banka gemiye el koyar. Geliştirmeler yeni gemide sıfırlanır.</small>`}`, { code: 'TR' });
   }
   return h;
 }
@@ -828,7 +828,8 @@ function titleScreen() {
   const cost = T.crew.reduce((a, id) => a + SS.comp(id).daily, 0);
   app().innerHTML = `<main class="title" id="main">
     <div class="logo"><span class="pcode">PELIKAN-OS · v3</span><canvas id="logoShip" width="180" height="90" aria-hidden="true"></canvas>
-      <h1>Space<span>Scrapper</span></h1><p class="muted">Borçlu bir hurdacının istasyondaki hayatı. Kanca at, iş kovala, haneni doyur, gemini büyüt.</p></div>
+      <h1>Space<span>Scrapper</span></h1><p class="muted">Borçlu bir hurdacının istasyondaki hayatı. Kanca at, iş kovala, haneni doyur, gemini büyüt.</p>
+      <div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost sm')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost sm')}</div></div>
     ${save ? panel(`${esc(save.name)} · Gün ${save.day}`, `<p class="muted">${SS.SHIPS[save.tier].name} · nakit ${fmt(save.cash)} · borç ${fmt(save.loan)}</p>${btn('Devam et', 'cont', {}, 'primary block')}`, { code: 'KYT' }) : ''}
     ${panel('Kaptan', `<label class="field" for="capName"><span>Adın</span><input id="capName" maxlength="18" placeholder="Kaptan" autocomplete="off" value="${esc(T.name)}"></label>`, { code: '01' })}
     ${panel('Yol arkadaşları', `<p class="muted">Birini, ikisini ya da üçünü seç. Daha çok arkadaş daha çok iş gücü ve yardım, ama daha çok masraf ve sorumluluk demek. İlk seçtiğin anlatıcı olur.</p>

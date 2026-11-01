@@ -499,7 +499,7 @@ SS.rollTrial = () => {
   if (S.day < S.nextTrial || S.trial) return;
   if (Math.random() < .2) { S.nextTrial = S.day + rint(1, 2); return; } // şans: biraz gecikebilir
   const last = (S.trialLog[S.trialLog.length - 1] || {}).id;
-  const D = pick(SS.TRIALS.filter(t => t.id !== last));
+  const D = pick(SS.TRIALS.filter(t => t.id !== last && (!t.when || t.when())));
   S.nextTrial = S.day + trialGap();
   const text = tx(D.text);
   if (D.id === 'plague' && (S.vaxUntil || 0) >= S.day) {

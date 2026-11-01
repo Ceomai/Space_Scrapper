@@ -96,14 +96,14 @@ SS.ARCS = [
 ];
 SS.arcDecision = () => {
   const a = S.arc; if (!a || S.day < a.next) return null;
-  const arc = SS.ARCS.find(x => x.id === a.id); if (!arc || (arc.who && !SS.hasCrew(arc.who))) { S.arc = null; return null; }
+  const arc = SS.ARCS.find(x => x.id === a.id); if (!arc || (arc.who && !SS.hasCrew(arc.who)) || (arc.when && a.step === 0 && !arc.when())) { S.arc = null; return null; }
   const st = arc.steps[a.step];
   return { id: `arc:${a.id}:${a.step}`, who: arc.who, title: `${arc.title} · ${a.step + 1}/${arc.steps.length}`, text: st.text, opts: st.opts, arc: true };
 };
 SS.arcAdvance = () => { const a = S.arc; const arc = SS.ARCS.find(x => x.id === a.id); a.step++; a.next = S.day + 2; if (a.step >= arc.steps.length) { (S.arcsDone = S.arcsDone || []).push(a.id); S.arc = null; } };
 SS.maybeStartArc = () => {
   if (S.arc || S.day < 3 || S.day % 5 !== 0) return;
-  const pool = SS.ARCS.filter(a => !(S.arcsDone || []).includes(a.id) && (!a.who || SS.hasCrew(a.who)));
+  const pool = SS.ARCS.filter(a => !(S.arcsDone || []).includes(a.id) && (!a.who || SS.hasCrew(a.who)) && (!a.when || a.when()));
   if (pool.length) { const a = pick(pool); S.arc = { id: a.id, step: 0, next: S.day }; S.arcScore = 0; }
 };
 
