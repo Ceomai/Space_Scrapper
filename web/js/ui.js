@@ -131,6 +131,7 @@ function hud() {
       <button class="help" data-act="menu" aria-label="Menü">☰</button>
     </div>
     <div class="gauges">${seg('Enerji', S.energy, SS.maxEnergy(), 'en')}${seg('Tokluk', S.hunger, 100, 'hu')}${seg('Sağlık', S.health, 100, 'he')}${seg('Moral', S.morale, 100, 'mo')}</div>
+    ${SS.adsLeft && SS.adsLeft() > 0 ? `<button class="ad-chip" data-act="adEnergy" aria-label="Reklam izle, enerji kazan">⚡ +${SS.AD.energy} enerji <small>reklam ${SS.adsLeft()}/${SS.AD.perDay}</small></button>` : ''}
     <div class="chips"><span>Yakıt <b>${S.fuel}/${SS.tankCap()}</b></span><span>Kargo <b>${SS.cargoUsed()}/${SS.cargoCap()}</b></span><span>Torpido <b>${S.torps}</b></span><span class="${S.arrears ? 'neg' : ''}">Borç <b>${fmt(S.loan + S.arrears)}</b></span></div>
   </header>`;
 }
@@ -725,7 +726,7 @@ const ACT = {
     SS.useJob(SS.COST.workshop, 60); m.forEach(c => { c.proc = true; c.cat = 'part'; c.value = Math.round(c.value * 1.8); });
     SS.toast(`${m.length} metal parça işlendi.`, 'good'); render();
   }),
-  nap: () => { if (!SS.timeOk(SS.DUR.nap) || S.today.nap) return; S.today.nap = 1; SS.passTime(SS.DUR.nap); SS.eat({ energy: SS.NAP.energy, morale: SS.NAP.morale }); SS.toast(`Kestirdin: enerji +${SS.NAP.energy}`, 'good'); render(); },
+  nap: () => { if (!SS.timeOk(SS.DUR.nap) || S.today.nap) return; S.today.nap = 1; SS.passTime(SS.DUR.nap); SS.eat({ free: 1, energy: SS.NAP.energy, morale: SS.NAP.morale }); SS.toast(`Kestirdin: enerji +${SS.NAP.energy}`, 'good'); render(); },
   ledger: () => { LSEL = null; ledgerModal(); },
   ltog: d => { if (LSEL.has(d.id)) LSEL.delete(d.id); else LSEL.add(d.id); SS.sfx('tick'); ledgerModal(); },
   sleepNow: () => {
@@ -760,12 +761,12 @@ const ACT = {
   eat: d => {
     const f = SS.FOOD.find(x => x.id === d.id);
     if (d.free) { if (!S.freeRation) return; S.freeRation = false; } else if (!SS.spend(SS.foodPrice(f))) return;
-    SS.eat(f); SS.passTime(15); SS.checkGoals(); SS.sfx('coin'); SS.toast(`${f.name}: enerji +${f.energy}, tokluk +${f.hunger}`, 'good'); render();
+    const e0 = S.energy; SS.eat(f); SS.passTime(15); SS.checkGoals(); SS.sfx('coin'); SS.toast(`${f.name}: enerji +${S.energy - e0}${S.energy - e0 < f.energy ? ' (günlük yiyecek sınırı)' : ''}, tokluk +${f.hunger}`, 'good'); render();
   },
   drink: d => {
     const x = SS.DRINKS.find(y => y.id === d.id), used = S.drinks[x.id] || 0, price = Math.round(x.price * SS.M().foodMult);
     if (used >= x.limit || !SS.spend(price)) return;
-    S.drinks[x.id] = used + 1; SS.eat(x); SS.passTime(x.id === 'spa' ? 45 : 10); SS.sfx('coin'); SS.toast(`${x.name}: enerji +${x.energy}`, 'good'); render();
+    const e0 = S.energy; S.drinks[x.id] = used + 1; SS.eat(x); SS.passTime(x.id === 'spa' ? 45 : 10); SS.sfx('coin'); SS.toast(`${x.name}: enerji +${S.energy - e0}${S.energy - e0 < x.energy ? ' (günlük yiyecek sınırı)' : ''}`, 'good'); render();
   },
   talk: d => {
     if (!SS.timeOk(SS.DUR.talk) || S.talked[d.id]) return;

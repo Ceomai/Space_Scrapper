@@ -3,7 +3,7 @@ window.SS = window.SS || {};
 (function(SS){
 
 // Herkes için aynı başlangıç kuralları (zorluk ayarı bunları değiştirmez)
-SS.RULES = { loan: 12000, interest: .02, installment: 700, deadline: 196, strikesMax: 3 };
+SS.RULES = { loan: 12000, interest: .02, installment: 700, deadline: 120, strikesMax: 3 };
 // Oyuncunun ayarlayabildiği zorluk: her satırda 3 seçenek
 SS.DIFF = [
   { id: 'hazard', name: 'Tehlike',          desc: 'Patlayıcı tank, korsan, kaza ve hastalık sıklığı; hasar miktarı.', opts: [['Az', .6], ['Normal', 1], ['Çok', 1.4]] },
@@ -83,9 +83,9 @@ SS.CARGO_CAP = [20, 30, 45, 65, 90];
 SS.TANK_CAP = [50, 80, 120, 180];
 
 SS.HOMES = [
-  { name: 'Uyku Kapsülü',  sleep: 55,  rent: 1,   morale: -3, cost: 0 },
-  { name: 'Küçük Daire',   sleep: 80,  rent: 1.6, morale: 0,  cost: 2500 },
-  { name: 'İstasyon Evi',  sleep: 100, rent: 2.4, morale: 4,  cost: 7000 },
+  { name: 'Uyku Kapsülü',  sleep: 40,  rent: 1,   morale: -3, cost: 0 },
+  { name: 'Küçük Daire',   sleep: 48,  rent: 1.6, morale: 0,  cost: 2500 },
+  { name: 'İstasyon Evi',  sleep: 56, rent: 2.4, morale: 4,  cost: 7000 },
 ];
 SS.EXTRAS = [
   { id: 'garden',   name: 'Hidroponik Bahçe', desc: 'Her sabah bedavaya +25 tokluk.',                        cost: 1500, needHome: 1 },
@@ -112,7 +112,7 @@ SS.DRINKS = [
   { id: 'boost',  name: 'Nebula Enerji İçeceği', price: 20, energy: 30, health: -4, morale: 0, limit: 2, desc: 'Hızlı ama sağlığa zararlı. Günde 2.' },
   { id: 'spa',    name: 'Oksijen Barı',       price: 70, energy: 40, health: 5,  morale: 10, limit: 1, desc: 'Saf oksijen ve masaj koltuğu. Günde 1.' },
 ];
-SS.NAP = { energy: 35, morale: 2 }; // kestirme: 1 vardiya, ücretsiz
+SS.NAP = { energy: 25, morale: 2 }; // kestirme: 1 vardiya, ücretsiz
 
 SS.NPCS = [
   { id: 'gus',  name: 'Gus',       role: 'Kantin sahibi, dört kollu', perks: [[30, 'Her gün bir bedava tayın'], [60, 'Yarının olayını önceden fısıldar']] },

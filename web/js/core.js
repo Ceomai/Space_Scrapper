@@ -20,7 +20,7 @@ SS.M = () => {
   return {
     interest: bank ? SS.BANK.interest : R.interest,
     installment: bank ? Math.max(300, Math.round(S.loanBase * SS.BANK.rate / 10) * 10) : R.installment,
-    deadline: S.lender === 'krell' ? R.deadline : 0, strikesMax: R.strikesMax,
+    deadline: S.lender === 'krell' ? (S.deadlineOverride || R.deadline) : 0, strikesMax: R.strikesMax,
     cm, oxygen: Math.round(12 * cm), dock: Math.round(100 * cm), rent: Math.round(480 * cm),
     hungerDrop: cm < 1 ? 20 : cm > 1 ? 30 : 25, foodMult: cm, hospital: Math.round(350 * cm * cm),
     priceMult: SS.dv('market'), hazard: hz, dmg: hz < 1 ? .5 : hz > 1 ? 1 : .75, jobTime: hz < 1 ? 55 : hz > 1 ? 46 : 50,
@@ -41,7 +41,7 @@ SS.SORTS = [
 ];
 
 SS.blankShip = () => Object.fromEntries(SS.SHIP.map(u => [u.id, 0]));
-SS.SCRAP_VAL = .38; // hurda avı değer çarpanı (nakit işlerle denge için)
+SS.SCRAP_VAL = .33; // hurda avı değer çarpanı (nakit işlerle denge için)
 SS.newState = (diff, tone, name, crewIds) => {
   const s = {
     v: 3, diff: diff.slice(), tone, name: name || 'Kaptan', day: 1, time: 420, loc: 'home', view: 'map',
@@ -62,7 +62,7 @@ SS.newState = (diff, tone, name, crewIds) => {
     over: null, won: false, finale: false, tab: 'hub', guideSeen: false,
     tut: 0, tease: null, teaseToday: null, arc: null, arcScore: 0, arcsDone: [], titles: [], ng: 0, perks: {},
     paint: 'klasik', paints: { klasik: true }, homeTint: 'std', shipNames: {}, daily: {}, decorStore: [],
-    lic: {}, course: {}, trial: null, nextTrial: 0, trialLog: [], casino: { today: 0, net: 0, chips: 0, best: 0 },
+    rules2: 1, lic: {}, course: {}, trial: null, nextTrial: 0, trialLog: [], casino: { today: 0, net: 0, chips: 0, best: 0 },
   };
   crewIds.forEach(id => { s.crew[id] = { bond: 50, task: 'with', down: 0, gone: false, hunger: 0, sick: false, sickDays: 0 }; });
   const prev = window.S; window.S = s;
@@ -132,7 +132,7 @@ SS.jobBlock = (energy, mins = 0) => {
   if (S.over) return 'Oyun bitti.';
   if (mins && !SS.timeOk(mins)) return `Bu iş ${Math.round(mins / 60 * 10) / 10} saat sürer; gece yarısından sonrasına sarkar.`;
   if (S.time >= SS.DAY_END) return 'Gece yarısını çok geçti. Eve gidip uyuman gerek.';
-  if (S.energy < energy) return `Enerjin yetmiyor (${energy} gerekli). Kantinde kahve iç, yemek ye ya da kestir.`;
+  if (S.energy < energy) return `Enerjin yetmiyor (${energy} gerekli). ${SS.adsLeft && SS.adsLeft() > 0 ? `Üstteki ⚡ düğmesiyle reklam izleyip +${SS.AD.energy} enerji al, ` : ''}kestir ya da kantinde bir şeyler ye.`;
   return null;
 };
 SS.useJob = (energy, mins = 0) => { SS.passTime(mins); S.energy = Math.max(0, S.energy - energy); };
@@ -152,10 +152,16 @@ SS.hospital = why => {
     ? `Bayıldın ve gözlerini klinikte açtın. Hemşire robot sana yıldızlı yara bandı yapıştırdı. Fatura: ${fmt(bill)}.`
     : `Kendini klinikte buldun. ${why || 'Yaraların'} pahalıya patladı: ${fmt(bill)}. Gün bitti.`);
 };
+// Yiyecek ve içecekten gün içinde en fazla FOOD_E_CAP enerji gelir; kestirme ve reklam bu sınıra dahil değil
+SS.FOOD_E_CAP = 35;
+SS.AD = { energy: 40, perDay: 3 };
+SS.foodEnergyLeft = () => Math.max(0, SS.FOOD_E_CAP - ((S.today && S.today.eatE) || 0));
 SS.eat = f => {
   S.hunger = clamp(S.hunger + (f.hunger || 0), 0, 100);
   SS.mood(f.morale || 0);
-  S.energy = Math.min(SS.maxEnergy(), S.energy + (f.energy || 0));
+  let e = f.energy || 0;
+  if (e > 0 && !f.free) { e = Math.min(e, SS.foodEnergyLeft()); S.today.eatE = (S.today.eatE || 0) + e; }
+  S.energy = clamp(S.energy + e, 0, SS.maxEnergy());
   S.health = clamp(S.health + (f.health || 0), 1, 100);
   if (f.id === 'meal' || f.id === 'special') SS.bump('meal');
 };

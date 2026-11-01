@@ -206,7 +206,7 @@ SS.COMP_STORY = {
 /* ---------- kılavuz ---------- */
 SS.GUIDE = [
   { id: 'start', title: 'Amaç ve gün akışı', body: `
-<p><b>Amaç:</b> Krell'e olan ₡12.000 borcu 196 gün içinde kapat. Sonra Paslı Pelikan'ı satıp Gezgin Martı'yı, en sonunda Demir Balina'yı al. Yol boyunca Halcyon gemisinin kayıp kayıtlarını topla.</p>
+<p><b>Amaç:</b> Krell'e olan ₡12.000 borcu 120 gün içinde kapat. Sonra Paslı Pelikan'ı satıp Gezgin Martı'yı, en sonunda Demir Balina'yı al. Yol boyunca Halcyon gemisinin kayıp kayıtlarını topla.</p>
 <p><b>Gün:</b> Her gün 3 vardiyadan oluşur (Sabah, Öğle, Akşam). İşler, eğitim, sohbet ve kestirme birer vardiya harcar. Üst bardaki 3 kare kalan vardiyaları gösterir.</p>
 <p><b>Akşam defteri:</b> <b>Uyu</b>'ya basınca bu gecenin hesabı açılır. Zorunlu kalemler (oksijen, kira, taksit…) otomatik ödenir. Akşam yemeği, ısıtma, arkadaşlarının yemeği ya da şarjı, ilaç ve okul ücreti için ödeyip ödemeyeceğine sen karar verirsin. Her atlanan kalemin bir bedeli vardır.</p>
 <p><b>Sabah bülteni:</b> Uyandığında günün manşeti, istasyon haberleri, hanenin durumu, dünkü kararların ve gecenin sonuçları önüne gelir.</p>
@@ -269,7 +269,7 @@ SS.GUIDE = [
 <li><b>Her 7 günde</b>: Rıhtım ücreti (zorunlu), Ela varsa okul ücreti (seçim).</li>
 <li><b>Her 28 günde</b>: Kira, kredi taksiti (₡700), işletme bakımı; borca aylık %2 faiz eklenir.</li>
 <li><b>Gecikme</b>: Para yetmezse kalan tutar %10 cezayla <i>gecikmiş borca</i> yazılır ve bir gecikme sayılır. 3 gecikmede oyun biter. Gecikmiş borcu tamamen ödersen sayaç bir azalır.</li>
-<li><b>Süre</b>: Krell borcu 196. günün sonunda bitmemişse oyun biter.</li>
+<li><b>Süre</b>: Krell borcu 120. günün sonunda bitmemişse oyun biter.</li>
 </ul>` },
   { id: 'crew', title: 'Yol arkadaşları', body: `
 <p>Oyun başında birini, ikisini ya da üçünü seçersin. Daha çok arkadaş daha çok iş gücü ve yardım demek; ama daha çok masraf ve daha çok karar.</p>

@@ -15,6 +15,7 @@ SS.migrate = s => {
   s.casino = s.casino || { today: 0, net: 0, chips: 0, best: 0 };
   if (s.nextTrial == null) s.nextTrial = 0;
   if (s.trial === undefined) s.trial = null;
+  if (!s.rules2) { s.rules2 = 1; if (s.day > 1 && s.lender === 'krell' && s.loan > 0) s.deadlineOverride = Math.max(SS.RULES.deadline, Math.min(196, s.day + 60)); }
   return s;
 };
 
@@ -414,6 +415,35 @@ Object.assign(ACT, {
     BUSY = false; ({ wheel: wheelView, dice: diceView, race: raceView, slot: slotView })[d.g]();
   },
 });
+
+/* =========================================================
+   ÖDÜLLÜ REKLAM: enerji
+   Yerel uygulama reklam sağlarsa (SS_NATIVE.ads) gerçek reklam gösterilir; yoksa kısa bir sponsor arası yer tutucusu.
+   ========================================================= */
+SS.adsLeft = () => window.S ? Math.max(0, SS.AD.perDay - ((S.today && S.today.ads) || 0)) : 0;
+SS.showRewardedAd = done => {
+  const n = SS.native && SS.native();
+  if (n && n.ads) { SS._adDone = done; n.post({ type: 'ad' }); return; }
+  const T = 5; let t = 0;
+  SS.modal(`<p class="eyebrow">Sponsor arası</p><h2>Enerji yükleniyor…</h2><div class="ad-box"><b>Space Scrapper</b><small>Reklam alanı</small></div>
+    <div class="track"><i id="adBar" style="width:0%"></i></div><p class="muted" id="adTxt">${T} saniye</p>`);
+  const iv = setInterval(() => {
+    t++; const bar = document.getElementById('adBar'), tx = document.getElementById('adTxt');
+    if (!bar) { clearInterval(iv); return; }
+    bar.style.width = (t / T * 100) + '%'; tx.textContent = t >= T ? 'Tamam' : `${T - t} saniye`;
+    if (t >= T) { clearInterval(iv); SS.closeModal(); done(); }
+  }, 1000);
+};
+window.SS_AD_DONE = ok => { const d = SS._adDone; SS._adDone = null; if (ok && d) d(); else if (!ok) SS.toast('Reklam tamamlanmadı; enerji verilmedi.', 'bad'); };
+ACT.adEnergy = () => {
+  if (SS.adsLeft() <= 0) return SS.toast('Bugünkü reklam hakların bitti. Yarın yenilenir.', 'bad');
+  if (S.energy >= SS.maxEnergy()) return SS.toast('Enerjin zaten dolu.');
+  SS.showRewardedAd(() => {
+    S.today.ads = (S.today.ads || 0) + 1; S.stats.ads = (S.stats.ads || 0) + 1;
+    const e0 = S.energy; S.energy = Math.min(SS.maxEnergy(), S.energy + SS.AD.energy);
+    SS.toast(`Enerji +${S.energy - e0} · bugün ${SS.adsLeft()} reklam hakkın kaldı`, 'good'); SS.sfx('big'); SS.save(); SS.render();
+  });
+};
 
 /* =========================================================
    SINAMALAR: 4–10 günde bir oyuncuyu zorlayan olaylar

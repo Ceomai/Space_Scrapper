@@ -182,7 +182,7 @@ SS.REX_LINES = {
 (function(SS){
 SS.GUIDE = [
   { id: 'start', title: 'Amaç ve gün', body: `
-<p><b>Amaç:</b> Krell'e olan ₡12.000 borcu 196 gün içinde kapat. Sonra Paslı Pelikan'ı satıp Gezgin Martı'yı, en sonunda Demir Balina'yı al. Yolda rütbe atla, Rex'i haftalık yarışta yen, Halcyon'un kayıtlarını topla.</p>
+<p><b>Amaç:</b> Krell'e olan ₡12.000 borcu 120 gün içinde kapat. Sonra Paslı Pelikan'ı satıp Gezgin Martı'yı, en sonunda Demir Balina'yı al. Yolda rütbe atla, Rex'i haftalık yarışta yen, Halcyon'un kayıtlarını topla.</p>
 <p><b>Saat:</b> Gün 07:00'de başlar. Her iş, yolculuk, sohbet ve yemek dakika harcar; süresi kartlarında yazar. 01:00'den sonra iş yapılamaz. Gün bitince Yaşam Modülü'ne dön ve akşam defterini kapatıp uyu.</p>
 <p><b>Akşam defteri:</b> Zorunlu ödemeler (oksijen, kira, taksit) otomatik düşer. Akşam yemeği, ısıtma, hanenin yemeği ya da şarjı, ilaç ve okul ücreti senin kararın; atladığın her kalemin bir bedeli var.</p>
 <p><b>Sabah bülteni:</b> Uyanınca manşet, gece olanlar, hanenin durumu, dünün kararları ve piyasa önüne gelir.</p>` },

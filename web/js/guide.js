@@ -45,12 +45,14 @@ function energySec() {
   SS.FOOD.forEach(f => r.push(row(f.name, fmt(Math.round(f.price * c)), `Kantin · ${fxText({ energy: f.energy, hunger: f.hunger, morale: f.morale })} · 15 dk`, 'kantin yemek')));
   SS.DRINKS.forEach(d => r.push(row(d.name, fmt(Math.round(d.price * c)), `Kantin · ${fxText({ energy: d.energy, health: d.health, morale: d.morale })} · ${d.desc}`, 'kantin içecek')));
   SS.GOODS.filter(g => g.use === 'eat').forEach(g => r.push(row(g.name, fmt(g.price), `Pazar${g.staple ? ' (her zaman)' : ' (bazen)'} · ${fxText(g.fx)}`, 'pazar yiyecek içecek')));
+  r.push(row('Ödüllü reklam', `+${SS.AD.energy}`, `Üst konsoldaki ⚡ düğmesi. Günde ${SS.AD.perDay} kez, her sabah yenilenir. Yiyecek sınırına dahil değil.`, 'reklam enerji'));
+  r.push(row('Yiyecek ve içecek sınırı', `+${SS.FOOD_E_CAP}/gün`, 'Kantin ve pazardaki yiyecek-içeceklerden gün içinde gelen toplam enerji. Tokluk, sağlık ve moral etkileri sınırsız.', 'sınır yemek'));
   r.push(row('Ela: Moral Konuşması', '+10', 'Ela hanedeyse günde bir: enerji +10, moral +15.', 'ela yetenek'));
   r.push(row('Enerji harcayan işler', '', `Hurda avı ${SS.COST.scrap}, teslimat ${SS.COST.deliver}, tamir ${SS.COST.repair}, ayrıştırma ${SS.COST.sortShort}/${SS.COST.sortLong}, ders ${SS.LESSON ? SS.LESSON.energy : 15}, kumar eli 3, sınamada mücadele 8, yolculuk 1–5.`, 'enerji maliyet'));
   r.push(row('Tokluk', '', `Her gece ${window.S ? SS.M().hungerDrop : 25} düşer. 25 altında uyku zayıflar, 12 altında sağlık bozulur.`, 'tokluk açlık'));
   r.push(row('Sağlık', '', 'Patlama, sert iniş, açlık ve sınamalar düşürür. 0 olursa hastanelik olursun. Klinik, bandaj, vitamin ve meyve iyileştirir.', 'sağlık'));
   r.push(row('Moral', '', '70 ve üstü mini oyunlarda +5 saniye, 30 altı −6 saniye. Dekor, sohbet, iyi yemek, kumar kazancı ve sınama zaferleri artırır.', 'moral'));
-  return sec('energy', 'Enerji ve göstergeler', 'Gün genelde enerji değil saat bittiği için biter: kahve ucuz, kestirme bedava. Asıl karar, saatini hangi işe harcayacağın.', r);
+  return sec('energy', 'Enerji ve göstergeler', `Yiyecek ve içecekten günde en fazla +${SS.FOOD_E_CAP} enerji gelir (kestirme ve reklam hariç). Gün çoğu zaman enerjiyle sınırlanır; reklam izlersen saatin yeter.`, r);
 }
 function jobsSec() {
   const r = [], m = window.S ? SS.jobPayMult() : 1;
@@ -185,18 +187,18 @@ SS.GUIDE = [
 <p><b>Takıldığında:</b> Menüdeki <b>Rehber</b> her eşyanın nereden alındığını ve ne işe yaradığını gösterir; aramayla bulabilirsin.</p>` },
   { id: 'first', title: 'İlk hafta', body: `
 <ol><li>İş Merkezi'nden bir <b>hurda sözleşmesi</b> al; başta tek lisansın hurdaya yeter.</li>
-<li>Enerjin düşünce Kantin'de <b>kahve</b> (günde 2, çok ucuz) ve yemek; ya da evde bedava <b>kestirme</b> (günde bir, 90 dk, +35).</li>
+<li>Enerjin düşünce üstteki <b>⚡ düğmesiyle reklam izle</b> (+40 enerji, günde 3), evde bedava <b>kestirme</b> yap (günde bir, +25) ya da kantinde ye-iç (yiyecek ve içecekten günde en fazla +35 enerji).</li>
 <li>Kargo dolunca Pazar'da sat. Aynı gün aynı türden çok satma; fiyat düşer.</li>
 <li>Akademi'de ilk lisansa başla: <b>Ayrıştırma</b> tek derslik, <b>Tamir</b> riski az.</li>
 <li>Para biriktikçe Hangar'da <b>Kargo Bölmesi</b> ve <b>Vinç</b>; bunlar hem hızlandırır hem ekipman primiyle satış fiyatını artırır.</li>
-<li>Uyku Kapsülü sadece 55 enerji verir; ilk büyük alım için <b>Küçük Daire</b> (+80) iyi bir hedef.</li></ol>` },
+<li>Uyku Kapsülü gecede 40 enerji verir; <b>Küçük Daire</b> 48, İstasyon Evi 56. Daha büyük ev ayrıca dekor yuvası ve moral getirir.</li></ol>` },
   { id: 'map', title: 'Harita ve yolculuk', body: `
 <p>Ana ekran istasyon haritası. Bir modüle dokununca oraya gidersin; yol 10–50 dakika ve 1–5 enerji tutar.</p>
 <ul><li>Açılış saatleri: İş Merkezi 07–24, Pazar 08–23, Klinik 08–22, Akademi 09–21, Krell 09–20, Kumarhane 16–02. Yaşam Modülü, Kantin ve Hangar gece de açık. Sabahları iş ve ders, akşamları alışveriş, sohbet ve kumarhane için vakit kalır.</li>
 <li>Üst şerit: Rex yarışı, sıradaki gemiye ilerleme, rütbe. Alt şerit: karar, hedefler, hane, sınama, Günün Avı ve bülten.</li>
 <li>En alttaki çubuk: Harita, bulunduğun yer ve Seyir Defteri (her yerden açılır).</li></ul>` },
   { id: 'stats', title: 'Enerji ve göstergeler', body: `
-<ul><li><b>Enerji</b>: Uyku (ev seviyesine göre 55/80/100), kestirme +35 (günde bir), kahve +15 (günde 2), yemekler, Oksijen Barı ve Ela'nın konuşması doldurur. Gün çoğu zaman enerji değil saat bittiği için biter.</li>
+<ul><li><b>Enerji</b>: Uyku (ev seviyesine göre 40/48/56), kestirme +25 (günde bir), yiyecek ve içecek (günde toplam en fazla +35), Ela'nın konuşması (+10) ve ödüllü reklam (+40, günde 3; üstteki ⚡ düğmesi) doldurur. Reklamsız da oynanır; reklam izleyen günde 1–2 iş fazla yapar.</li>
 <li><b>Tokluk</b>: Her gece düşer. 25 altında uyku zayıflar, 12 altında sağlık bozulur.</li>
 <li><b>Sağlık</b>: Patlama, sert iniş, açlık ve sınamalar düşürür. 0'da hastanelik olursun.</li>
 <li><b>Moral</b>: 70+ mini oyunlarda +5 saniye, 30 altı −6 saniye.</li></ul>` },
