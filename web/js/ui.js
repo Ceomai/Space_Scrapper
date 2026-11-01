@@ -244,7 +244,7 @@ function homeView() {
       </section>`;
     }
     h += `<p class="hint">${store.length ? `Depoda ${store.length} dekor var. Bir <b>+</b> yuvasına dokunup yerleştir.` : 'Pazardan dekor al, sonra bir <b>+</b> yuvasına dokunup yerleştir.'} Yerleştirilen dekor her gece etki eder.</p>
-    <div class="row">${btn(`Kestir · ${dur(SS.DUR.nap)}, +${SS.NAP.energy} enerji`, 'nap', {}, 'ghost', !SS.timeOk(SS.DUR.nap))}${btn('Akşam defteri ve uyku', 'ledger', {}, 'primary')}</div>`;
+    <div class="row">${btn(`Kestir · ${dur(SS.DUR.nap)}, +${SS.NAP.energy} enerji`, 'nap', {}, 'ghost', !SS.timeOk(SS.DUR.nap) || !!S.today.nap)}${btn('Akşam defteri ve uyku', 'ledger', {}, 'primary')}</div>`;
     return h;
   }
   const crew = SS.crewList();
@@ -412,7 +412,7 @@ function cantinaView() {
       <small class="perk">${n.perks.filter(p => a >= p[0]).map(p => '✓ ' + p[1]).join(' · ') || (next ? `${next[0]} yakınlıkta: ${next[1]}` : '')}</small></div>
       ${btn(S.talked[n.id] ? 'Konuştun' : 'Sohbet', 'talk', { id: n.id }, 'sm ghost', S.talked[n.id] || !SS.timeOk(SS.DUR.talk))}</div>`;
   }).join('')}</div>`, { code: 'MS' });
-  h += panel('Kart masası taşındı', `<p class="muted">Gus'un kart masası artık Nebula Kumarhanesi'nde; orada çark, zar, meteor yarışı ve slot da var. Kumarhane 14:00'te açılır.</p>`, { code: 'KR' });
+  h += panel('Kart masası taşındı', `<p class="muted">Gus'un kart masası artık Nebula Kumarhanesi'nde; orada çark, zar, meteor yarışı ve slot da var. Kumarhane 16:00'da açılır.</p>`, { code: 'KR' });
   return h;
 }
 
@@ -725,7 +725,7 @@ const ACT = {
     SS.useJob(SS.COST.workshop, 60); m.forEach(c => { c.proc = true; c.cat = 'part'; c.value = Math.round(c.value * 1.8); });
     SS.toast(`${m.length} metal parça işlendi.`, 'good'); render();
   }),
-  nap: () => { if (!SS.timeOk(SS.DUR.nap)) return; SS.passTime(SS.DUR.nap); SS.eat({ energy: SS.NAP.energy, morale: SS.NAP.morale }); SS.toast(`Kestirdin: enerji +${SS.NAP.energy}`, 'good'); render(); },
+  nap: () => { if (!SS.timeOk(SS.DUR.nap) || S.today.nap) return; S.today.nap = 1; SS.passTime(SS.DUR.nap); SS.eat({ energy: SS.NAP.energy, morale: SS.NAP.morale }); SS.toast(`Kestirdin: enerji +${SS.NAP.energy}`, 'good'); render(); },
   ledger: () => { LSEL = null; ledgerModal(); },
   ltog: d => { if (LSEL.has(d.id)) LSEL.delete(d.id); else LSEL.add(d.id); SS.sfx('tick'); ledgerModal(); },
   sleepNow: () => {

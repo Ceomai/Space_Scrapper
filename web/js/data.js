@@ -108,7 +108,7 @@ SS.FOOD = [
 ];
 // Enerji odaklı seçenekler: içecekler (vardiya harcamaz) ve dinlenme
 SS.DRINKS = [
-  { id: 'coffee', name: 'Kara Delik Kahvesi', price: 6,  energy: 15, health: 0,  morale: 0,  limit: 3, desc: 'Günde en fazla 3 fincan.' },
+  { id: 'coffee', name: 'Kara Delik Kahvesi', price: 6,  energy: 15, health: 0,  morale: 0,  limit: 2, desc: 'Günde en fazla 2 fincan.' },
   { id: 'boost',  name: 'Nebula Enerji İçeceği', price: 20, energy: 30, health: -4, morale: 0, limit: 2, desc: 'Hızlı ama sağlığa zararlı. Günde 2.' },
   { id: 'spa',    name: 'Oksijen Barı',       price: 70, energy: 40, health: 5,  morale: 10, limit: 1, desc: 'Saf oksijen ve masaj koltuğu. Günde 1.' },
 ];

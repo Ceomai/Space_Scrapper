@@ -93,7 +93,7 @@ SS.LIC_ORDER = ['deliver', 'sort', 'repair', 'order', 'scrap2', 'scrap3'];
 SS.ZONE_LIC = { belt: null, yard: null, gas: 'scrap2', pirate: 'scrap3', lost: 'scrap3' };
 SS.hasLic = id => !window.S || !S.lic || !!S.lic[id];
 SS.zoneLic = z => !SS.ZONE_LIC[z] || SS.hasLic(SS.ZONE_LIC[z]);
-SS.LESSON = { mins: 120, energy: 15 };
+SS.LESSON = { mins: 90, energy: 15 };
 const lessonFee = L => Math.round(L.fee * SS.dv('costs'));
 SS.lockedJobsNote = () => {
   const miss = ['deliver', 'repair', 'sort', 'order'].filter(k => !SS.hasLic(k));

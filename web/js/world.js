@@ -59,7 +59,7 @@ SS.buyRoom = id => { const r = SS.ROOMS[id]; if (!SS.hasCrew(id) || S.rooms[id] 
 /* ---------- ilan panosu (3 saatlik pencereler) ---------- */
 const fill = (t, o) => t.replace(/\{(\w)\}/g, (_, k) => o[k] || '');
 const line = (type, o) => { const t = fill(pick(SS.JOB_LINES[type][SS.fun() ? 'easy' : 'hard']), o); return t.charAt(0).toLocaleUpperCase('tr') + t.slice(1); };
-SS.jobPayMult = () => (1 + Math.min(S.day, 200) / 250 + S.tier * .1) * SS.rankPay() * SS.ngPay() * (SS.win() >= 4 ? 1.1 : 1) * (SS.hard() ? .95 : 1);
+SS.jobPayMult = () => (1 + Math.min(S.day, 200) / 250 + S.tier * .1) * SS.rankPay() * SS.ngPay() * (SS.win() >= 4 ? 1.1 : 1) * (SS.hard() ? .95 : 1) * 1.05;
 function mkDeliver(tierIdx, special) {
   const t = SS.DELIVERY_TIERS[tierIdx], [g, tag] = pick(SS.CARGOS);
   const mods = [];

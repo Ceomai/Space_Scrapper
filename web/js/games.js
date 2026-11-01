@@ -573,7 +573,7 @@ G.repair = (job, onEnd) => {
   let hints = rmods.includes('nohint') ? 0 : Math.floor(S.skills.eng / 2) + (SS.hard() ? 0 : 1) + (SS.assist('ela') ? 2 : 0) + tk + (solder ? 2 : 0) + (SS.perk('ela', 90) ? 1 : 0);
   if (solder) g.helpers.push('Lehim seti: +2 ipucu');
   if (rmods.length) g.helpers.push(...(job.modNames || []));
-  const timeMax = (SS.hard() ? 60 : 72) + S.skills.eng * 6 + SS.moraleTime() + (N - 4) * 18 + (SS.assist('ela') ? 15 : 0) + tk * 8 + (rmods.includes('rush') ? -12 : 0);
+  const timeMax = (SS.hard() ? 66 : 78) + S.skills.eng * 6 + SS.moraleTime() + (N - 4) * 18 + (SS.assist('ela') ? 15 : 0) + tk * 8 + (rmods.includes('rush') ? -12 : 0);
   let time = timeMax;
   const fx = SS.FX.make();
   const updHint = () => SS.Stage.setCtl('hint', `İpucu (${hints})`, hints <= 0);

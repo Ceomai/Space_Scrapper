@@ -5,14 +5,14 @@
 // x, y: haritada 0–1 konum; open: açılış–kapanış saati (24+ = gece yarısından sonra)
 SS.LOCS = [
   { id: 'home',    code: 'H-01', name: 'Yaşam Modülü',      sub: 'Ev, hane, dekor, uyku',                 x: 0.2,  y: 0.66, open: [0, 26] },
-  { id: 'jobs',    code: 'İ-04', name: 'İş Merkezi',        sub: 'Hurda sözleşmeleri ve lisanslı işler',   x: 0.5, y: 0.12, open: [6, 25] },
+  { id: 'jobs',    code: 'İ-04', name: 'İş Merkezi',        sub: 'Hurda sözleşmeleri ve lisanslı işler',   x: 0.5, y: 0.12, open: [7, 24] },
   { id: 'hangar',  code: 'R-07', name: 'Rıhtım ve Hangar',  sub: 'Gemi, geliştirme, tersane, hurda avı',   x: 0.84, y: 0.56, open: [0, 26] },
-  { id: 'market',  code: 'P-02', name: 'Pazar Halkası',     sub: 'Zara, günlük stok, seyyar satıcılar',    x: 0.42, y: 0.8, open: [8, 22] },
+  { id: 'market',  code: 'P-02', name: 'Pazar Halkası',     sub: 'Zara, günlük stok, seyyar satıcılar',    x: 0.42, y: 0.8, open: [8, 23] },
   { id: 'cantina', code: 'K-03', name: 'Gus\'un Kantini',   sub: 'Yemek, içecek, sohbet',                  x: 0.16, y: 0.4, open: [7, 26] },
-  { id: 'clinic',  code: 'S-05', name: 'Klinik',            sub: 'Tedavi, aşı, kontrol',                   x: 0.84, y: 0.1, open: [8, 20] },
-  { id: 'krell',   code: 'F-06', name: 'Krell ve Banka',    sub: 'Borç, taksit, gecikmiş ödemeler',        x: 0.16, y: 0.1, open: [9, 18] },
-  { id: 'academy', code: 'A-08', name: 'Akademi',           sub: 'Lisanslar, beceri eğitimi, sınavlar',    x: 0.85, y: 0.33, open: [8, 21] },
-  { id: 'casino',  code: 'Q-09', name: 'Nebula Kumarhanesi', sub: 'Kartlar, çark, zar, yarış, slot',       x: 0.77, y: 0.8, open: [14, 26] },
+  { id: 'clinic',  code: 'S-05', name: 'Klinik',            sub: 'Tedavi, aşı, kontrol',                   x: 0.84, y: 0.1, open: [8, 22] },
+  { id: 'krell',   code: 'F-06', name: 'Krell ve Banka',    sub: 'Borç, taksit, gecikmiş ödemeler',        x: 0.16, y: 0.1, open: [9, 20] },
+  { id: 'academy', code: 'A-08', name: 'Akademi',           sub: 'Lisanslar, beceri eğitimi, sınavlar',    x: 0.85, y: 0.33, open: [9, 21] },
+  { id: 'casino',  code: 'Q-09', name: 'Nebula Kumarhanesi', sub: 'Kartlar, çark, zar, yarış, slot',       x: 0.77, y: 0.8, open: [16, 26] },
 ];
 SS.LOG_LOC = { id: 'log', name: 'Seyir Defteri', sub: 'Kaptan, hikâye, albüm, ayarlar' };
 

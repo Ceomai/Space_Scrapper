@@ -41,7 +41,7 @@ function whereSec() {
 function energySec() {
   const r = [], c = cm();
   r.push(row('Uyku', SS.HOMES.map(h => `+${h.sleep}`).join(' / '), `Gece uykusu ev seviyesine göre enerji verir (Kapsül / Daire / Ev). Tokluk 25'in altındaysa %40 daha az. Lamba gibi dekorlar uykuya ekler.`, 'uyku'));
-  r.push(row('Kestirme', `+${SS.NAP.energy}`, `Yaşam Modülü'nde ${SS.DUR.nap} dakika, ücretsiz.`, 'kestirme'));
+  r.push(row('Kestirme', `+${SS.NAP.energy}`, `Yaşam Modülü'nde ${SS.DUR.nap} dakika, ücretsiz, günde bir kez.`, 'kestirme'));
   SS.FOOD.forEach(f => r.push(row(f.name, fmt(Math.round(f.price * c)), `Kantin · ${fxText({ energy: f.energy, hunger: f.hunger, morale: f.morale })} · 15 dk`, 'kantin yemek')));
   SS.DRINKS.forEach(d => r.push(row(d.name, fmt(Math.round(d.price * c)), `Kantin · ${fxText({ energy: d.energy, health: d.health, morale: d.morale })} · ${d.desc}`, 'kantin içecek')));
   SS.GOODS.filter(g => g.use === 'eat').forEach(g => r.push(row(g.name, fmt(g.price), `Pazar${g.staple ? ' (her zaman)' : ' (bazen)'} · ${fxText(g.fx)}`, 'pazar yiyecek içecek')));
@@ -54,12 +54,12 @@ function energySec() {
 }
 function jobsSec() {
   const r = [], m = window.S ? SS.jobPayMult() : 1;
-  r.push(row('Serbest dalış', `${SS.COST.scrap} en · 3 sa`, 'Hangar → Hurda avı. Yükün tamamı senin; değerler %25 fazla ve kayıp eser şansı yüksek. Yakıt bölgeye göre.', 'hurda dalış hangar'));
-  r.push(row('Hurda sözleşmesi', `${SS.COST.scrap} en · 3 sa`, 'İş Merkezi. Müşteri belirli hurdayı ister: sabit ücret + hedef başına ödeme + tamamlama primi. Hedef olmayan her şey kargona girer. Lisans gerekmez.', 'sözleşme hurda'));
+  r.push(row('Serbest dalış', `${SS.COST.scrap} en · ${SS.DUR.scrap / 60} sa`, 'Hangar → Hurda avı. Yükün tamamı senin; değerler %25 fazla ve kayıp eser şansı yüksek. Yakıt bölgeye göre.', 'hurda dalış hangar'));
+  r.push(row('Hurda sözleşmesi', `${SS.COST.scrap} en · ${SS.DUR.scrap / 60} sa`, 'İş Merkezi. Müşteri belirli hurdayı ister: sabit ücret + hedef başına ödeme + tamamlama primi. Hedef olmayan her şey kargona girer. Lisans gerekmez.', 'sözleşme hurda'));
   SS.DELIVERY_TIERS.forEach((t, i) => r.push(row(`Teslimat · ${t.name}`, `${fmt(t.pay[0] * m)}–${fmt(t.pay[1] * m)}`, `${SS.COST.deliver} enerji · ${SS.DUR.deliver[i]} dk · ${t.fuel} yakıt${t.vip ? ' · teslimat itibarı 3 gerekir' : ''}. Kargo Pilotu Lisansı gerekir.`, 'teslimat')));
   SS.REPAIR_TIERS.forEach((t, i) => r.push(row(`Tamir · ${t.name}`, `${fmt(t.pay[0] * m)}–${fmt(t.pay[1] * m)}`, `${SS.COST.repair} enerji · ${SS.DUR.repair[i]} dk · ${t.size}×${t.size} devre. Devre Teknisyeni Belgesi gerekir.`, 'tamir')));
   SS.SORTS.forEach(s => r.push(row(`Ayrıştırma · ${s.name}`, `${fmt(s.per)}/doğru`, `${s.energy} enerji · ${s.time} sn bant. Yanlış −₡4, kaçan −₡2, her 5'li seri +₡2. Ayrıştırma Sertifikası gerekir.`, 'ayrıştırma')));
-  r.push(row('Sipariş', 'pazarın ~1,7 katı', 'Kargondaki eşyayı alıcıya teslim et; enerji harcamaz, 30 dk. Ticaret Ruhsatı gerekir.', 'sipariş'));
+  r.push(row('Sipariş', 'pazarın ~1,7 katı', `Kargondaki eşyayı alıcıya teslim et; enerji harcamaz, ${SS.DUR.order} dk. Ticaret Ruhsatı gerekir.`, 'sipariş'));
   r.push(row('İlan saatleri', '', 'İlanlar 07, 10, 13, 16, 19 ve 22\'de yenilenir. 19:00 sonrası gece zammı %10.', 'ilan'));
   r.push(row('İtibar', '', 'Her başarılı iş kendi itibarını artırır; her seviye ödemeye %4 ekler. Teslimat ve tamirde 3. seviye VIP işleri açar.', 'itibar'));
   return sec('jobs', 'İşler', 'Ödemeler bugünkü çarpanlarla gösterilir (gün, gemi, rütbe; itibar hariç).', r);
@@ -185,18 +185,18 @@ SS.GUIDE = [
 <p><b>Takıldığında:</b> Menüdeki <b>Rehber</b> her eşyanın nereden alındığını ve ne işe yaradığını gösterir; aramayla bulabilirsin.</p>` },
   { id: 'first', title: 'İlk hafta', body: `
 <ol><li>İş Merkezi'nden bir <b>hurda sözleşmesi</b> al; başta tek lisansın hurdaya yeter.</li>
-<li>Enerjin düşünce Kantin'de <b>kahve</b> (günde 3, çok ucuz) ve yemek; ya da evde bedava <b>kestirme</b> (90 dk, +35).</li>
+<li>Enerjin düşünce Kantin'de <b>kahve</b> (günde 2, çok ucuz) ve yemek; ya da evde bedava <b>kestirme</b> (günde bir, 90 dk, +35).</li>
 <li>Kargo dolunca Pazar'da sat. Aynı gün aynı türden çok satma; fiyat düşer.</li>
 <li>Akademi'de ilk lisansa başla: <b>Ayrıştırma</b> tek derslik, <b>Tamir</b> riski az.</li>
 <li>Para biriktikçe Hangar'da <b>Kargo Bölmesi</b> ve <b>Vinç</b>; bunlar hem hızlandırır hem ekipman primiyle satış fiyatını artırır.</li>
 <li>Uyku Kapsülü sadece 55 enerji verir; ilk büyük alım için <b>Küçük Daire</b> (+80) iyi bir hedef.</li></ol>` },
   { id: 'map', title: 'Harita ve yolculuk', body: `
 <p>Ana ekran istasyon haritası. Bir modüle dokununca oraya gidersin; yol 10–50 dakika ve 1–5 enerji tutar.</p>
-<ul><li>Açılış saatleri: Pazar 08–22, Klinik 08–20, Akademi 08–21, Krell 09–18, Kumarhane 14–02. Yaşam Modülü, Kantin ve Hangar gece de açık.</li>
+<ul><li>Açılış saatleri: İş Merkezi 07–24, Pazar 08–23, Klinik 08–22, Akademi 09–21, Krell 09–20, Kumarhane 16–02. Yaşam Modülü, Kantin ve Hangar gece de açık. Sabahları iş ve ders, akşamları alışveriş, sohbet ve kumarhane için vakit kalır.</li>
 <li>Üst şerit: Rex yarışı, sıradaki gemiye ilerleme, rütbe. Alt şerit: karar, hedefler, hane, sınama, Günün Avı ve bülten.</li>
 <li>En alttaki çubuk: Harita, bulunduğun yer ve Seyir Defteri (her yerden açılır).</li></ul>` },
   { id: 'stats', title: 'Enerji ve göstergeler', body: `
-<ul><li><b>Enerji</b>: Uyku (ev seviyesine göre 55/80/100), kestirme +35, kahve +15 (günde 3), yemekler, Oksijen Barı ve Ela'nın konuşması doldurur. Gün çoğu zaman enerji değil saat bittiği için biter.</li>
+<ul><li><b>Enerji</b>: Uyku (ev seviyesine göre 55/80/100), kestirme +35 (günde bir), kahve +15 (günde 2), yemekler, Oksijen Barı ve Ela'nın konuşması doldurur. Gün çoğu zaman enerji değil saat bittiği için biter.</li>
 <li><b>Tokluk</b>: Her gece düşer. 25 altında uyku zayıflar, 12 altında sağlık bozulur.</li>
 <li><b>Sağlık</b>: Patlama, sert iniş, açlık ve sınamalar düşürür. 0'da hastanelik olursun.</li>
 <li><b>Moral</b>: 70+ mini oyunlarda +5 saniye, 30 altı −6 saniye.</li></ul>` },
@@ -226,7 +226,7 @@ SS.GUIDE = [
   { id: 'trials', title: 'Sınamalar', body: `
 <p>4–9 günde bir (tehlike ayarına ve şansa göre) korsan haracı, meteor yağmuru, virüs, salgın ya da denetim çıkar. Talepler oyun ilerledikçe büyür.</p>
 <p>Ya öde ya da kısa bir mini oyunla mücadele et (30 dk, 8 enerji). Kazanırsan hiçbir şey kaybetmez, ödül alırsın; kaybedersen para, dekor, kargo, yakıt, sağlık ya da moral gider. Gün biterken karar vermediysen kaybetmiş sayılırsın.</p>` },
-  { id: 'casino', title: 'Kumarhane', body: `<p>14:00–02:00. Kart, çark, zar, meteor yarışı ve slot. El başı 15 dk ve 3 enerji, günde en fazla 8 el. Kasa uzun vadede kazanır.</p>` },
+  { id: 'casino', title: 'Kumarhane', body: `<p>16:00–02:00. Kart, çark, zar, meteor yarışı ve slot. El başı 15 dk ve 3 enerji, günde en fazla 8 el. Kasa uzun vadede kazanır.</p>` },
   { id: 'costs', title: 'Masraflar ve gecikmeler', body: `
 <ul><li><b>Her gece</b>: oksijen (zorunlu); yemek, ısıtma, hane ihtiyaçları (senin kararın).</li>
 <li><b>Her 7 günde</b>: rıhtım ücreti ve gemi bakımı (gemi büyüdükçe artar), Ela varsa okul. Rex yarışı sonuçlanır.</li>

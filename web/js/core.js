@@ -23,7 +23,7 @@ SS.M = () => {
     deadline: S.lender === 'krell' ? R.deadline : 0, strikesMax: R.strikesMax,
     cm, oxygen: Math.round(12 * cm), dock: Math.round(100 * cm), rent: Math.round(480 * cm),
     hungerDrop: cm < 1 ? 20 : cm > 1 ? 30 : 25, foodMult: cm, hospital: Math.round(350 * cm * cm),
-    priceMult: SS.dv('market'), hazard: hz, dmg: hz < 1 ? .5 : hz > 1 ? 1 : .75, jobTime: hz < 1 ? 50 : hz > 1 ? 42 : 46,
+    priceMult: SS.dv('market'), hazard: hz, dmg: hz < 1 ? .5 : hz > 1 ? 1 : .75, jobTime: hz < 1 ? 55 : hz > 1 ? 46 : 50,
   };
 };
 // Saat: dakika cinsinden. Gün 07:00'de başlar, 01:00'den sonra iş yapılamaz
@@ -33,15 +33,15 @@ SS.timeOk = mins => S.time + mins <= SS.DAY_END;
 SS.passTime = mins => { S.time += Math.round(mins); };
 SS.win = () => Math.max(0, Math.min(5, Math.floor((S.time - SS.DAY_START) / 180)));
 SS.winLabel = (w = SS.win()) => `${SS.clock(SS.DAY_START + w * 180)}–${SS.clock(SS.DAY_START + (w + 1) * 180)}`;
-SS.DUR = { scrap: 180, deliver: [90, 120, 180, 210], repair: [60, 90, 120, 150], sortShort: 60, sortLong: 120, talk: 60, nap: 90, train: 180, workshop: 60, order: 30, decision: 120 };
-SS.COST = { scrap: 30, deliver: 20, repair: 15, sortShort: 8, sortLong: 14, workshop: 10, train: 15 };
+SS.DUR = { scrap: 120, deliver: [60, 80, 120, 150], repair: [45, 60, 80, 100], sortShort: 45, sortLong: 75, talk: 45, nap: 90, train: 120, workshop: 45, order: 20, decision: 90 };
+SS.COST = { scrap: 25, deliver: 17, repair: 13, sortShort: 7, sortLong: 12, workshop: 10, train: 15 };
 SS.SORTS = [
-  { id: 'short', name: 'Kısa vardiya', time: 30, per: 2, speed: .9, energy: SS.COST.sortShort, desc: '30 saniye, yavaş bant, doğru başına ₡2' },
-  { id: 'long', name: 'Uzun vardiya', time: 60, per: 3, speed: 1.25, energy: SS.COST.sortLong, desc: '60 saniye, hızlanan bant, doğru başına ₡3' },
+  { id: 'short', name: 'Kısa vardiya', time: 35, per: 2, speed: .9, energy: SS.COST.sortShort, desc: '35 saniye, yavaş bant, doğru başına ₡2' },
+  { id: 'long', name: 'Uzun vardiya', time: 65, per: 3, speed: 1.25, energy: SS.COST.sortLong, desc: '65 saniye, hızlanan bant, doğru başına ₡3' },
 ];
 
 SS.blankShip = () => Object.fromEntries(SS.SHIP.map(u => [u.id, 0]));
-SS.SCRAP_VAL = .36; // hurda avı değer çarpanı (nakit işlerle denge için)
+SS.SCRAP_VAL = .38; // hurda avı değer çarpanı (nakit işlerle denge için)
 SS.newState = (diff, tone, name, crewIds) => {
   const s = {
     v: 3, diff: diff.slice(), tone, name: name || 'Kaptan', day: 1, time: 420, loc: 'home', view: 'map',
