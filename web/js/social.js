@@ -20,7 +20,7 @@ const EMO = { gold: '🪙', ice: '🧊', jelly: '🪼', egg: '🥚', amber: '�
 SS.gridOf = got => got.filter(g => g.kind).map(g => EMO[g.kind] || '▫️').join('');
 
 /* ---------- meydan okuma kodu ---------- */
-SS.CHALLENGE_URL = 'https://claude.ai/artifact/4h7GXry168Zh8Mrjqwmb9G';
+SS.CHALLENGE_URL = 'https://ceomai.github.io/Space_Scrapper/';
 SS.challengeCode = (seed, score) => `MO-${seed.toString(36).toUpperCase()}-${score}`;
 SS.parseChallenge = str => {
   const m = String(str || '').trim().match(/(?:MO-|meydan-)([0-9a-z]+)-(\d+)/i);

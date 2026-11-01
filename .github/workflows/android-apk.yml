@@ -1,0 +1,75 @@
+# Her main güncellemesinde imzalı (debug anahtarlı) bir APK derler ve "apk" sürümüne yükler.
+# Kalıcı indirme bağlantısı: https://github.com/Ceomai/Space_Scrapper/releases/download/apk/SpaceScrapper.apk
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', 'web/**', '.github/workflows/android-apk.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Bağımlılıkları kur
+        working-directory: app
+        run: npm ci
+
+      - name: Oyunu paketle
+        working-directory: app
+        run: npm run build:game
+
+      - name: Android projesini üret
+        working-directory: app
+        run: npx expo prebuild --platform android --no-install
+
+      - name: APK derle
+        working-directory: app/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a,x86_64
+
+      - name: APK'yı adlandır
+        run: cp app/android/app/build/outputs/apk/release/app-release.apk SpaceScrapper.apk
+
+      - name: Sürüm notu
+        run: |
+          {
+            echo "Space Scrapper'ın en güncel Android sürümü."
+            echo
+            echo "**İndir:** [SpaceScrapper.apk](https://github.com/${{ github.repository }}/releases/download/apk/SpaceScrapper.apk)"
+            echo
+            echo "Kurulum: APK'yı telefona indir, aç; Android \"bilinmeyen kaynaklardan yükleme\" izni isterse bu sefer için izin ver."
+            echo
+            echo "Commit: ${{ github.sha }}"
+          } > apk-notes.md
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk
+          name: Space Scrapper · Android
+          body_path: apk-notes.md
+          files: SpaceScrapper.apk
+          make_latest: true

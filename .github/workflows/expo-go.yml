@@ -1,0 +1,97 @@
+# Expo Go için EAS Update yayınlar ve her zaman en son sürümü açan QR kodunu "expo-go" sürüm sayfasına yazar.
+# Gerekli: depo ayarlarında EXPO_TOKEN adlı bir secret (expo.dev > Account settings > Access tokens).
+name: Expo Go (EAS Update)
+
+on:
+  push:
+    branches: [main]
+    paths: ['app/**', 'web/**', '.github/workflows/expo-go.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: expo-go
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Expo anahtarını denetle
+        id: token
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN tanımlı değil; Expo Go yayını atlandı. README'deki adımlara bak." >> "$GITHUB_STEP_SUMMARY"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.token.outputs.ok == 'true'
+        uses: actions/checkout@v4
+
+      - if: steps.token.outputs.ok == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - if: steps.token.outputs.ok == 'true'
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Kur ve paketle
+        if: steps.token.outputs.ok == 'true'
+        working-directory: app
+        run: |
+          npm ci
+          npm run build:game
+
+      - name: EAS projesini bağla ve güncellemeyi yayınla
+        if: steps.token.outputs.ok == 'true'
+        working-directory: app
+        env:
+          PROJECT_ID: ${{ vars.EXPO_PROJECT_ID }}
+          MSG: ${{ github.event.head_commit.message || 'Elle başlatılan yayın' }}
+        run: |
+          if [ -n "$PROJECT_ID" ]; then eas init --id "$PROJECT_ID" --non-interactive --force; else eas init --non-interactive --force; fi
+          PID=$(node -p "require('./app.json').expo.extra.eas.projectId")
+          node -e "
+            const fs = require('fs'), j = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+            j.expo.runtimeVersion = { policy: 'sdkVersion' };
+            j.expo.updates = { url: 'https://u.expo.dev/' + process.argv[1] };
+            fs.writeFileSync('app.json', JSON.stringify(j, null, 2));
+          " "$PID"
+          npx expo install expo-updates
+          eas channel:create production --non-interactive || true
+          eas update --channel production --message "$(echo "$MSG" | head -n1 | cut -c1-80)" --non-interactive --json > update.json
+          RV=$(node -p "require('./update.json')[0].runtimeVersion")
+          GROUP=$(node -p "require('./update.json')[0].group")
+          LATEST="https://qr.expo.dev/eas-update?slug=exp&projectId=$PID&runtimeVersion=$RV&channel=production"
+          THIS="https://qr.expo.dev/eas-update?slug=exp&projectId=$PID&groupId=$GROUP"
+          {
+            echo "Telefonuna **Expo Go** uygulamasını kur ve aşağıdaki QR kodu okut. Bu kod her zaman en son yayınlanan sürümü açar; Wi‑Fi ya da bilgisayar gerekmez."
+            echo
+            echo "![Expo Go QR]($LATEST)"
+            echo
+            echo "Yalnızca bu yayın için: [QR]($THIS)"
+            echo
+            echo "Proje: $PID · çalışma sürümü: $RV · commit: ${{ github.sha }}"
+          } > ../expo-notes.md
+          cat ../expo-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - if: steps.token.outputs.ok == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: expo-go
+          name: Space Scrapper · Expo Go
+          body_path: expo-notes.md
+          make_latest: false
