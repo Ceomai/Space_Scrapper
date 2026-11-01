@@ -78,6 +78,10 @@ SS.wipe = () => { try { localStorage.removeItem(KEY); } catch (e) {} };
 /* ---------- gemi ve türetilmiş değerler ---------- */
 SS.shipT = () => SS.SHIPS[S.tier];
 SS.lvl = k => (S.ship[k] || 0) + (SS.shipT().base[k] || 0);
+// Ekipman primi: hurda donanımının her seviyesi (gemiyle gelenler dahil) satışta hurda değerine +%2,5 ekler
+SS.GEAR = ['claw', 'winch', 'magnet', 'radar'];
+SS.gearLvl = () => SS.GEAR.reduce((a, k) => a + SS.lvl(k), 0);
+SS.gearMult = () => 1 + SS.gearLvl() * .025;
 SS.maxEnergy = () => 100 + S.skills.fit * 10 + (SS.decorFx ? (SS.decorFx().energyMax || 0) : 0);
 SS.cargoCap = () => SS.shipT().cargo + S.ship.cargo * SS.shipT().cargoStep;
 SS.tankCap = () => SS.shipT().tank + S.ship.tank * SS.shipT().tankStep;
@@ -91,7 +95,7 @@ SS.sellMult = () => {
 };
 // Pazar doygunluğu: aynı gün aynı kategoriden her satış fiyatı %3 düşürür (en fazla %40)
 SS.saturation = cat => cat === 'relic' ? 1 : Math.max(.6, 1 - .03 * (S.satur[cat] || 0));
-SS.priceOf = it => Math.round(it.value * (S.prices[it.cat] || 1) * SS.sellMult() * SS.saturation(it.cat));
+SS.priceOf = it => Math.round(it.value * (S.prices[it.cat] || 1) * SS.sellMult() * SS.saturation(it.cat) * (it.cat === 'relic' ? 1 : SS.gearMult()));
 // Bölge stoku: her dalış o bölgeyi %22 tüketir, her gece yarısı kadar yenilenir
 SS.zoneStock = z => clamp(1 - (S.zoneUse[z] || 0) * .22, .35, 1);
 // İş itibarı: başarılı iş sayısıyla seviye atlar, ödemeyi artırır
@@ -372,6 +376,9 @@ SS.ledger = () => {
     if (up) L.push({ id: 'upkeep', name: 'İşletme bakımı', amt: up, req: true });
     if (S.loan > 0) L.push({ id: 'loan', name: (S.lender === 'bank' ? 'Banka' : 'Krell') + ' taksiti', amt: Math.min(S.loan, m.installment), req: true });
   }
+  if (S.day % 7 === 0) L.push({ id: 'shipcare', name: `Gemi bakımı ve sigortası: ${SS.SHIPS[S.tier].name}`, amt: Math.round([45, 120, 210][S.tier || 0] * cm), req: true });
+  if (S.day % 28 === 0 && S.home > 0) L.push({ id: 'dues', name: `Ev aidatı: ${SS.HOMES[S.home].name}`, amt: Math.round([0, 140, 300][S.home] * cm), req: true });
+  if (S.day % 28 === 0 && S.extras && Object.keys(S.extras).some(k => S.extras[k])) L.push({ id: 'extras', name: 'Bahçe ve atölye bakımı', amt: Math.round(Object.keys(S.extras).filter(k => S.extras[k]).length * 60 * cm), req: true });
   L.push({ id: 'dinner', name: `Akşam yemeği: ${S.name}`, amt: Math.round(14 * cm), warn: 'Atlarsan tokluğun 15 daha düşer.' });
   L.push({ id: 'heat', name: 'Isıtma', amt: Math.max(0, Math.round([12, 16, 22][S.home] * cm) - (SS.decorFx().heat || 0)), warn: 'Kapatırsan moral -6, sağlık -3; arkadaşların hastalanabilir.' });
   for (const id of SS.crewList()) {

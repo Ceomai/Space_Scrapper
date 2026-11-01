@@ -33,6 +33,7 @@ const HUNT_VARIANTS = [
     mix: m => { m.jelly = (m.jelly || 0) + 3; m.egg = (m.egg || 0) + 2; m.slime = Math.max(0, (m.slime || 0) - 1); } },
 ];
 const ZONE_EXTRA = { belt: { gold: .5, ice: 1 }, yard: { mimic: .6, gold: .4 }, gas: { jelly: 1, ice: .5 }, pirate: { mimic: .7, gold: 1 }, lost: { egg: 1, mimic: .5, jelly: .5 } };
+SS.HUNT_VARIANTS = HUNT_VARIANTS; SS.ZONE_EXTRA = ZONE_EXTRA;
 function pickVariant(zoneId, deepOK) {
   if (SS._forceVariant) return HUNT_VARIANTS.find(v => v.id === SS._forceVariant);
   const L = HUNT_VARIANTS.filter(v => (v.w[zoneId] || 0) > 0 && (!v.deep || deepOK));
@@ -141,14 +142,16 @@ G.scrap = (zoneId, onEnd, ct) => {
   const radarOn = !daily && (SS.lvl('radar') || SS.assist('pit') || B.sensor || SS.perk('pit', 90));
   const g = { title: daily ? (ct.title || 'Günün Avı') : Z.name, W, H, quitLabel: 'Dön',
     helpers: [SS.assist('pit') && 'Pıtırcık: kara kutuların içi görünür', SS.assist('tolga') && 'Tolga: vinç %40 hızlı', sniffed && 'Pıtırcık\'ın kokladığı bölge: değer %30 fazla',
-      B.oil && 'Kanca yağı: kanca hızlı', B.sensor && 'Sensör pili: radar açık', B.bait && 'Yem: +2 sümüksü', dep < 1 && `Bölge stoku %${Math.round(dep * 100)}`, ct && !daily && `Sözleşme: ${ct.label}`].filter(Boolean),
+      !ct && !daily && 'Serbest dalış: değerler +%25, eser şansı yüksek', B.oil && 'Kanca yağı: kanca hızlı', B.sensor && 'Sensör pili: radar açık', B.bait && 'Yem: +2 sümüksü', dep < 1 && `Bölge stoku %${Math.round(dep * 100)}`, ct && !daily && `Sözleşme: ${ct.label}`].filter(Boolean),
     controls: [{ id: 'fire', label: 'Kancayı At', cls: 'primary big' }, { id: 'torp', label: 'Torpido', cls: 'danger' }] };
   const hook = { phase: 0, angle: 0, len: MIN, st: 'swing', held: null };
   const fx = SS.FX.make(), stars = SS.Art.makeStars(70, W, H);
   const got = []; let items = [], time = 0, timeMax = 0, lost = 0, shake = 0, endT = -1;
   let V = HUNT_VARIANTS[0], scene = null, actors = [], warns = [], meteorT = 3, eelT = 2, droneT = 3, intro = 3.2;
   const deepOK = daily || !SS.hasLic || SS.hasLic('scrap2');
-  const zm = daily ? Z.mult : Z.mult * (S.flags.scrapBoost || 1) * (sniffed ? 1.3 : 1);
+  // Serbest dalış primi: sözleşmesiz dalışta yükün tamamı senin, değerler %25 fazla ve eser şansı yüksek
+  const freeDive = !ct && !daily;
+  const zm = daily ? Z.mult : Z.mult * (S.flags.scrapBoost || 1) * (sniffed ? 1.3 : 1) * (freeDive ? 1.25 : 1);
   const reach = daily ? 11 : 6 + SS.lvl('magnet') * 5;
   const extendSp = daily ? 7.9 : 6.5 + (SS.lvl('claw') + (B.oil ? 1 : 0)) * 1.4;
   if (daily) g.helpers = ['Herkes aynı alanda, eşit gemiyle oynar'];
@@ -201,7 +204,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     // sözleşme hedefleri sahada mutlaka bulunsun
     if (ct) ct.kinds.forEach(k => { mix[k] = Math.max(mix[k] || 0, Math.ceil((ct.qty + 1) / ct.kinds.length)); });
     order.forEach(k => add(k, mix[k] || 0));
-    if (Z.relics.length && (!SS.hasLic || SS.hasLic('scrap2')) && (S.relicNext || Math.random() < (SS.hard() ? .28 : .35)) && !(ct && ct.daily)) {
+    if (Z.relics.length && (!SS.hasLic || SS.hasLic('scrap2')) && (S.relicNext || Math.random() < (freeDive ? (SS.hard() ? .45 : .55) : (SS.hard() ? .2 : .25))) && !(ct && ct.daily)) {
       S.relicNext = false;
       const unfound = Z.relics.filter(r => !S.album[r]);
       const id = unfound.length && Math.random() < .75 ? pick(unfound) : pick(Z.relics);
@@ -280,7 +283,7 @@ G.scrap = (zoneId, onEnd, ct) => {
       got.push({ kind: it.kind, value: Math.round(v), relic: it.relic });
       const name = it.relic ? SS.RELICS[it.relic].name : T.name;
       if (v >= 250 || it.relic) snap(`${name} · ${Z.name}`, Math.round(v) + (it.relic ? 1000 : 0));
-      SS.FX.text(fx, tx, ty, '≈' + SS.fmt(v * (S.prices[T.cat] || 1) * SS.sellMult()), v > 250 ? P.crystal : P.accent, name);
+      SS.FX.text(fx, tx, ty, '≈' + SS.fmt(v * (S.prices[T.cat] || 1) * SS.sellMult() * (it.relic ? 1 : SS.gearMult())), v > 250 ? P.crystal : P.accent, name);
       SS.FX.burst(fx, OX, OY, [P.accent, P.star], 12, 2.5);
       SS.sfx(v > 250 ? 'big' : 'coin');
     } else { lost++; SS.FX.text(fx, tx, ty, 'Kargo dolu!', P.bad, T.name + ' uzaya bırakıldı'); SS.sfx('bad'); }

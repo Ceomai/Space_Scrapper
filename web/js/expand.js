@@ -421,47 +421,48 @@ Object.assign(ACT, {
 const capPay = n => { const p = Math.min(S.cash, Math.round(n)); S.cash -= p; return p; };
 SS.TRIALS = [
   { id: 'raid', icon: 'tank', title: 'Kızıl Pençe haraç istiyor', game: 'shooter', gameName: 'Modülü savun',
-    demand: () => clamp(Math.round(S.cash * .2 / 10) * 10, 150, 900),
+    demand: () => clamp(Math.round((S.cash * .22 + S.day * 4) / 10) * 10, 180, 1400),
     text: { easy: 'Kızıl Pençe korsanları yaşam modülünün önüne park etti. Hoparlörden bağırıyorlar: "Ya parayı verirsin ya da kanepeni alırız!" Kanepeyi gerçekten seviyorlar.', hard: 'Kızıl Pençe korsanları modülünü kuşattı. Haraç ödenmezse gece içeri girecekler.' },
     loseDesc: 'Bir dekor çalınır ya da daha fazla para gider; moral ve sağlık düşer',
     lose(T) {
       const placed = S.decor.map((id, i) => id ? i : -1).filter(i => i >= 0), out = [];
-      if (placed.length && Math.random() < .6) { const i = pick(placed), d = SS.DECOR.find(x => x.id === S.decor[i]); S.decor[i] = null; out.push(`Korsanlar "${d ? d.name : 'bir dekor'}" eşyanı söküp götürdü.`); out.push(`Ayrıca ${fmt(capPay(T.demand * .5))} aldılar.`); }
-      else out.push(`Korsanlar kasandan ${fmt(capPay(T.demand * 1.3))} aldı.`);
-      SS.mood(-10); S.health = clamp(S.health - 8, 0, 100); out.push('Moral −10, sağlık −8.'); return out;
+      if (placed.length && Math.random() < .6) { const i = pick(placed), d = SS.DECOR.find(x => x.id === S.decor[i]); S.decor[i] = null; out.push(`Korsanlar "${d ? d.name : 'bir dekor'}" eşyanı söküp götürdü.`); out.push(`Ayrıca ${fmt(capPay(T.demand * .7))} aldılar.`); }
+      else out.push(`Korsanlar kasandan ${fmt(capPay(T.demand * 1.5))} aldı.`);
+      const tk = Math.min(S.torps, 1); S.torps -= tk; if (tk) out.push('Torpidonu da götürdüler.');
+      SS.mood(-12); S.health = clamp(S.health - 10, 0, 100); out.push('Moral −12, sağlık −10.'); return out;
     },
-    win(T) { const b = Math.round(T.demand * .25); SS.earn(b); SS.mood(8); return [`Rıhtım İdaresi korsanları kovaladığın için ${fmt(b)} ödül gönderdi. Moral +8.`]; } },
+    win(T) { const b = Math.round(T.demand * .3); SS.earn(b); SS.mood(8); return [`Rıhtım İdaresi korsanları kovaladığın için ${fmt(b)} ödül gönderdi. Moral +8.`]; } },
   { id: 'meteor', icon: 'boulder', title: 'Meteor yağmuru yaklaşıyor', game: 'shield', gameName: 'Kalkanı yönet',
-    demand: () => clamp(Math.round((120 + S.day * 6) / 10) * 10, 140, 600),
+    demand: () => clamp(Math.round((160 + S.day * 9) / 10) * 10, 180, 1100),
     text: { easy: 'Rasathane uyarıyor: bu gece taş yağacak. Kalkan kiralayabilirsin ya da eski kalkanı elle çevirip şansını deneyebilirsin. Pıtırcık kafasına tencere geçirdi bile.', hard: 'Meteor yağmuru yaklaşıyor. Kiralık kalkan pahalı. Elle yönetmek riskli.' },
     loseDesc: 'Onarım faturası, sağlık kaybı, kargodan parça kaybı',
     lose(T) {
-      const out = [`Onarım faturası: ${fmt(capPay(T.demand * 1.4))}.`], n = Math.min(S.cargo.length, 2);
+      const out = [`Onarım faturası: ${fmt(capPay(T.demand * 1.6))}.`], n = Math.min(S.cargo.length, 3);
       if (n) { S.cargo.splice(0, n); out.push(`Kargodan ${n} parça uzaya savruldu.`); }
-      S.health = clamp(S.health - 12, 0, 100); out.push('Sağlık −12.'); return out;
+      S.health = clamp(S.health - 15, 0, 100); S.fuel = Math.max(0, S.fuel - 15); out.push('Sağlık −15, sızıntıdan 15 yakıt kaybı.'); return out;
     },
     win() { SS.mood(6); const k = pick(['crystal', 'rock', 'plate']); SS.addCargo(k, SS.ITEMS[k].val * SS.SCRAP_VAL); return [`Kalkan dayandı. Parçalanan meteorlardan biri kargona ${SS.ITEMS[k].name} bıraktı. Moral +6.`]; } },
   { id: 'virus', icon: 'bug', title: 'Hesabına virüs bulaştı', game: 'whack', gameName: 'Virüsü temizle',
-    demand: () => clamp(Math.round(S.cash * .15 / 10) * 10, 100, 700),
+    demand: () => clamp(Math.round((S.cash * .18 + S.day * 3) / 10) * 10, 140, 1100),
     text: { easy: 'Ekranında dans eden bir kurbağa var ve fidye istiyor. Kurbağa sevimli ama cüzdanını boşaltmaya kararlı.', hard: 'Fidye yazılımı istasyon hesabına sızdı. Ödemezsen hesabından para çekilecek.' },
     loseDesc: 'Hesaptan daha fazla para çekilir, moral düşer',
-    lose(T) { const out = [`Virüs hesabından ${fmt(capPay(T.demand * 1.4))} çekti.`]; SS.mood(-8); out.push('Moral −8.'); return out; },
+    lose(T) { const out = [`Virüs hesabından ${fmt(capPay(T.demand * 1.6))} çekti.`]; SS.mood(-10); if (S.board) { S.board.forEach(b => { if (!b.done && Math.random() < .5) b.done = true; }); out.push('İlan panosundaki işlerin yarısı silindi.'); } out.push('Moral −10.'); return out; },
     win() { SS.mood(6); S.rep.repair = (S.rep.repair || 0) + 1; return ['Virüsü sildin. Haber yayıldı; tamir itibarın arttı. Moral +6.']; } },
   { id: 'plague', icon: 'slime', title: 'İstasyonda salgın', game: 'memory', gameName: 'Laboratuvara gir',
-    demand: () => Math.round(70 * (1 + SS.crewList().length * .6) * SS.dv('costs')),
+    demand: () => Math.round((90 + S.day * 1.5) * (1 + SS.crewList().length * .6) * SS.dv('costs')),
     text: { easy: 'Sümüksü gribi istasyonu sardı. Herkes yeşil hapşırıyor. Klinik ilaç satıyor ya da laboratuvarda formülü kendin tutturabilirsin.', hard: 'Bulaşıcı bir hastalık yayılıyor. İlaç pahalı; laboratuvarda formülü kendin karıştırmayı deneyebilirsin.' },
     loseDesc: 'Sağlık ciddi düşer, hane üyeleri hastalanır',
-    lose() { S.health = clamp(S.health - 18, 0, 100); SS.crewList().forEach(id => { S.crew[id].sick = true; }); SS.mood(-6); return ['Hastalık haneye girdi. Sağlık −18, moral −6. Hane üyeleri hasta; klinikte iyileşmeleri gerekecek.']; },
+    lose() { S.health = clamp(S.health - 22, 0, 100); S.energy = Math.max(0, S.energy - 15); SS.crewList().forEach(id => { S.crew[id].sick = true; }); SS.mood(-8); return ['Hastalık haneye girdi. Sağlık −22, enerji −15, moral −8. Hane üyeleri hasta; ilaç almaları gerekecek.']; },
     win() { SS.mood(8); SS.earn(80); return ['Formülü tutturdun. Klinik fazla dozları ₡80\'e satın aldı. Moral +8.']; } },
   { id: 'audit', icon: 'box', title: 'Rıhtım denetimi', game: 'audit', gameName: 'Evrakları kontrol et',
-    demand: () => clamp(Math.round((100 + S.day * 5) / 10) * 10, 120, 500),
+    demand: () => clamp(Math.round((140 + S.day * 7) / 10) * 10, 160, 900),
     text: { easy: 'Denetçi Bayan Kılçık geldi. Evraklarında "tutarsızlık" kokusu almış. Ya cezayı ödersin ya da belgeleri satır satır birlikte kontrol edersiniz.', hard: 'Rıhtım denetçisi kayıtlarında tutarsızlık iddia ediyor. Ceza ödemezsen belgeleri tek tek kontrol edeceksiniz.' },
     loseDesc: 'Daha yüksek ceza ve deponun yarısına el konur',
-    lose(T) { const out = [`Ceza kesildi: ${fmt(capPay(T.demand * 1.5))}.`]; S.fuel = Math.floor(S.fuel / 2); out.push('Yakıt deposunun yarısına el kondu.'); return out; },
+    lose(T) { const out = [`Ceza kesildi: ${fmt(capPay(T.demand * 1.7))}.`]; S.fuel = Math.floor(S.fuel / 2); out.push('Yakıt deposunun yarısına el kondu.'); SS.mood(-6); out.push('Moral −6.'); return out; },
     win() { SS.mood(5); S.fuel = Math.min(SS.tankCap(), S.fuel + 20); return ['Denetçi hatalı çıktı ve özür olarak 20 birim yakıt bıraktı. Moral +5.']; } },
 ];
 const trialDef = id => SS.TRIALS.find(t => t.id === id);
-const trialGap = () => { const hz = SS.dv('hazard'); return hz > 1 ? rint(4, 7) : hz < 1 ? rint(6, 10) : rint(5, 9); };
+const trialGap = () => { const hz = SS.dv('hazard'); return hz > 1 ? rint(4, 6) : hz < 1 ? rint(6, 9) : rint(4, 8); };
 SS.rollTrial = () => {
   if (!S.nextTrial) { S.nextTrial = Math.max(6, S.day + trialGap()); return; }
   if (S.trial && S.trial.done) S.trial = null;

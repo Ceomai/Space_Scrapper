@@ -67,10 +67,10 @@ SS.RELICS = {
 
 // group: hangi işi etkilediği
 SS.SHIP = [
-  { id: 'claw',     group: 'scrap',  name: 'Fırlatıcı Kanca', desc: 'Hurda avı: kanca daha hızlı fırlar.',                 costs: [500, 1100, 2200, 4000] },
-  { id: 'winch',    group: 'scrap',  name: 'Vinç Motoru',     desc: 'Hurda avı: ağır yükler daha hızlı sarılır.',          costs: [600, 1300, 2600, 4800] },
-  { id: 'magnet',   group: 'scrap',  name: 'Manyetik Pençe',  desc: 'Hurda avı: yakalama alanı genişler.',                 costs: [800, 1800, 3400] },
-  { id: 'radar',    group: 'scrap',  name: 'Tarayıcı Radar',  desc: 'Hurda avı: kara kutuların içi önceden görünür.',      costs: [1100] },
+  { id: 'claw',     group: 'scrap',  name: 'Fırlatıcı Kanca', desc: 'Hurda avı: kanca daha hızlı fırlar. Her seviye satışta hurda değerine +%2,5.',                 costs: [500, 1100, 2200, 4000] },
+  { id: 'winch',    group: 'scrap',  name: 'Vinç Motoru',     desc: 'Hurda avı: ağır yükler daha hızlı sarılır. Her seviye satışta hurda değerine +%2,5.',          costs: [600, 1300, 2600, 4800] },
+  { id: 'magnet',   group: 'scrap',  name: 'Manyetik Pençe',  desc: 'Hurda avı: yakalama alanı genişler. Her seviye satışta hurda değerine +%2,5.',                 costs: [800, 1800, 3400] },
+  { id: 'radar',    group: 'scrap',  name: 'Tarayıcı Radar',  desc: 'Hurda avı: kara kutuların ve taklitçilerin içi görünür. Satışta hurda değerine +%2,5.',      costs: [1100] },
   { id: 'thruster', group: 'flight', name: 'İtici Motorlar',  desc: 'Teslimat: itki %15 güçlü, yakıt %10 az harcanır (seviye başına).', costs: [450, 1000, 2000] },
   { id: 'gyro',     group: 'flight', name: 'Jiroskop',        desc: 'Teslimat: iniş hızı ve açı toleransı artar.',         costs: [500, 1200] },
   { id: 'hull',     group: 'flight', name: 'Gövde Zırhı',     desc: 'Patlama ve sert inişlerde %20 daha az hasar (seviye başına).', costs: [700, 1600, 3200] },

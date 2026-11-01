@@ -415,6 +415,19 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .grid-emoji{font-size:22px;letter-spacing:2px;line-height:1.3;word-break:break-all}
 .code-in{width:100%;padding:9px;background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:6px;font:inherit;text-transform:uppercase}
 .qb.daily b{color:var(--accent)}
+.rehber{display:flex;flex-direction:column;gap:8px}
+.rh-q{text-transform:none}
+.rh-nav{position:sticky;top:-1px;z-index:1;background:var(--surface);padding:4px 0}
+.rh-sec h3{font-family:var(--display);font-size:15px;margin:10px 0 2px;text-transform:uppercase;letter-spacing:.04em;color:var(--accent)}
+.rh-sec{scroll-margin-top:52px}
+.rh-list{display:flex;flex-direction:column}
+.rh-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dotted var(--line)}
+.rh-row b{display:block;font-size:13.5px} .rh-row small{display:block;color:var(--muted);font-size:12px;line-height:1.35}
+.rh-row em{font-style:normal;font-family:var(--mono);font-size:12px;color:var(--accent2);white-space:nowrap;text-align:right}
+:root[data-style="pixel"] .rh-row b{font-size:17px} :root[data-style="pixel"] .rh-row small,:root[data-style="pixel"] .rh-row em{font-size:15px}
+.rh-empty{color:var(--muted)}
+.gear-line{display:grid;grid-template-columns:1fr auto;gap:2px 8px;margin-top:8px;padding:7px 9px;border:1px dashed var(--accent2);background:var(--surface2)}
+.gear-line b{color:var(--good);font-family:var(--mono)} .gear-line small{grid-column:1/-1;color:var(--muted)}
 .map-bottom .qb{flex-direction:column;gap:1px;padding:5px 2px;min-width:0;background:var(--surface2)}
 .map-bottom .qb.hot{background:var(--accent)}
 .map-area.compact .node .n-cost{display:none}
@@ -528,6 +541,7 @@ body.in-mini{overflow:hidden}
 <script charset="utf-8" src="js/games.js"></script>
 <script charset="utf-8" src="js/ui.js"></script>
 <script charset="utf-8" src="js/expand.js"></script>
+<script charset="utf-8" src="js/guide.js"></script>
 <script>
 (function(){
   document.documentElement.lang = 'tr';

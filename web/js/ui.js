@@ -110,7 +110,7 @@ function guideModal(sec, first) {
   SS.modal(`<p class="eyebrow">Kılavuz ${first ? '· ilk adımlar' : ''}</p>
     <div class="gnav">${G.map(g => `<button class="chip ${g.id === cur.id ? 'on' : ''}" data-act="guide" data-s="${g.id}">${g.title}</button>`).join('')}</div>
     <h2>${cur.title}</h2><div class="guide">${cur.body}</div>
-    <div class="row">${i > 0 ? btn('◀ Önceki', 'guide', { s: G[i - 1].id }, 'ghost') : ''}${i < G.length - 1 ? btn('Sonraki ▶', 'guide', { s: G[i + 1].id }, 'ghost') : ''}${btn('Kapat', 'close', {}, 'primary')}</div>`, 'guide-sheet');
+    <div class="row">${btn('Rehber', 'rehber', {}, 'ghost')}${i > 0 ? btn('◀ Önceki', 'guide', { s: G[i - 1].id }, 'ghost') : ''}${i < G.length - 1 ? btn('Sonraki ▶', 'guide', { s: G[i + 1].id }, 'ghost') : ''}${btn('Kapat', 'close', {}, 'primary')}</div>`, 'guide-sheet');
 }
 
 /* ---------- üst konsol ---------- */
@@ -381,7 +381,8 @@ function marketView() {
   h += panel('Zara\'nın tezgâhı · fiyatlar', `<div class="prices">${Object.keys(SS.CATS).filter(k => k !== 'relic').map(k => {
     const tr = S.trend[k] || 0, p = Math.round(S.prices[k] * 100 * SS.saturation(k));
     return `<div class="${p >= 115 ? 'up' : p <= 85 ? 'down' : ''}"><span>${SS.CATS[k]}</span><b>%${p}</b><small>${tr > .02 ? '▲' : tr < -.02 ? '▼' : '–'}${S.satur[k] ? ` · ${S.satur[k]} satış` : ''}</small></div>`;
-  }).join('')}</div><p class="muted">Aynı gün aynı türden her satış fiyatı %3 düşürür. Satışı günlere yay ya da İş Merkezi'ndeki siparişlere bak.</p>`, { code: 'ZR' });
+  }).join('')}</div><p class="muted">Aynı gün aynı türden her satış fiyatı %3 düşürür. Satışı günlere yay ya da İş Merkezi'ndeki siparişlere bak.</p>
+  <div class="gear-line"><span>Ekipman primi</span><b>+%${Math.round((SS.gearMult() - 1) * 100)}</b><small>Kanca, vinç, pençe ve radarın ${SS.gearLvl()} seviyesinden. Hangar'da geliştirdikçe artar; antikalara uygulanmaz. Aşağıdaki fiyatlara dahil.</small></div>`, { code: 'ZR' });
   const gs = groups(), total = gs.reduce((a, g) => a + g.sum, 0);
   h += panel('Kargo', gs.length ? `<div class="list">${gs.map((g, n) => `<div class="row-item">${icon(g.it.kind, 34, g.it.relic || '')}<div><b>${itemName(g.it)} ×${g.idx.length}</b><small>tanesi ≈ ${fmt(g.sum / g.idx.length)}${g.it.relic ? ' · albümde kayıtlı' : ''}</small></div>
       <div class="btns">${btn('1 sat', 'sell', { g: n, n: 1 }, 'sm ghost')}${g.idx.length > 1 ? btn(fmt(g.sum), 'sell', { g: n, n: 'all' }, 'sm') : ''}</div></div>`).join('')}</div>
@@ -439,8 +440,9 @@ function krellView() {
 /* ---------- SEYİR DEFTERİ ---------- */
 function logView() {
   const r = SS.rank(), nr = SS.nextRank();
-  const [tab, bar] = subTabs('log', [['cap', 'Kaptan'], ['story', 'Hikâye'], ['ach', 'Başarımlar'], ['set', 'Ayarlar']]);
+  const [tab, bar] = subTabs('log', [['cap', 'Kaptan'], ['rehber', 'Rehber'], ['story', 'Hikâye'], ['ach', 'Başarımlar'], ['set', 'Ayarlar']]);
   let h = bar;
+  if (tab === 'rehber') return h + panel('Rehber', `<p class="muted">Ne nereden alınır, ne işe yarar. Ara ya da bir bölüme dokun.</p>${SS.rehberHtml()}<div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost sm')}</div>`, { code: 'RH' });
   if (tab === 'cap') {
   h += panel(esc(S.name), `<div class="row-i">${face('captain', 60)}<div><p class="eyebrow">${r.name} · ${SS.SHIPS[S.tier].name}</p>
     <small>Toplam kazanç ${fmt(S.stats.earned)} · ${S.stats.runs} hurda avı · ${S.stats.deliver} teslimat · ${S.stats.repair} tamir · ${S.stats.orders || 0} sipariş · ${S.stats.decisions} karar · Rex'e karşı ${S.stats.rexWins || 0} galibiyet</small></div></div>
@@ -643,7 +645,7 @@ const ACT = {
   room: d => { if (SS.buyRoom(d.id)) { SS.sfx('big'); SS.toast(`${SS.ROOMS[d.id].name} kuruldu.`, 'good'); render(); } },
   useInv: d => { const msg = SS.useInv(d.g, d.t); if (msg) { SS.toast(msg, /yok|değil/.test(msg) ? 'bad' : 'good'); render(); } },
   menu: () => SS.modal(`<p class="eyebrow">Menü · ${esc(S.name)} · Gün ${S.day}</p><h2>PELIKAN-OS</h2>
-    <div class="menu-list">${btn('Oyuna dön', 'close', {}, 'primary block')}${btn('Kılavuz', 'guide', { s: S.view === 'map' ? 'map' : S.view }, 'ghost block')}${btn('Seyir Defteri ve ayarlar', 'view', { v: 'log' }, 'ghost block')}${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'muteMenu', {}, 'ghost block')}${btn('Kaydet ve ana menüye dön', 'toMenu', {}, 'ghost block')}${btn('Yeni oyun başlat', 'askWipe', {}, 'ghost block danger-t')}</div>
+    <div class="menu-list">${btn('Oyuna dön', 'close', {}, 'primary block')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost block')}${btn('Nasıl oynanır', 'guide', { s: S.view === 'map' ? 'map' : S.view }, 'ghost block')}${btn('Seyir Defteri ve ayarlar', 'view', { v: 'log' }, 'ghost block')}${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'muteMenu', {}, 'ghost block')}${btn('Kaydet ve ana menüye dön', 'toMenu', {}, 'ghost block')}${btn('Yeni oyun başlat', 'askWipe', {}, 'ghost block danger-t')}</div>
     <small>Oyun her işlemde otomatik kaydedilir. Ana menüden kaldığın yerden devam edebilirsin.</small>`),
   muteMenu: () => { prefs.muted = !prefs.muted; savePrefs(); ACT.menu(); },
   toMenu: () => { SS.save(); window.S = null; Q.length = 0; SS.closeModal(); titleScreen(); },
