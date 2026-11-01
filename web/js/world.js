@@ -9,7 +9,13 @@ SS.openLabel = id => { const l = SS.loc(id); return l.open[0] === 0 && l.open[1]
 SS.travelCost = to => {
   if (to === S.loc) return { min: 0, energy: 0 };
   const a = SS.loc(S.loc), b = SS.loc(to), d = Math.hypot(a.x - b.x, a.y - b.y);
-  return { min: 10 + Math.round(d * 45 / 5) * 5, energy: 1 + Math.round(d * 4) };
+  const min = 10 + Math.round(d * 45 / 5) * 5;
+  return { min: SS.assist('pit') ? Math.round(min * .8 / 5) * 5 : min, energy: 1 + Math.round(d * 4) };
+};
+SS.travelCostFrom = (from, to) => {
+  if (to === from) return { min: 0, energy: 0 };
+  const a = SS.loc(from), b = SS.loc(to), d = Math.hypot(a.x - b.x, a.y - b.y), min = 10 + Math.round(d * 45 / 5) * 5;
+  return { min: SS.assist('pit') ? Math.round(min * .8 / 5) * 5 : min, energy: 1 + Math.round(d * 4) };
 };
 SS.travelBlock = to => {
   if (to === S.loc) return null;
@@ -59,7 +65,7 @@ SS.buyRoom = id => { const r = SS.ROOMS[id]; if (!SS.hasCrew(id) || S.rooms[id] 
 /* ---------- ilan panosu (3 saatlik pencereler) ---------- */
 const fill = (t, o) => t.replace(/\{(\w)\}/g, (_, k) => o[k] || '');
 const line = (type, o) => { const t = fill(pick(SS.JOB_LINES[type][SS.fun() ? 'easy' : 'hard']), o); return t.charAt(0).toLocaleUpperCase('tr') + t.slice(1); };
-SS.jobPayMult = () => (1 + Math.min(S.day, 200) / 250 + S.tier * .1) * SS.rankPay() * SS.ngPay() * (SS.win() >= 4 ? 1.1 : 1) * (SS.hard() ? .95 : 1) * .9;
+SS.jobPayMult = () => (1 + Math.min(S.day, 200) / 250 + S.tier * .1) * SS.rankPay() * SS.ngPay() * (SS.win() >= 4 ? 1.1 : 1) * (SS.hard() ? .95 : 1) * SS.moralePay() * .86;
 function mkDeliver(tierIdx, special) {
   const t = SS.DELIVERY_TIERS[tierIdx], [g, tag] = pick(SS.CARGOS);
   const mods = [];
@@ -85,7 +91,7 @@ function mkRepair(tierIdx, special) {
 }
 function mkSort() {
   const v = pick(SS.SORT_VARIANTS), long = Math.random() < .5, base = SS.SORTS[long ? 1 : 0];
-  const per = Math.round((base.per + v.bonus) * SS.rankPay() * (SS.win() >= 4 ? 1.1 : 1));
+  const per = Math.round((base.per + v.bonus) * SS.rankPay() * SS.moralePay() * (SS.win() >= 4 ? 1.1 : 1));
   return { type: 'sort', id: Math.random().toString(36).slice(2), name: `${v.name} · ${long ? 'uzun' : 'kısa'}`, variant: v.id, mix: v.mix,
     time: base.time, per, speed: base.speed * v.speed, energy: base.energy, dur: long ? SS.DUR.sortLong : SS.DUR.sortShort,
     text: `${v.desc} ${line('sort', {})}`, done: false };
@@ -129,6 +135,8 @@ SS.refreshBoard = (force) => {
   if (w % 2 === 0 || Math.random() < .5) B.unshift(mkHunt());
   if (B.length < 3) B.push(mkHunt());
   if (L('order')) { B.push(mkOrder()); if (Math.random() < .5) B.push(mkOrder()); }
+  // Günün işi: seçilen türdeki ilanlar %25 fazla öder (çeşitliliği ödüllendirir)
+  if (S.dailyJob) B.forEach(b => { if (b.type !== S.dailyJob || b.hot) return; b.hot = true; if (b.type === 'sort') b.per = Math.round(b.per * 1.25); else b.pay = Math.round(b.pay * 1.25); });
   if (S.tolgaJob && L('deliver') && L('repair')) { B.unshift(Math.random() < .5 ? mkDeliver(rint(1, 2), true) : mkRepair(rint(1, 2), true)); S.tolgaJob = false; }
   S.board = B;
 };
@@ -215,18 +223,25 @@ SS.storeDecor = slot => { const id = S.decor[slot]; if (!id) return null; S.deco
 SS.sellDecor = si => { const id = (S.decorStore || [])[si]; if (!id) return null; S.decorStore.splice(si, 1); const d = SS.DECOR.find(x => x.id === id); SS.earn(Math.round(d.price * .4)); return d; };
 
 /* ---------- Rex yarışı ---------- */
+// Rex her yenilgisinden ders alır: hedefi her galibiyetinde artar, her kaybında biraz geriler
+SS.REX_STEP = { win: 1.1, lose: .95 };
 SS.rexWeek = () => {
-  if (!S.rexTarget) S.rexTarget = Math.round(rint(1600, 2800) * (1 + Math.floor((S.day - 1) / 7) * .18) * (1 + S.tier * .3) / 50) * 50;
+  if (!S.rexTarget) {
+    // Rex seni izler: hedefi hem kendi tabanı hem senin geçen haftanın kazancı üzerinden belirlenir
+    const base = rint(1600, 2800) * (1 + Math.floor((S.day - 1) / 7) * .18) * (1 + S.tier * .3) * (S.rexMult || 1);
+    const last = (S.rexLog || []).slice(-1)[0], chase = last ? last.mine * rnd(.86, 1.08) * Math.pow(S.rexMult || 1, .3) : 0;
+    S.rexTarget = Math.round(Math.max(base, chase) / 50) * 50;
+  }
   return S.rexTarget;
 };
 SS.rexSettle = notes => {
   const target = SS.rexWeek(), mine = S.weekEarned || 0, fun = SS.fun();
   if (mine >= target) {
     const prize = Math.round(150 + target * .08);
-    SS.earn(prize); SS.mood(8); S.aff.rex = Math.min(100, S.aff.rex + 5); S.stats.rexWins = (S.stats.rexWins || 0) + 1;
+    SS.earn(prize); SS.mood(8); S.rexMult = Math.min(5, (S.rexMult || 1) * SS.REX_STEP.win); S.aff.rex = Math.min(100, S.aff.rex + 5); S.stats.rexWins = (S.stats.rexWins || 0) + 1;
     notes.push(`Haftalık yarışı kazandın: ${fmt(mine)} / Rex ${fmt(target)}. Ödül ${fmt(prize)}. ${pick(SS.REX_LINES.win[fun ? 'easy' : 'hard'])}`);
   } else {
-    SS.mood(-5);
+    SS.mood(-5); S.rexMult = Math.max(.7, (S.rexMult || 1) * SS.REX_STEP.lose);
     notes.push(`Haftalık yarışı Rex kazandı: ${fmt(target)} / sen ${fmt(mine)}. ${pick(SS.REX_LINES.lose[fun ? 'easy' : 'hard'])}`);
   }
   S.rexLog.push({ week: Math.ceil(S.day / 7), mine, rex: target, win: mine >= target });

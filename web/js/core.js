@@ -41,7 +41,7 @@ SS.SORTS = [
 ];
 
 SS.blankShip = () => Object.fromEntries(SS.SHIP.map(u => [u.id, 0]));
-SS.SCRAP_VAL = .33; // hurda avı değer çarpanı (nakit işlerle denge için)
+SS.SCRAP_VAL = .315; // hurda avı değer çarpanı (nakit işlerle denge için)
 SS.newState = (diff, tone, name, crewIds) => {
   const s = {
     v: 3, diff: diff.slice(), tone, name: name || 'Kaptan', day: 1, time: 420, loc: 'home', view: 'map',
@@ -63,6 +63,7 @@ SS.newState = (diff, tone, name, crewIds) => {
     tut: 0, tease: null, teaseToday: null, arc: null, arcScore: 0, arcsDone: [], titles: [], ng: 0, perks: {},
     paint: 'klasik', paints: { klasik: true }, homeTint: 'std', shipNames: {}, daily: {}, decorStore: [],
     rules2: 1, lic: {}, course: {}, trial: null, nextTrial: 0, trialLog: [], casino: { today: 0, net: 0, chips: 0, best: 0 },
+    rexMult: 1, flags2: {}, weekSnap: null, weekSum: null, easeSeen: 0, shipGrace: 0, dailyJob: null, nextBill: 0, bill: null, billLater: [], billFix: null, mile: null, mileNext: 0, bondWarn: {}, route: [],
   };
   crewIds.forEach(id => { s.crew[id] = { bond: 50, task: 'with', down: 0, gone: false, hunger: 0, sick: false, sickDays: 0 }; });
   const prev = window.S; window.S = s;
@@ -103,7 +104,8 @@ SS.sellMult = () => {
   let m = SS.M().priceMult;
   if (S.aff.zara >= 60) m *= 1.10; else if (S.aff.zara >= 30) m *= 1.05;
   if (S.biz.shop) m *= 1.10;
-  return m * (1 + S.skills.trade * .03);
+  if (SS.assist('ela')) m *= 1.03;
+  return m * (1 + S.skills.trade * .03) * (1 + Object.keys(S.setsDone || {}).length * .03);
 };
 // Pazar doygunluğu: aynı gün aynı kategoriden her satış fiyatı %3 düşürür (en fazla %40)
 SS.saturation = cat => cat === 'relic' ? 1 : Math.max(.6, 1 - .03 * (S.satur[cat] || 0));
@@ -118,6 +120,8 @@ SS.repGain = k => { const b = SS.repLvl(k); S.rep[k] = (S.rep[k] || 0) + 1; cons
 SS.upgradeDiscount = () => S.aff.vida >= 60 ? .8 : S.aff.vida >= 30 ? .9 : 1;
 SS.foodPrice = f => Math.round(f.price * SS.M().foodMult);
 SS.fuelPrice = () => Math.round(3 * (SS.hard() ? 1.3 : 1) * (S.flags.fuelHike ? 1.8 : 1));
+// Moral iş ücretini etkiler: 85+ ise +%5, 50 altıysa −%10
+SS.moralePay = () => S.morale >= 85 ? 1.05 : S.morale < 50 ? .9 : 1;
 SS.moraleTime = () => S.morale >= 70 ? 5 : S.morale < 30 ? -6 : 0;
 SS.monthDay = () => (S.day - 1) % 28 + 1;
 SS.daysTo = n => { const r = S.day % n; return r === 0 ? 0 : n - r; };
@@ -125,8 +129,15 @@ SS.daysTo = n => { const r = S.day % n; return r === 0 ? 0 : n - r; };
 SS.earn = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; S.cash += n; S.today.earned = (S.today.earned || 0) + n; S.stats.earned += n; S.weekEarned = (S.weekEarned || 0) + n; };
 SS.spend = n => { n = Math.round(n); if (!isFinite(n) || n < 0 || S.cash < n) return false; S.cash -= n; return true; };
 SS.charge = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; if (S.cash >= n) S.cash -= n; else { S.arrears += Math.round((n - S.cash) * 1.1); S.cash = 0; } };
+// Hurda yorgunluğu: günün ilk 3 dalışı tam değer, sonrakiler %15'er azalır (sözleşmeler dahil, Günün Avı hariç)
+SS.scrapFatigue = start => { if (start) S.today.dives = (S.today.dives || 0) + 1; const n = (S.today.dives || 0) + (start ? 0 : 1); return Math.pow(.85, Math.max(0, n - 3)); };
 SS.bump = (k, n = 1) => { S.today[k] = (S.today[k] || 0) + n; };
-SS.mood = n => { S.morale = clamp(S.morale + n, 0, 100); };
+// Moral: günün ilk +10 kazanımı tam, sonrası dörtte bir işler (moral kolayca tavana yapışmasın)
+SS.mood = n => {
+  if (!isFinite(n)) return;
+  if (n > 0 && S.today) { const used = S.today.moodUp || 0, full = Math.max(0, Math.min(n, 10 - used)); S.today.moodUp = used + n; n = full + (n - full) * .25; }
+  S.morale = clamp(S.morale + n, 0, 100);
+};
 
 /* ---------- hane ---------- */
 SS.comp = id => SS.COMPANIONS.find(c => c.id === id);
@@ -387,14 +398,15 @@ SS.nightIncome = () => {
 SS.ledger = () => {
   const m = SS.M(), cm = m.cm, L = [];
   L.push({ id: 'oxy', name: 'Oksijen ve su', amt: Math.round(m.oxygen * (S.home === 2 ? 1.3 : 1)), req: true });
-  if (S.day % 7 === 0) L.push({ id: 'dock', name: 'Rıhtım ücreti (haftalık)', amt: Math.round(m.dock * [1, 2.5, 4][S.tier || 0]), req: true });
+  const sg = SS.shipGraceOn() ? .5 : 1, sgT = sg < 1 ? ' · yeni gemi indirimi %50' : '';
+  if (S.day % 7 === 0) L.push({ id: 'dock', name: 'Rıhtım ücreti (haftalık)' + sgT, amt: Math.round(m.dock * [1, 2.5, 4][S.tier || 0] * sg), req: true });
   if (S.day % 28 === 0) {
     L.push({ id: 'rent', name: 'Kira: ' + SS.HOMES[S.home].name, amt: Math.round(m.rent * SS.HOMES[S.home].rent), req: true });
     const up = SS.BIZ.reduce((a, b) => a + (S.biz[b.id] ? b.upkeep : 0), 0);
     if (up) L.push({ id: 'upkeep', name: 'İşletme bakımı', amt: up, req: true });
     if (S.loan > 0) L.push({ id: 'loan', name: (S.lender === 'bank' ? 'Banka' : 'Krell') + ' taksiti', amt: Math.min(S.loan, m.installment), req: true });
   }
-  if (S.day % 7 === 0) L.push({ id: 'shipcare', name: `Gemi bakımı ve sigortası: ${SS.SHIPS[S.tier].name}`, amt: Math.round([45, 120, 210][S.tier || 0] * cm), req: true });
+  if (S.day % 7 === 0) L.push({ id: 'shipcare', name: `Gemi bakımı ve sigortası: ${SS.SHIPS[S.tier].name}${sgT}`, amt: Math.round([45, 120, 210][S.tier || 0] * cm * sg), req: true });
   if (S.day % 28 === 0 && S.home > 0) L.push({ id: 'dues', name: `Ev aidatı: ${SS.HOMES[S.home].name}`, amt: Math.round([0, 140, 300][S.home] * cm), req: true });
   if (S.day % 28 === 0 && S.extras && Object.keys(S.extras).some(k => S.extras[k])) L.push({ id: 'extras', name: 'Bahçe ve atölye bakımı', amt: Math.round(Object.keys(S.extras).filter(k => S.extras[k]).length * 60 * cm), req: true });
   L.push({ id: 'dinner', name: `Akşam yemeği: ${S.name}`, amt: Math.round(14 * cm), warn: 'Atlarsan tokluğun 15 daha düşer.' });
@@ -493,6 +505,8 @@ SS.sleep = (sel) => {
   S.hunger = clamp(S.hunger - m.hungerDrop + (paid('dinner') ? 20 : 0), 0, 100);
   S.health = clamp(S.health + (S.hunger > 50 ? 4 : 0), 0, 100);
   SS.mood(SS.HOMES[S.home].morale + (S.loan > 0 && SS.hard() ? -2 : 0) + (S.arrears > 0 ? -5 : 0));
+  // Moral kendiliğinden azalır; yüksekken daha hızlı (eğlence, sohbet ve dinlenme onu yukarıda tutar)
+  S.morale = clamp(S.morale - (3 + Math.max(0, S.morale - 55) / 2.5), 0, 100);
   if (S.health <= 0) SS.hospital('Açlık ve yorgunluk');
   S.day++; S.time = 420; S.loc = 'home'; S.view = 'map'; S.weekEarned = S.day % 7 === 1 ? 0 : S.weekEarned;
   if (S.strikes >= m.strikesMax) S.over = S.lender === 'bank' ? 'repo' : S.lender === 'krell' ? 'evict' : 'evict_station';
@@ -523,6 +537,8 @@ SS.payArrears = () => {
   return n;
 };
 SS.tradeValue = () => SS.shipT().trade + Math.round(S.upSpent * .35);
+// Yeni gemi alındıktan sonraki 7 gece rıhtım ve gemi bakımı yarı fiyat
+SS.shipGraceOn = () => !!(S.shipGrace && S.day < S.shipGrace);
 SS.shipCost = () => { const nx = SS.nextShip(); return nx ? Math.round((nx.price - SS.tradeValue()) * (S.flags.yardSale ? .9 : 1)) : 0; };
 SS.nextShip = () => SS.SHIPS[S.tier + 1] || null;
 SS.shipBlock = () => {
@@ -541,7 +557,7 @@ SS.buyShip = useBank => {
     // Banka kredisinin de süresi var: Martı 112, Balina 140 gün; yeni kredi gecikme sayacını sıfırlar
     S.bankDeadline = S.day + (nx.id === 'marti' ? 112 : 140); S.strikes = 0;
   }
-  S.tier++;
+  S.tier++; S.shipGrace = S.day + 8;
   S.ship = SS.blankShip(); S.upSpent = 0;
   S.fuel = SS.tankCap();
   // Yeni geminin ambarına sığmayan yük Zara'ya satılır

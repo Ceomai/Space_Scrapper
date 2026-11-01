@@ -64,6 +64,11 @@ function jobsSec() {
   r.push(row('Sipariş', 'pazarın ~1,7 katı', `Kargondaki eşyayı alıcıya teslim et; enerji harcamaz, ${SS.DUR.order} dk. Ticaret Ruhsatı gerekir.`, 'sipariş'));
   r.push(row('İlan saatleri', '', 'İlanlar 07, 10, 13, 16, 19 ve 22\'de yenilenir. 19:00 sonrası gece zammı %10.', 'ilan'));
   r.push(row('İtibar', '', 'Her başarılı iş kendi itibarını artırır; her seviye ödemeye %4 ekler. Teslimat ve tamirde 3. seviye VIP işleri açar.', 'itibar'));
+  r.push(row('Günün işi', '+%25', 'Her sabah teslimat, tamir ya da ayrıştırmadan biri seçilir; o türün ilanları gün boyu %25 fazla öder. İş kartında "Günün işi" etiketi görünür.', 'günün işi bonus çeşitlilik'));
+  r.push(row('Hurda yorgunluğu', '−%15/dalış', 'Günün ilk 3 dalışı (sözleşme ya da serbest) tam değer getirir; 4. dalıştan itibaren her biri %15 daha az. Günün Avı sayılmaz.', 'yorgunluk dalış hurda'));
+  r.push(row('Moral primi', '+%5 / −%10', 'Moral 85 ve üstündeyken iş ödemeleri %5 fazla, 50\'nin altındayken %10 az.', 'moral ödeme'));
+  r.push(row('★ En verimli', '', 'İş kartında saat başına tahmini kazanç yazar; şu an yapılabilecek en verimli iş yıldızla işaretlenir.', 'verim yıldız'));
+  r.push(row('Kilometre taşı', '8–10 gün', 'Haritadaki Hedefler panelinde. Süresi içinde tamamlarsan büyük ödül ve moral; kaçırırsan yenisi gelir.', 'kilometre hedef'));
   return sec('jobs', 'İşler', 'Ödemeler bugünkü çarpanlarla gösterilir (gün, gemi, rütbe; itibar hariç).', r);
 }
 function itemsSec() {
@@ -82,6 +87,8 @@ function itemsSec() {
   });
   r.push(row('Ekipman primi', window.S ? `+%${Math.round((SS.gearMult() - 1) * 100)}` : '', 'Kanca, vinç, pençe ve radarın her seviyesi satışta hurda değerine +%2,5 ekler (gemiyle gelen seviyeler dahil). Pazardaki fiyatlarda görünür.', 'ekipman satış'));
   r.push(row('Bölge çarpanı', '', 'Değerler bölgenin çarpanıyla büyür (Bölgeler bölümü). Pazar fiyatı her sabah kategoriye göre değişir; aynı gün aynı türden her satış %3 düşürür.', 'fiyat'));
+  r.push(row('Eser takası', '2 → 1', 'Pazar\'daki koleksiyon masası: kargondaki 2 eseri albümünde olmayan 1 eserle değiştirir (tamamlanmaya en yakın setten).', 'takas eser'));
+  r.push(row('Set primi', '+%3/set', 'Tamamlanan her eser seti tüm satışlara kalıcı +%3 ekler. Setin tek eseri eksikken o eserin çıkma şansı iki katı.', 'set prim'));
   return sec('items', 'Hurda ve eşyalar', 'Değerler Asteroit Kuşağı taban değeridir; bölge çarpanı ve pazar fiyatıyla değişir.', r);
 }
 function zonesSec() {
@@ -116,6 +123,8 @@ function crewSec() {
     (SS.BOND_PERKS[c.id] || []).forEach(([lv, t]) => r.push(row(`${c.name} · bağ ${lv}`, '', t, 'bağ')));
   });
   r.push(row('Görevler', '', 'Seninle: işte yardım eder. Çalışsın: gece ücret getirir. Dinlensin: bağ +4, moral +2.', 'görev'));
+  Object.entries(SS.PASSIVES || {}).forEach(([id, p]) => r.push(row(`${SS.comp(id).name}: ${p.name}`, 'pasif', p.desc, 'pasif')));
+  r.push(row('Barışma', '', 'Bağ 40\'ın altına düşünce bültende uyarı gelir. 35\'in altında küsen arkadaşla bir karar anı açılır: birlikte vakit geçir (1 sa, bağ +15) ya da hediye al (₡80, bağ +18).', 'barış küs bağ'));
   return sec('crew', 'Hane', 'Akşam defterinde doyurulmayan (Pıtırcık şarj edilmeyen) üyenin bağı düşer; iki gece aç kalan hastalanır, ilaçsız üç gece geçerse ayrılır.', r);
 }
 function costsSec() {
@@ -135,6 +144,9 @@ function costsSec() {
     row('Banka taksiti', 'kredinin %6\'sı', 'Yeni gemiyi krediyle alırsan her 28 günde; aylık faiz %1. Süre: Martı 112, Balina 140 gün. Kredi başlayınca gecikme sayacı sıfırlanır.', 'ay banka borç'),
     row('Gecikme', '', 'Zorunlu ödemeye para yetmezse kalan %10 cezayla gecikmiş borca yazılır ve bir gecikme sayılır. 3 gecikmede oyun biter: Krell borcundayken istasyondan atılırsın, banka kredisindeyken banka gemine el koyar, borcun yokken istasyon gemini çeker.', 'gecikme'),
   ];
+  r.push(row('Beklenmedik masraf', '10–14 günde bir', 'Motor arızası, vergi, tıbbi fatura gibi. Tutar nakdinin yaklaşık %20–30\'u. Öde, 7 gün ertele (%25 fazlası) ya da tamir mini oyunuyla %40\'a indir. Karar vermezsen o gece tamamı ödenir.', 'masraf fatura arıza'));
+  r.push(row('Yeni gemi indirimi', '%50 · 7 gece', 'Gemi aldıktan sonraki 7 gece rıhtım ve gemi bakımı yarı fiyat. Tersane satın almadan önce önerilen rezervi gösterir.', 'gemi rezerv'));
+  r.push(row('Borç takvimi', '', 'Üstteki Borç düğmesi: kalan borç, son gün, gecikmeler ve önümüzdeki 28 günün zorunlu ödemeleri.', 'takvim borç'));
   return sec('costs', 'Masraflar', 'Hepsi akşam defterinde listelenir; zorunlu olanlar otomatik düşer.', r);
 }
 function trialsSec() {
@@ -152,6 +164,8 @@ function casinoSec() {
     row('Nebula Slotu', '×0,9 – ×40', 'Üç aynı sembol büyük öder; iki aynı bahsin bir kısmını geri verir.', 'slot'),
     row('Kurallar', '', 'El başı 15 dakika ve 3 enerji, günde en fazla 8 el. Kasa uzun vadede kazanır. Kazanç moral verir, kayıp moral alır. 25 elde Gümüş üyelik daha yüksek bahis açar. Kumar kazancı Rex yarışına sayılmaz.', 'kural'),
   ];
+  if (SS.casEdges) { const E = SS.casEdges(); r.push(row('Kasa avantajı', '', `Çark ${E.wheel}, zar ${E.dice}, meteor yarışı ${E.race}, slot ${E.slot}. Kart masası beceriye bağlı.`, 'kasa avantaj oran')); }
+  r.push(row('Şanslı gece', 'haftanın 5. günü', 'O gece ödemeler kasa avantajını sıfırlayacak kadar büyür: uzun vadede başabaş.', 'şanslı gece'));
   return sec('casino', 'Kumarhane', `Nebula Kumarhanesi ${hours('casino')} açık.`, r);
 }
 const BUILD = { where: whereSec, energy: energySec, jobs: jobsSec, items: itemsSec, zones: zonesSec, ship: shipSec, academy: academySec, home: homeSec, crew: crewSec, costs: costsSec, trials: trialsSec, casino: casinoSec };
@@ -197,18 +211,21 @@ SS.GUIDE = [
 <p>Ana ekran istasyon haritası. Bir modüle dokununca oraya gidersin; yol 10–50 dakika ve 1–5 enerji tutar.</p>
 <ul><li>Açılış saatleri: İş Merkezi 07–24, Pazar 08–23, Klinik 08–22, Akademi 09–21, Krell 09–20, Kumarhane 16–02. Yaşam Modülü, Kantin ve Hangar gece de açık. Sabahları iş ve ders, akşamları alışveriş, sohbet ve kumarhane için vakit kalır.</li>
 <li>Üst şerit: Rex yarışı, sıradaki gemiye ilerleme, rütbe. Alt şerit: karar, hedefler, hane, sınama, Günün Avı ve bülten.</li>
-<li>En alttaki çubuk: Harita, bulunduğun yer ve Seyir Defteri (her yerden açılır).</li></ul>` },
+<li>En alttaki çubuk: Harita, bulunduğun yer, Seyir Defteri ve <b>☾ Uyu</b> (her yerden eve gidip akşam defterini açar).</li>
+<li><b>Rota</b> düğmesiyle 5 durağa kadar plan yap; üst şeritteki ▶ düğmesi seni sıradaki durağa götürür.</li>
+<li>Üst şerit kalan saati, enerjine göre yapılabilecek iş sayısını ve bulunduğun yerin kapanmasına 1 saat kala uyarıyı gösterir. Konum adına dokunmak o yerin rehberini açar.</li></ul>` },
   { id: 'stats', title: 'Enerji ve göstergeler', body: `
 <ul><li><b>Enerji</b>: Uyku (ev seviyesine göre 40/48/56), kestirme +25 (günde bir), yiyecek ve içecek (günde toplam en fazla +35), Ela'nın konuşması (+10) ve ödüllü reklam (+40, günde 3; üstteki ⚡ düğmesi) doldurur. Reklamsız da oynanır; reklam izleyen günde 1–2 iş fazla yapar.</li>
 <li><b>Tokluk</b>: Her gece düşer. 25 altında uyku zayıflar, 12 altında sağlık bozulur.</li>
 <li><b>Sağlık</b>: Patlama, sert iniş, açlık ve sınamalar düşürür. 0'da hastanelik olursun.</li>
-<li><b>Moral</b>: 70+ mini oyunlarda +5 saniye, 30 altı −6 saniye.</li></ul>` },
+<li><b>Moral</b>: 70+ mini oyunlarda +5 saniye, 30 altı −6 saniye. 85+ iken iş ödemeleri +%5, 50 altında −%10. Her gece kendiliğinden azalır (yüksekken daha hızlı); işler, yemek, sohbet, dekor ve kumar kazancı yükseltir.</li></ul>` },
   { id: 'money', title: 'Para nasıl kazanılır', body: `
 <ul><li><b>Serbest dalış</b> (Hangar): yükün tamamı senin, değerler %25 fazla, eser şansı yüksek.</li>
 <li><b>Hurda sözleşmesi</b> (İş Merkezi): sabit ücret + hedef başına ödeme + tamamlama primi; hedef dışı her şey de kargona.</li>
 <li><b>Teslimat, tamir, ayrıştırma, sipariş</b>: lisansla açılır.</li>
 <li><b>Satış</b>: Pazar fiyatı her sabah değişir; ekipman primi (her hurda donanımı seviyesi +%2,5) fiyata eklenir.</li>
-<li><b>Ekstra</b>: günlük hedefler, Rex yarışı ödülü, hanenin gece işleri, sınama zaferleri, set ödülleri.</li></ul>` },
+<li><b>Ekstra</b>: günlük hedefler, 8–10 günlük kilometre taşları, Rex yarışı ödülü, hanenin gece işleri, sınama zaferleri, set ödülleri.</li>
+<li><b>Çeşitlilik öder</b>: her gün bir "günün işi" %25 fazla öder; günün 4. dalışından itibaren hurda değeri %15'er düşer.</li></ul>` },
   { id: 'jobs', title: 'İş Merkezi ve Akademi', body: `
 <p>İlanlar 07, 10, 13, 16, 19 ve 22'de yenilenir; 19:00 sonrası %10 gece zammı. Her işin başarısı kendi itibarını artırır (seviye başına +%4).</p>
 <p>Başta yalnızca hurda sözleşmeleri açıktır. Akademi'de lisans al: Kargo Pilotu (teslimat), Ayrıştırma, Devre Teknisyeni (tamir), Ticaret Ruhsatı (sipariş), Derin Tarama (kristal, uydu, eser, Gaz Devi) ve Tehlikeli Bölge (Korsan Sektörü, Kayıp Yıldız). Günde bir ders; son ders 3 soruluk sınav.</p>
@@ -225,16 +242,26 @@ SS.GUIDE = [
   { id: 'home', title: 'Ev ve hane', body: `
 <ul><li><b>Odalar</b>: dekorları yuvalara yerleştir; her dekor moral, uyku, ısıtma ya da bağ etkisi verir.</li>
 <li><b>Ev</b>: Daire ve İstasyon Evi daha çok uyku ve yuva verir ama kira, ısıtma ve aidat artar.</li>
-<li><b>Hane</b>: her arkadaşa görev ver, günde bir yeteneğini kullan, odasını kur. Bağ 30, 60 ve 90'da ayrıcalıklar açılır.</li></ul>` },
+<li><b>Hane</b>: her arkadaşa görev ver, günde bir yeteneğini kullan, odasını kur. Bağ 30, 60 ve 90'da ayrıcalıklar açılır.</li>
+<li><b>Pasifler</b>: Pıtırcık seninleyken yolculuk %20 kısa; Ela seninleyken satışlar +%3; Tolga seninleyken tamirde +15 saniye ve teslimatta +%10 ödeme.</li>
+<li><b>Barışma</b>: bağ 40'ın altına düşünce uyarı gelir; 35'in altında bir barışma karar anı açılır.</li></ul>` },
   { id: 'trials', title: 'Sınamalar', body: `
 <p>4–9 günde bir (tehlike ayarına ve şansa göre) korsan haracı, meteor yağmuru, virüs, salgın ya da denetim çıkar. Talepler oyun ilerledikçe büyür.</p>
 <p>Ya öde ya da kısa bir mini oyunla mücadele et (30 dk, 8 enerji). Kazanırsan hiçbir şey kaybetmez, ödül alırsın; kaybedersen para, dekor, kargo, yakıt, sağlık ya da moral gider. Gün biterken karar vermediysen kaybetmiş sayılırsın.</p>` },
-  { id: 'casino', title: 'Kumarhane', body: `<p>16:00–02:00. Kart, çark, zar, meteor yarışı ve slot. El başı 15 dk ve 3 enerji, günde en fazla 8 el. Kasa uzun vadede kazanır.</p>` },
+  { id: 'casino', title: 'Kumarhane', body: `<p>16:00–02:00. Kart, çark, zar, meteor yarışı ve slot. El başı 15 dk ve 3 enerji, günde en fazla 8 el. Kasa uzun vadede kazanır; her masanın kasa avantajı kartında yazar. Haftanın 5. günü <b>şanslı gece</b>: kasa avantajı yok.</p>` },
   { id: 'costs', title: 'Masraflar ve gecikmeler', body: `
 <ul><li><b>Her gece</b>: oksijen (zorunlu); yemek, ısıtma, hane ihtiyaçları (senin kararın).</li>
 <li><b>Her 7 günde</b>: rıhtım ücreti ve gemi bakımı (gemi büyüdükçe artar), Ela varsa okul. Rex yarışı sonuçlanır.</li>
 <li><b>Her 28 günde</b>: kira, ev aidatı, bahçe/atölye bakımı, taksit ve faiz.</li>
-<li><b>Gecikme</b>: zorunlu ödemeye para yetmezse kalan %10 cezayla gecikmiş borca yazılır. 3 gecikmede oyun biter.</li></ul>` },
+<li><b>Beklenmedik masraf</b>: 10–14 günde bir; öde, ertele ya da kendin onar.</li>
+<li><b>Yeni gemi</b>: ilk 7 gece rıhtım ve bakım yarı fiyat. Satın almadan önce tersane önerilen rezervi gösterir.</li>
+<li><b>Gecikme</b>: zorunlu ödemeye para yetmezse kalan %10 cezayla gecikmiş borca yazılır. 3 gecikmede oyun biter. Üstteki Borç düğmesi ödeme takvimini açar.</li></ul>` },
+  { id: 'ease', title: 'Kolaylıklar', body: `
+<ul><li><b>Otomatik yakıt</b> (açık): dalış ve teslimattan önce yakıt azsa tankı doldurur, akşam için en az ₡150 bırakır.</li>
+<li><b>Otomatik satış</b> (kapalı): dalıştan önce ambar %60'tan doluysa eser ve sipariş eşyaları dışındakini %5 aracı payıyla satar.</li>
+<li>İş bitince <b>Benzer iş</b> ya da <b>Tekrar dal</b> düğmesiyle tek dokunuşla devam et.</li>
+<li>Enerji bir işe yetmiyorsa reklam teklifi doğrudan iş kartında çıkar.</li>
+<li>Seyir Defteri → Ayarlar: yavaş mini oyunlar (%80), büyük yazı, titreşim, solak düzeni.</li></ul>` },
   { id: 'social', title: 'Günün Avı ve paylaşım', body: `<p>Haritadaki <b>Günün Avı</b>: herkes için aynı alan, 45 saniye; saat ve enerji harcamaz. Skorunu ve meydan okuma kodunu paylaş, arkadaşının kodunu girip onu geçmeye çalış. Seyir Defteri'nden haftanı, bültenden dünü paylaşabilirsin.</p>` },
 ];
 

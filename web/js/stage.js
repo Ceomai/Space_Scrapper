@@ -23,6 +23,12 @@ Stage.open = game => {
   game.canvas = cv;
   const fit = () => {
     const st = el.querySelector('#miniStage'), bw = st.clientWidth, bh = st.clientHeight;
+    // fill: oyun alanı dikeyde ekrana yayılır, içerik ortalanır (siyah boşluk kalmaz)
+    if (game.fill && bw > 0 && bh > 0) {
+      const baseH = game.baseH || (game.baseH = game.H);
+      game.H = Math.max(baseH, Math.min(Math.round(game.W * bh / bw), Math.round(baseH * 1.7)));
+      game.dy = Math.round((game.H - baseH) / 2);
+    }
     const s = Math.min(bw / game.W, bh / game.H);
     wrap.style.width = Math.floor(game.W * s) + 'px'; wrap.style.height = Math.floor(game.H * s) + 'px';
     const r = SS.Art.setup(cv, game.W, game.H, .5);
@@ -34,7 +40,7 @@ Stage.open = game => {
   };
   game._fit = fit; fit();
   window.addEventListener('resize', fit);
-  const toLocal = e => { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) / b.width * game.W, y: (e.clientY - b.top) / b.height * game.H }; };
+  const toLocal = e => { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) / b.width * game.W, y: (e.clientY - b.top) / b.height * game.H - (game.dy || 0) }; };
   cv.addEventListener('pointerdown', e => { e.preventDefault(); const p = toLocal(e); game.pointer && game.pointer(p.x, p.y, 'down'); });
   el.querySelectorAll('[data-ctl]').forEach(b => {
     const id = b.dataset.ctl;
@@ -57,14 +63,16 @@ Stage.hud = html => { const h = document.getElementById('miniHud'); if (h && h._
 
 function loop(now) {
   if (!cur) return;
-  const dt = Math.min(.05, (now - last) / 1000); last = now;
+  const dt = Math.min(.05, (now - last) / 1000) * (SS.miniSpeed ? SS.miniSpeed() : 1); last = now;
   const g = cur;
   if (!g.done) { g.t += dt; g.update(dt, dt * 60); }
   if (cur !== g) return;
-  g.ctx.save(); g.draw(g.ctx, SS.Art.P(), g.t); g.ctx.restore();
+  g.ctx.save();
+  if (g.dy) { g.ctx.fillStyle = SS.Art.P().space0; g.ctx.fillRect(0, 0, g.W, g.H); g.ctx.translate(0, g.dy); }
+  g.draw(g.ctx, SS.Art.P(), g.t); g.ctx.restore();
   SS.Art.post(g.canvas, g.ctx, g.pixel);
   g.tctx.clearRect(0, 0, g.W, g.H);
-  if (g.drawUI) { g.tctx.save(); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }
+  if (g.drawUI) { g.tctx.save(); if (g.dy) g.tctx.translate(0, g.dy); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }
   if (g.done) {
     const res = g.result; Stage.close();
     g.onEnd && g.onEnd(res);

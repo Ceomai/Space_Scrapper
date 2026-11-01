@@ -262,7 +262,9 @@ const stake = n => {
   S.casino.today++; S.casino.chips++; SS.passTime(CAS.mins); S.energy = Math.max(0, S.energy - CAS.en);
   return true;
 };
-const settle = (n, mult) => {
+// Şanslı gece (her haftanın 5. günü): ödeme beklenen değeri 1,0 olacak şekilde büyütülür; kasa avantajı yok
+const settle = (n, mult, ev) => {
+  if (mult > 0 && ev && ev < 1 && SS.luckyNight && SS.luckyNight()) mult = mult / ev;
   const win = Math.round(n * mult);
   if (win) S.cash += win;
   S.casino.net += win - n;
@@ -271,7 +273,7 @@ const settle = (n, mult) => {
   return win;
 };
 const betRow = () => `<div class="row bets">${casBets().map(b => `<button class="chip-bet ${bet() === b ? 'on' : ''}" data-act="casBet" data-b="${b}" ${BUSY ? 'disabled' : ''}>${fmt(b)}</button>`).join('')}</div>`;
-const casHead = (name, rule) => `<p class="eyebrow">${name} · el başı ${CAS.mins} dk, ${CAS.en} enerji · bugün ${S.casino.today}/${CAS.limit}</p>${rule ? `<p class="muted">${rule}</p>` : ''}`;
+const casHead = (name, rule) => `<p class="eyebrow">${name} · el başı ${CAS.mins} dk, ${CAS.en} enerji · bugün ${S.casino.today}/${CAS.limit}${SS.luckyNight && SS.luckyNight() ? ' · ŞANSLI GECE' : ''}</p>${rule ? `<p class="muted">${rule}</p>` : ''}`;
 const endRow = () => `<div class="row">${btn('Masadan kalk', 'close', {}, 'ghost', BUSY)}</div>`;
 
 /* --- Yıldız Çarkı --- */
@@ -309,7 +311,7 @@ ACT.wheelSpin = () => {
   const cv = document.getElementById('wheelCv'); WDEG = end;
   requestAnimationFrame(() => requestAnimationFrame(() => { cv.style.transition = 'transform 2.6s cubic-bezier(.15,.85,.2,1)'; cv.style.transform = `rotate(${end}deg)`; }));
   SS.sfx('fire');
-  setTimeout(() => { BUSY = false; const m = WHEEL[i], w = settle(n, m); wheelView(m ? `×${String(m).replace('.', ',')}: ${fmt(w)} geri aldın${w > n ? '!' : '.'}` : 'Boş dilim. Bahis kasanın.'); }, 2750);
+  setTimeout(() => { BUSY = false; const m = WHEEL[i], w = settle(n, m, CAS_EV.wheel); wheelView(m ? `×${String(m).replace('.', ',')}: ${fmt(w)} geri aldın${w > n ? '!' : '.'}` : 'Boş dilim. Bahis kasanın.'); }, 2750);
 };
 
 /* --- Kara Delik Zarı --- */
@@ -333,7 +335,7 @@ ACT.diceRoll = d => {
     if (++k > 12) {
       clearInterval(iv); DV = fin; BUSY = false;
       const s = fin[0] + fin[1], hit = d.k === 'lo' ? s <= 6 : d.k === 'hi' ? s >= 8 : d.k === 'seven' ? s === 7 : fin[0] === fin[1];
-      const m = DICE.find(x => x[0] === d.k)[2], w = settle(n, hit ? m : 0);
+      const m = DICE.find(x => x[0] === d.k)[2], w = settle(n, hit ? m : 0, CAS_EV.dice[d.k]);
       diceView(hit ? `Toplam ${s}. Bildin: ${fmt(w)}!` : `Toplam ${s}. Bu sefer olmadı.`);
     }
   }, 70);
@@ -363,7 +365,7 @@ ACT.raceGo = () => {
       const el = document.getElementById('rc' + i); if (el) el.style.left = (RPOS[i] * 92) + '%';
     });
     if (!all) return requestAnimationFrame(step);
-    BUSY = false; const ok = win === RPICK, w = settle(n, ok ? RACERS[RPICK].m : 0);
+    BUSY = false; const ok = win === RPICK, w = settle(n, ok ? RACERS[RPICK].m : 0, RACERS[RPICK].m * RACERS[RPICK].w);
     raceView(ok ? `${RACERS[win].n} kazandı! ${fmt(w)} aldın.` : `${RACERS[win].n} kazandı. Senin meteorun geride kaldı.`);
   };
   requestAnimationFrame(step);
@@ -390,24 +392,37 @@ ACT.slotPull = () => {
     if (t > 600 + 2 * 380 + 120) {
       clearInterval(iv); SR = fin; BUSY = false;
       const tri = fin[0] === fin[1] && fin[1] === fin[2], pair = !tri && (fin[0] === fin[1] || fin[1] === fin[2] || fin[0] === fin[2]);
-      const m = tri ? TRIPLE[fin[0]] : pair ? PAIR : 0, w = settle(n, m);
+      const m = tri ? TRIPLE[fin[0]] : pair ? PAIR : 0, w = settle(n, m, CAS_EV.slot);
       slotView(tri ? `Üçlü ${SYM[fin[0]]}! ${fmt(w)} kazandın!` : pair ? `İkili: ${fmt(w)} geri geldi.` : 'Boş. Makine sana göz kırptı.');
     }
   }, 60);
 };
 
+// Beklenen geri dönüş (1 = başabaş); kasa avantajı = 1 − EV
+const CAS_EV = (() => {
+  const p = SW.map(w => w / 15), tri = p.reduce((a, q, i) => a + q * q * q * TRIPLE[i], 0);
+  const allSame = p.reduce((a, q) => a + q * q * q, 0), pairP = p.reduce((a, q) => a + 3 * q * q * (1 - q), 0);
+  return { wheel: WHEEL.reduce((a, m) => a + m, 0) / WHEEL.length, dice: { lo: 2.2 * 15 / 36, hi: 2.2 * 15 / 36, seven: 5 * 6 / 36, dbl: 5 * 6 / 36 },
+    race: Math.max(...RACERS.map(r => r.m * r.w)), raceMin: Math.min(...RACERS.map(r => r.m * r.w)), slot: tri + pairP * PAIR, _all: allSame };
+})();
+SS.CAS_EV = CAS_EV;
+const edge = ev => `%${Math.max(0, Math.round((1 - ev) * 100))}`;
+SS.casEdges = () => ({ wheel: edge(CAS_EV.wheel), dice: `${edge(CAS_EV.dice.lo)}–${edge(CAS_EV.dice.seven)}`, race: `${edge(CAS_EV.race)}–${edge(CAS_EV.raceMin)}`, slot: edge(CAS_EV.slot) });
 function casinoView() {
   const [tab, bar] = SS.ui.subTabs('casino', [['games', 'Masalar'], ['lounge', 'Salon']]);
   const blk = casBlock();
   let h = bar;
   if (tab === 'games') {
     const G = [
-      ['cards', 'cards', 'Yüksek mi alçak mı', 'Gus\'un kart masası buraya taşındı. Seriyi uzat, potu büyüt, doğru anda çekil.', `Bu gece ${Math.max(0, 4 - S.cardsToday)} el`, S.cardsToday >= 4 || S.energy < 5 || !SS.timeOk(20)],
+      ['cards', 'cards', 'Yüksek mi alçak mı', 'Gus\'un kart masası buraya taşındı. Seriyi uzat, potu büyüt, doğru anda çekil. Kasa avantajı: beceriye bağlı.', `Bu gece ${Math.max(0, 4 - S.cardsToday)} el`, S.cardsToday >= 4 || S.energy < 5 || !SS.timeOk(20)],
       ['wheel', 'radar', 'Yıldız Çarkı', 'On iki dilimli çark. ×4 dilimi tek, boşlar çok.', '×0 – ×4', !!blk],
       ['dice', 'box', 'Kara Delik Zarı', 'Alçak, yüksek, tam 7 ya da çift. Hızlı ve acımasız.', '×2,2 – ×5', !!blk],
       ['race', 'ship', 'Meteor Yarışı', 'Dört meteor, dört oran. Favoriye mi, sürprize mi?', '×2 – ×9', !!blk],
       ['slot', 'crystal', 'Nebula Slotu', 'Üç makara, beş sembol. Elmas üçlüsü ×40.', '×0,9 – ×40', !!blk],
     ];
+    const E = SS.casEdges(), lucky = SS.luckyNight && SS.luckyNight();
+    G.forEach(g => { if (E[g[0]]) g[3] += ` Kasa avantajı: ${lucky ? '<b>bu gece yok</b>' : E[g[0]]}.`; });
+    h += lucky ? `<div class="alert info"><b>Şanslı gece!</b> Bu gece ödemeler kasa avantajını sıfırlayacak kadar büyük: uzun vadede başabaş oynarsın.</div>` : `<p class="muted cas-note">Şanslı gece her haftanın 5. günü (sıradaki: ${S.day + ((5 - S.day % 7) + 7) % 7}. gün): o gece kasa avantajı yok.</p>`;
     h += `<p class="muted cas-note">${SS.hasCrew('ela') ? 'Ela kapıda Pıtırcık\'la bekliyor; çocuklar giremez. ' : ''}${blk ? `<b>${blk}</b>` : `Bugün ${S.casino.today}/${CAS.limit} el oynadın. Kazanç Rex yarışına sayılmaz.`}</p>`;
     h += `<div class="list">${G.map(([id, ic, n, desc, odds, dis]) => `<article class="job j-cas"><header><span class="pcode">MSA</span><h3>${n}</h3><b class="pay">${odds}</b></header>
       <div class="row-i">${icon(ic, 36)}<p>${desc}</p></div><footer><small>${id === 'cards' ? '20 dk · 5 enerji' : `${CAS.mins} dk · ${CAS.en} enerji`}</small>${btn('Otur', 'casPlay', { g: id }, 'sm primary', dis)}</footer></article>`).join('')}</div>`;

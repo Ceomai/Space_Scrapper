@@ -4,15 +4,15 @@
 /* ---------- yol arkadaşları ---------- */
 SS.COMPANIONS = [
   { id: 'pit', name: 'Pıtırcık', kind: 'Robot gemi kedisi', daily: 5, weekly: 0, weeklyName: '',
-    pros: ['Seninle: hurda avında kara kutuların içini gösterir, ayrıştırmada tehlikelileri işaretler', 'Seninle: her iş sonrası moral +3', 'Çalışsın: fare avı, gecede ₡20–40', 'Bağ 60+: her sabah moral +5'],
+    pros: ['Seninle: hurda avında kara kutuların içini gösterir, ayrıştırmada tehlikelileri işaretler', 'Seninle: her iş sonrası moral +3', 'Çalışsın: fare avı, gecede ₡20–40', 'Bağ 60+: her sabah moral +5', 'Pasif · seninle: istasyon içi yolculuk −%20'],
     cons: ['Her gece şarj ve yağ ister (₡5); şarjsız kalırsa ertesi gün kapalıdır', 'Ara sıra bir şeyleri bozar'],
     work: { name: 'Fare avı', pay: [20, 40] } },
   { id: 'ela', name: 'Ela', kind: '12 yaşındaki kardeşin', daily: 9, weekly: 60, weeklyName: 'Ela\'nın okul ücreti',
-    pros: ['Seninle: tamirde +2 ipucu ve +15 saniye', 'Seninle: ayrıştırmada her doğru +₡2', 'Çalışsın: kantinde garsonluk, gecede ₡25–45', 'Bağ 60+: her gece moral +5'],
+    pros: ['Seninle: tamirde +2 ipucu ve +15 saniye', 'Seninle: ayrıştırmada her doğru +₡2', 'Çalışsın: kantinde garsonluk, gecede ₡25–45', 'Bağ 60+: her gece moral +5', 'Pasif · seninle: tüm satışlar +%3'],
     cons: ['Her gece yemek (₡9), her hafta okul (₡60)', 'Aç kalırsa hastalanır; ilaçsız 3 gece geçerse yanından alınır', 'Bağ 30 altı: her gece moral -4'],
     work: { name: 'Kantinde garsonluk', pay: [25, 45] } },
   { id: 'tolga', name: 'Tolga', kind: 'Eski mürettebat dostun', daily: 12, weekly: 0, weeklyName: '',
-    pros: ['Çalışsın: ayrıştırma vardiyası, gecede ₡70–110', 'Seninle: hurda avında vinç %40 hızlı', 'Seninle: teslimatta +40 yakıt ve daha geniş pist', 'Pazarlıkta Zara daha yüksek fiyata razı olur'],
+    pros: ['Çalışsın: ayrıştırma vardiyası, gecede ₡70–110', 'Seninle: hurda avında vinç %40 hızlı', 'Seninle: teslimatta +40 yakıt ve daha geniş pist', 'Pazarlıkta Zara daha yüksek fiyata razı olur', 'Pasif · seninle: tamirde +15 saniye, teslimatta +%10 ödeme'],
     cons: ['Her gece yemek (₡12)', 'Riskli planlar önerir; bağı 25\'in altına düşerse gitmek ister'],
     work: { name: 'Ayrıştırma vardiyası', pay: [70, 110] } },
 ];

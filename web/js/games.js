@@ -151,7 +151,11 @@ G.scrap = (zoneId, onEnd, ct) => {
   const deepOK = daily || !SS.hasLic || SS.hasLic('scrap2');
   // Serbest dalış primi: sözleşmesiz dalışta yükün tamamı senin, değerler %25 fazla ve eser şansı yüksek
   const freeDive = !ct && !daily;
-  const zm = daily ? Z.mult : Z.mult * (S.flags.scrapBoost || 1) * (sniffed ? 1.3 : 1) * (freeDive ? 1.25 : 1);
+  // Aynı gün art arda dalış yorar: günün 4. dalışından itibaren her biri %15 daha az değer getirir
+  const fat = daily ? 1 : SS.scrapFatigue(true);
+  if (ct && !daily) ct.fat = fat;
+  if (fat < 1) g.helpers.push(`Bugünkü ${S.today.dives}. dalış: değerler −%${Math.round((1 - fat) * 100)}`);
+  const zm = daily ? Z.mult : Z.mult * (S.flags.scrapBoost || 1) * (sniffed ? 1.3 : 1) * (freeDive ? 1.25 : 1) * fat;
   const reach = daily ? 11 : 6 + SS.lvl('magnet') * 5;
   const extendSp = daily ? 7.9 : 6.5 + (SS.lvl('claw') + (B.oil ? 1 : 0)) * 1.4;
   if (daily) g.helpers = ['Herkes aynı alanda, eşit gemiyle oynar'];
@@ -204,7 +208,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     // sözleşme hedefleri sahada mutlaka bulunsun
     if (ct) ct.kinds.forEach(k => { mix[k] = Math.max(mix[k] || 0, Math.ceil((ct.qty + 1) / ct.kinds.length)); });
     order.forEach(k => add(k, mix[k] || 0));
-    if (Z.relics.length && (!SS.hasLic || SS.hasLic('scrap2')) && (S.relicNext || Math.random() < (freeDive ? (SS.hard() ? .45 : .55) : (SS.hard() ? .2 : .25))) && !(ct && ct.daily)) {
+    if (Z.relics.length && (!SS.hasLic || SS.hasLic('scrap2')) && (S.relicNext || Math.random() < (freeDive ? (SS.hard() ? .45 : .55) : (SS.hard() ? .2 : .25)) * (Z.relics.filter(r => !S.album[r]).length === 1 ? 2 : 1)) && !(ct && ct.daily)) {
       S.relicNext = false;
       const unfound = Z.relics.filter(r => !S.album[r]);
       const id = unfound.length && Math.random() < .75 ? pick(unfound) : pick(Z.relics);
@@ -532,8 +536,8 @@ G.deliver = (ct, onEnd) => {
 G.repair = (job, onEnd) => {
   const N = job.size, W = 360, H = 470, cs = 300 / N, ox = 30, oy = 110;
   const tk = SS.lvl('toolkit');
-  const g = { title: 'Tamir: ' + job.what, W, H, quitLabel: 'Vazgeç', controls: [{ id: 'hint', label: 'İpucu', cls: '' }],
-    helpers: [SS.assist('ela') && 'Ela: +2 ipucu, +15 sn', tk && `Takım çantası ${tk}: +${tk} ipucu, +${tk * 8} sn`, S.skills.eng && `Mühendislik ${S.skills.eng}: +${S.skills.eng * 6} sn`].filter(Boolean) };
+  const g = { title: 'Tamir: ' + job.what, W, H, fill: true, quitLabel: 'Vazgeç', controls: [{ id: 'hint', label: 'İpucu', cls: '' }],
+    helpers: [SS.assist('ela') && 'Ela: +2 ipucu, +15 sn', SS.assist('tolga') && 'Tolga: +15 sn', tk && `Takım çantası ${tk}: +${tk} ipucu, +${tk * 8} sn`, S.skills.eng && `Mühendislik ${S.skills.eng}: +${S.skills.eng * 6} sn`].filter(Boolean) };
   const NB = 1, EB = 2, SB = 4, WB = 8;
   const rot = m => ((m << 1) | (m >> 3)) & 15;
   const grid = [];
@@ -576,7 +580,7 @@ G.repair = (job, onEnd) => {
   let hints = rmods.includes('nohint') ? 0 : Math.floor(S.skills.eng / 2) + (SS.hard() ? 0 : 1) + (SS.assist('ela') ? 2 : 0) + tk + (solder ? 2 : 0) + (SS.perk('ela', 90) ? 1 : 0);
   if (solder) g.helpers.push('Lehim seti: +2 ipucu');
   if (rmods.length) g.helpers.push(...(job.modNames || []));
-  const timeMax = (SS.hard() ? 66 : 78) + S.skills.eng * 6 + SS.moraleTime() + (N - 4) * 18 + (SS.assist('ela') ? 15 : 0) + tk * 8 + (rmods.includes('rush') ? -12 : 0);
+  const timeMax = (SS.hard() ? 66 : 78) + S.skills.eng * 6 + SS.moraleTime() + (N - 4) * 18 + (SS.assist('ela') ? 15 : 0) + (SS.assist('tolga') ? 15 : 0) + tk * 8 + (rmods.includes('rush') ? -12 : 0);
   let time = timeMax;
   const fx = SS.FX.make();
   const updHint = () => SS.Stage.setCtl('hint', `İpucu (${hints})`, hints <= 0);

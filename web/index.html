@@ -170,7 +170,7 @@ main>*{flex-shrink:0}
 :root[data-style="pixel"] .btn.sm{font-size:18px} :root[data-style="pixel"] .btn.block{font-size:22px}
 
 /* ---------- dok ---------- */
-.dock{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:6px;background:var(--surface);border-top:1px solid var(--line2);padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px))}
+.dock{display:grid;grid-template-columns:1fr 1.35fr 1fr .95fr;gap:6px;background:var(--surface);border-top:1px solid var(--line2);padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px))}
 .dock button{display:flex;flex-direction:column;align-items:center;gap:1px;background:transparent;border:1px solid transparent;color:var(--muted);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:6px 4px;cursor:pointer;min-width:0}
 .dock button span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dock .dk-ico{font-size:17px;line-height:1}
@@ -529,6 +529,32 @@ body.in-mini{overflow:hidden}
 
 @media (max-width:420px){.hud-cash span{display:none}.reps{gap:5px}.prices{grid-template-columns:repeat(3,minmax(0,1fr))}.choice.three{grid-template-columns:1fr 1fr 1fr}.album{grid-template-columns:repeat(3,minmax(0,1fr))}.ach{grid-template-columns:1fr}.sortbrief{gap:4px}}
 @media (prefers-reduced-motion:reduce){.sheet{animation:none}.btn,.toast{transition:none}}
+
+/* ---------- kolaylık paketi ---------- */
+button.hud-loc{background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
+button.hud-loc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip-btn{border:1px solid var(--line);padding:1px 7px;min-height:28px;background:var(--surface2);color:var(--muted);font:inherit;cursor:pointer}
+.chip-btn b{color:var(--ink);font-weight:400} .chip-btn.neg,.chip-btn.neg b{color:var(--bad)}
+.plan{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.plan b{color:var(--ink);font-weight:400} .plan .neg{color:var(--bad)}
+.plan-go{margin-left:auto;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--ink);font:inherit;padding:3px 8px;cursor:pointer}
+.plan-go small{display:inline;font-size:11px}
+:root[data-style="pixel"] .plan,:root[data-style="pixel"] .chip-btn{font-size:16px}
+.dock button.late{color:var(--warn);border-color:var(--warn)}
+.tag.hot{border-color:var(--accent);color:var(--accent)} .tag.star{border-color:var(--good);color:var(--good)}
+.job.best{box-shadow:inset 3px 0 0 var(--good)}
+.ad-inline{border-color:var(--warn)!important}
+.node .rk{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:4px;background:var(--accent);color:var(--btn-ink);font-style:normal;font-size:11px;border-radius:50%}
+.kv.cal li{align-items:flex-start} .kv.cal small{font-size:12px}
+:root[data-big="1"] .hud,:root[data-big="1"] main>*:not(.map-wrap),:root[data-big="1"] .dock,:root[data-big="1"] #modal .sheet{zoom:1.12}
+:root[data-big="1"] .map-top,:root[data-big="1"] .map-bottom{zoom:1.1}
+:root[data-left="1"] .dock{direction:rtl} :root[data-left="1"] .dock button{direction:ltr}
+:root[data-left="1"] .mini-ctl{flex-direction:row-reverse}
+:root[data-left="1"] #modal .row{flex-direction:row-reverse;justify-content:flex-end}
+:root[data-left="1"] .map-bottom{direction:rtl} :root[data-left="1"] .map-bottom .qb{direction:ltr}
+.weeksum{border:1px solid var(--line2);padding:8px 10px;margin:8px 0;background:var(--surface2)}
+.tips{padding-left:18px;display:grid;gap:6px}
+.row-item>.chk{width:34px;height:34px;flex:none}
 </style>
 
 <div id="app"></div>
@@ -549,6 +575,7 @@ body.in-mini{overflow:hidden}
 <script charset="utf-8" src="js/ui.js"></script>
 <script charset="utf-8" src="js/expand.js"></script>
 <script charset="utf-8" src="js/content2.js"></script>
+<script charset="utf-8" src="js/polish.js"></script>
 <script charset="utf-8" src="js/guide.js"></script>
 <script>
 (function(){

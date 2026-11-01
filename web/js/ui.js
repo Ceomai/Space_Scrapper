@@ -125,14 +125,15 @@ function hud() {
   const v = VIEW_NAME(), late = S.time >= 1320;
   return `<header class="hud">
     <div class="hud-row">
-      <div class="hud-loc"><span class="pcode">${v.code}</span><b>${v.name}</b></div>
+      <button class="hud-loc" data-act="ctxHelp" aria-label="${v.name} için rehber"><span class="pcode">${v.code} ?</span><b>${v.name}</b></button>
       <div class="hud-clock ${late ? 'late' : ''}"><b>${SS.clock()}</b><span>Gün ${S.day} · Ay ${Math.floor((S.day - 1) / 28) + 1}</span></div>
       <div class="hud-cash"><b>${fmt(S.cash)}</b><span>${SS.rank().name}</span></div>
       <button class="help" data-act="menu" aria-label="Menü">☰</button>
     </div>
     <div class="gauges">${seg('Enerji', S.energy, SS.maxEnergy(), 'en')}${seg('Tokluk', S.hunger, 100, 'hu')}${seg('Sağlık', S.health, 100, 'he')}${seg('Moral', S.morale, 100, 'mo')}</div>
-    ${SS.adsLeft && SS.adsLeft() > 0 ? `<button class="ad-chip" data-act="adEnergy" aria-label="Reklam izle, enerji kazan">⚡ +${SS.AD.energy} enerji <small>reklam ${SS.adsLeft()}/${SS.AD.perDay}</small></button>` : ''}
-    <div class="chips"><span>Yakıt <b>${S.fuel}/${SS.tankCap()}</b></span><span>Kargo <b>${SS.cargoUsed()}/${SS.cargoCap()}</b></span><span>Torpido <b>${S.torps}</b></span><span class="${S.arrears ? 'neg' : ''}">Borç <b>${fmt(S.loan + S.arrears)}</b></span></div>
+    ${SS.adsLeft && SS.adsLeft() > 0 && S.energy < 50 ? `<button class="ad-chip" data-act="adEnergy" aria-label="Reklam izle, enerji kazan">⚡ +${SS.AD.energy} enerji <small>reklam ${SS.adsLeft()}/${SS.AD.perDay}</small></button>` : ''}
+    <div class="chips"><span>Yakıt <b>${S.fuel}/${SS.tankCap()}</b></span><span>Kargo <b>${SS.cargoUsed()}/${SS.cargoCap()}</b></span><span>Torp. <b>${S.torps}</b></span><button class="chip-btn ${S.arrears || S.strikes ? 'neg' : ''}" data-act="debtCal" aria-label="Borç ve ödeme takvimi">Borç <b>${fmt(S.loan + S.arrears)}</b>${SS.M().deadline && S.loan > 0 ? ` · ${SS.M().deadline - S.day + 1} gün` : ''}</button></div>
+    ${SS.planStrip ? SS.planStrip() : ''}
   </header>`;
 }
 function dock() {
@@ -140,7 +141,8 @@ function dock() {
   return `<nav class="dock">
     <button class="${S.view === 'map' ? 'on' : ''}" data-act="view" data-v="map"><span class="dk-ico">◎</span><span>Harita</span></button>
     ${atLoc ? `<button class="on here" data-act="view" data-v="${S.view}"><span class="dk-ico">▣</span><span>${SS.loc(S.view).name}</span></button>` : `<button data-act="view" data-v="${S.loc}"><span class="dk-ico">▣</span><span>${SS.loc(S.loc).name}</span></button>`}
-    <button class="${S.view === 'log' ? 'on' : ''}" data-act="view" data-v="log"><span class="dk-ico">≡</span><span>Seyir Defteri</span></button>
+    <button class="${S.view === 'log' ? 'on' : ''}" data-act="view" data-v="log"><span class="dk-ico">≡</span><span>Defter</span></button>
+    <button class="${S.time >= 1260 ? 'late' : ''}" data-act="goSleep" aria-label="Eve git ve uyu"><span class="dk-ico">☾</span><span>Uyu${S.loc !== 'home' ? ` · ${SS.travelCost('home').min} dk` : ''}</span></button>
   </nav>`;
 }
 
@@ -157,13 +159,15 @@ function mapView() {
     ${S.time >= 1380 ? `<div class="map-alert">Saat geç: eve dön ve uyu</div>` : ''}
     ${SS.LOCS.map(l => {
       const here = l.id === S.loc, c = SS.travelCost(l.id), open = l.id === 'home' || SS.isOpen(l.id, S.time + c.min);
-      const st = SS.tutStep(), aim = st && st.to === l.id && !here;
+      const st = SS.tutStep(), aim = st && st.to === l.id && !here, rk = (S.route || []).indexOf(l.id);
       return `<button class="node ${here ? 'here' : ''} ${open ? '' : 'closed'} ${aim ? 'aim' : ''}" style="left:${l.x * 100}%;top:${l.y * 100}%" data-act="go" data-to="${l.id}" aria-label="${l.name}, ${here ? 'buradasın' : open ? `${c.min} dakika` : 'kapalı'}">
-        <span class="n-name">${l.name}</span><span class="n-cost">${here ? 'Buradasın' : open ? `${c.min} dk · ${c.energy} en` : `Kapalı · ${SS.openLabel(l.id)}`}</span></button>`;
+        <span class="n-name">${rk >= 0 ? `<i class="rk">${rk + 1}</i>` : ''}${l.name}</span><span class="n-cost">${here ? 'Buradasın' : open ? `${c.min} dk · ${c.energy} en` : `Kapalı · ${SS.openLabel(l.id)}`}</span></button>`;
     }).join('')}</div>
     <div class="map-bottom">
       ${S.decision ? `<button class="qb hot" data-act="mapPanel" data-p="decision"><b>!</b><span>Karar</span></button>` : ''}
-      <button class="qb" data-act="mapPanel" data-p="goals"><b>${done}/3</b><span>Hedefler</span></button>
+      <button class="qb ${S.mile && !S.mile.done && S.mile.due - S.day <= 1 ? 'warn' : ''}" data-act="mapPanel" data-p="goals"><b>${done}/3</b><span>Hedefler</span></button>
+      <button class="qb" data-act="route"><b>${S.route && S.route.length ? S.route.length : '↝'}</b><span>Rota</span></button>
+      ${S.billFix ? `<button class="qb hot" data-act="billFix"><b>🔧</b><span>Onar</span></button>` : ''}
       ${SS.crewList().length ? `<button class="qb ${sickN ? 'warn' : ''}" data-act="mapPanel" data-p="crew"><b>${SS.crewList().length}</b><span>Hane</span></button>` : ''}
       ${S.trial && !S.trial.done ? `<button class="qb hot" data-act="trial"><b>⚠</b><span>Tehdit</span></button>` : ''}
       <button class="qb daily" data-act="dailyPanel"><b>${SS.pendingChallenge ? '⚔' : '★'}</b><span>Günün Avı</span></button>
@@ -179,6 +183,7 @@ function mapPanel(p) {
   if (p === 'goals') return SS.modal(`<p class="eyebrow">Günlük hedefler</p><ul class="goals">${S.goals.map(g => {
     const cur = Math.min(S.today[g.key] || 0, g.target), show = g.key === 'earned' ? `${fmt(cur)} / ${fmt(g.target)}` : `${cur}/${g.target}`;
     return `<li class="${g.done ? 'done' : ''}"><i></i><span>${g.txt}<small>${show}</small></span><b>+${fmt(g.reward)}</b></li>`; }).join('')}</ul>
+    ${S.mile ? (() => { const [c, t] = SS.mileProgress(), dl = S.mile.due - S.day + 1; return `<p class="label">Kilometre taşı · ${S.mile.done ? 'tamamlandı' : `${dl} gün kaldı`}</p><ul class="goals"><li class="${S.mile.done ? 'done' : ''}"><i></i><span>${S.mile.txt}<small>${S.mile.id === 'earn' || S.mile.id === 'debt' ? `${fmt(c)} / ${fmt(t)}` : `${c}/${t}`}</small></span><b>+${fmt(S.mile.reward)}</b></li></ul>`; })() : ''}
     ${S.event ? `<p class="label">Bugünün olayı · ${S.event.title}</p><p>${esc(S.event.text)}</p>` : ''}<div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`);
   if (p === 'crew') return SS.modal(`<p class="eyebrow">Hane</p>${SS.crewList().map(id => { const st = SS.crewStatus(id), c = S.crew[id];
     return `<div class="row-item">${face(id, 44)}<div><b>${SS.comp(id).name}</b><em class="st ${st.cls}">${st.label}</em><small>Görev: ${SS.TASKS.find(t => t.id === c.task).name} · bağ ${c.bond}</small></div></div>`; }).join('')}
@@ -258,6 +263,7 @@ function homeView() {
       <p class="label">Bugünkü görev</p>
       <div class="seg3">${SS.TASKS.map(t => `<button class="dopt ${c.task === t.id ? 'on' : ''}" data-act="task" data-id="${id}" data-t="${t.id}" ${c.down ? 'disabled' : ''}>${t.name}</button>`).join('')}</div>
       <div class="crew-act"><div><b>${ab.name}</b><small>${ab.desc}</small></div>${btn(S.ability[id] ? 'Kullanıldı' : 'Kullan', 'ability', { id }, 'sm', !!S.ability[id] || !SS.canAct(id))}</div>
+      ${SS.PASSIVES && SS.PASSIVES[id] ? `<div class="crew-act"><div><b>Pasif: ${SS.PASSIVES[id].name}</b><small>${SS.PASSIVES[id].desc}</small></div><span class="pill ${SS.PASSIVES[id].on() ? 'good' : ''}">${SS.PASSIVES[id].on() ? 'Etkin' : 'Kapalı'}</span></div>` : ''}
       <div class="crew-act"><div><b>Oda: ${room.name}</b><small>${room.desc}</small></div>${S.rooms[id] ? '<span class="pill good">Kuruldu</span>' : btn(fmt(room.price), 'room', { id }, 'sm ghost', S.cash < room.price)}</div>
     </article>`;
   }).join('')}</div>`, { code: 'HN', aside: btn('?', 'guide', { s: 'crew' }, 'ghost sm q') }) : '<p class="empty">Hanende kimse yok.</p>';
@@ -287,14 +293,21 @@ function jobsView() {
   const [tab, bar] = subTabs('jobs', [['all', 'Tümü'], ['hunt', 'Hurda'], ['deliver', 'Teslimat'], ['repair', 'Tamir'], ['other', 'Diğer']]);
   const nextAt = SS.DAY_START + (SS.win() + 1) * 180;
   let h = `<section class="panel window"><div class="ph"><span class="pcode">İLAN</span><h3>Pencere ${SS.winLabel()}</h3><span class="paside">Yenileme ${SS.clock(nextAt)}</span></div>
-    <p class="muted">İlanlar her 3 saatte bir değişir. ${SS.win() >= 4 ? '<b>Gece zammı: ödemeler %10 fazla.</b>' : '19:00 sonrası gece zammı başlar.'} Rütbe primi +%${Math.round((SS.rankPay() - 1) * 100)}.</p>
+    <p class="muted">İlanlar her 3 saatte bir değişir. ${SS.win() >= 4 ? '<b>Gece zammı: ödemeler %10 fazla.</b>' : '19:00 sonrası gece zammı başlar.'} Rütbe primi +%${Math.round((SS.rankPay() - 1) * 100)}.${SS.moralePay() !== 1 ? ` <b>Moral ${SS.moralePay() > 1 ? 'primi +%5' : 'cezası −%10'}.</b>` : ' Moral 85+ iken ödemeler +%5, 50 altında −%10.'}</p>
     ${SS.lockedJobsNote ? SS.lockedJobsNote() : ''}
     <div class="reps">${[['scrap', 'Hurda'], ['deliver', 'Teslimat'], ['repair', 'Tamir'], ['sort', 'Ayrıştırma']].map(([k, n]) => `<div><small>${n} itibarı</small><b>${SS.repLvl(k)}/5</b><div class="track"><i style="width:${pct(SS.repLvl(k), 5)}%"></i></div></div>`).join('')}</div></section>${bar}`;
   const helpers = ids => { const hs = ids.filter(SS.assist); return hs.length ? `<div class="assists">${hs.map(id => `<span class="assist">${face(id, 22)}${SS.comp(id).name} yardım ediyor</span>`).join('')}</div>` : ''; };
   const TT = { hunt: ['AVL', 'Hurda Sözleşmesi', 'j-hunt'], deliver: ['TSL', 'Kargo Teslimatı', 'j-deliver'], repair: ['TMR', 'Tamir İşi', 'j-repair'], sort: ['AYR', 'Ayrıştırma Vardiyası', 'j-sort'], order: ['SPR', 'Sipariş', 'j-order'] };
+  const blkOf = b => b.done ? null : (SS.jobBlock(b.energy, b.dur) || ((b.type === 'deliver' || b.type === 'hunt') && SS.fuelShort(b.fuel) ? 'Yakıt yetmiyor, Hangar\'dan al.' : null) || (b.type === 'hunt' && S.flags.storm ? 'Güneş fırtınası: bugün dışarı çıkılamaz.' : null) || (b.type === 'order' && SS.orderHave(b) < b.qty ? 'Kargonda yeterli yok.' : null));
+  // En verimli iş (saat başına tahmini kazanç) yıldızla işaretlenir
+  let best = null, bestV = 0;
+  for (const b of S.board) { if (b.done || b.type === 'order' || blkOf(b)) continue; const v = SS.jobEst(b).perHour; if (v > bestV) { bestV = v; best = b.id; } }
+  const fat = SS.scrapFatigue ? SS.scrapFatigue(false) : 1;
+  if (fat < 1) h += `<p class="hint">Bugün ${S.today.dives} dalış yaptın: sıradaki hurda işinin değeri −%${Math.round((1 - fat) * 100)}. Başka işlere geçmenin tam zamanı.</p>`;
   h += S.board.filter(b => tab === 'all' || b.type === tab || (tab === 'other' && (b.type === 'sort' || b.type === 'order'))).map(b => {
     const [code, title, cls] = TT[b.type];
-    const blk = b.done ? null : (SS.jobBlock(b.energy, b.dur) || ((b.type === 'deliver' || b.type === 'hunt') && S.fuel < b.fuel ? 'Yakıt yetmiyor, Hangar\'dan al.' : null) || (b.type === 'hunt' && S.flags.storm ? 'Güneş fırtınası: bugün dışarı çıkılamaz.' : null) || (b.type === 'order' && SS.orderHave(b) < b.qty ? 'Kargonda yeterli yok.' : null));
+    const blk = blkOf(b), est = SS.jobEst(b);
+    const effTxt = b.type === 'order' ? '' : ` · ≈${fmt(est.perHour)}/sa`;
     let body = '', meta = '', pay = '';
     const tags = b.modNames && b.modNames.length ? `<div class="tags">${b.modNames.map(n => `<span class="tag">${n}</span>`).join('')}</div>` : '';
     if (b.type === 'hunt') { body = `<p>${esc(b.text)}</p><div class="row-i">${b.kinds.map(k => icon(k, 34)).join('')}<p><b>Hedef: ${b.label}</b><br><small>Hedefler müşteriye gider; topladığın diğer her şey kargona girer. Hepsini getirirsen +%50 tamamlama primi.</small></p></div>${helpers(['pit', 'tolga'])}`; meta = `${b.zoneName} · ${b.fuel} yakıt · ${dur(b.dur)} · ${b.energy} enerji`; pay = `${fmt(b.fee)} + ${fmt(b.per)}/hedef`; }
@@ -302,8 +315,10 @@ function jobsView() {
     else if (b.type === 'repair') { body = `<p>${esc(b.text)}</p>${tags}${helpers(['ela', 'tolga'])}`; meta = `${b.tierName} · ${b.size}×${b.size} devre · ${dur(b.dur)} · ${b.energy} enerji`; pay = fmt(b.pay); }
     else if (b.type === 'sort') { body = `<p>${esc(b.text)}</p>${helpers(['ela', 'pit'])}`; meta = `${b.time} sn · ${dur(b.dur)} · ${b.energy} enerji`; pay = `${fmt(b.per)}/doğru`; }
     else { const have = SS.orderHave(b); body = `<div class="row-i">${icon(b.kind, 40)}<p><b>${b.buyer}</b> ${b.qty} adet <b>${SS.ITEMS[b.kind].name}</b> istiyor. Kargonda ${have} var. Pazardan çok daha iyi fiyat.</p></div>`; meta = `${dur(b.dur)} · enerji yok`; pay = fmt(b.pay); }
-    return `<article class="job ${cls} ${b.done ? 'done' : ''} ${b.special ? 'special' : ''}"><header><span class="pcode">${code}</span><h3>${b.type === 'sort' ? b.name : title}${b.special ? ' · özel' : ''}</h3><b class="pay">${pay}</b></header>
-      ${body}<footer><small>${meta}</small>${b.done ? '<span class="pill">Bitti</span>' : btn(b.type === 'order' ? 'Teslim et' : 'Kabul et', 'job', { id: b.id }, 'sm primary', !!blk)}</footer>${blk ? `<small class="why">${blk}</small>` : ''}</article>`;
+    const enBlk = blk && !b.done && S.energy < b.energy && SS.adsLeft && SS.adsLeft() > 0 && S.energy + SS.AD.energy >= b.energy;
+    const flags = `${b.hot ? '<span class="tag hot">Günün işi +%25</span>' : ''}${best === b.id ? '<span class="tag star">★ En verimli</span>' : ''}`;
+    return `<article class="job ${cls} ${b.done ? 'done' : ''} ${b.special ? 'special' : ''} ${best === b.id ? 'best' : ''}"><header><span class="pcode">${code}</span><h3>${b.type === 'sort' ? b.name : title}${b.special ? ' · özel' : ''}</h3><b class="pay">${pay}</b></header>
+      ${flags ? `<div class="tags">${flags}</div>` : ''}${body}<footer><small>${meta}${b.done ? '' : effTxt}</small>${b.done ? '<span class="pill">Bitti</span>' : btn(b.type === 'order' ? 'Teslim et' : 'Kabul et', 'job', { id: b.id }, 'sm primary', !!blk)}</footer>${blk ? `<small class="why">${blk}</small>` : ''}${enBlk ? `<div class="row">${btn(`⚡ Reklam izle · +${SS.AD.energy} enerji (${SS.adsLeft()}/${SS.AD.perDay})`, 'adEnergy', {}, 'sm ghost ad-inline')}</div>` : ''}</article>`;
   }).join('');
   return h;
 }
@@ -322,7 +337,7 @@ function hangarView() {
     <div class="list">${SS.ZONES.map(z => {
       if (!SS.zoneLic(z.id)) return `<div class="row-item locked"><div><b>${z.name}</b><small>${SS.LICENSES[SS.ZONE_LIC[z.id]].name} gerekli · Akademi</small></div></div>`;
       if (z.story && S.fragments < 5) return `<div class="row-item locked"><div><b>??? · kayıp sinyal</b><small>Halcyon kayıtları ${S.fragments}/5. Kara kutulardan çıkar.</small></div></div>`;
-      const why = S.flags.storm ? 'Fırtına' : z.fuel > SS.tankCap() ? 'Daha büyük tank' : z.fuel > S.fuel ? 'Yakıt yetmiyor' : SS.jobBlock(SS.COST.scrap, SS.DUR.scrap);
+      const why = S.flags.storm ? 'Fırtına' : z.fuel > SS.tankCap() ? 'Daha büyük tank' : (SS.fuelShort ? SS.fuelShort(z.fuel) : z.fuel > S.fuel) ? 'Yakıt yetmiyor' : SS.jobBlock(SS.COST.scrap, SS.DUR.scrap);
       const stock = Math.round(SS.zoneStock(z.id) * 100), found = z.relics.filter(r => S.album[r]).length;
       return `<div class="row-item zone ${S.pitZone === z.id ? 'sniff' : ''}"><div><b>${z.name}</b><small>${z.desc}</small>
         <small class="meta">${z.fuel} yakıt · değer x${z.mult} · stok %${stock}${z.relics.length ? ` · eser ${found}/3` : ''}${S.pitZone === z.id ? ' · Pıtırcık kokladı +%30' : ''}</small></div>
@@ -465,6 +480,7 @@ function logView() {
   return h; }
   if (tab === 'ach') return h + panel('Başarımlar', `<ul class="ach">${SS.ACH.map(a => `<li class="${S.ach[a.id] ? 'on' : ''}"><b>${a.name}</b><small>${a.desc}</small></li>`).join('')}</ul>`, { code: 'BŞ', aside: `${Object.keys(S.ach).length}/${SS.ACH.length}` });
   h += panel('Görünüm ve anlatım', `${lookControls(false)}${toneControls(S.tone, 'tone')}<div class="row">${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'mute', {}, 'ghost sm')}${btn('Kılavuz', 'guide', { s: 'start' }, 'ghost sm')}${btn('Yeni oyun', 'askWipe', {}, 'ghost sm danger-t')}</div>`, { code: 'AY' });
+  if (SS.a11yPanel) h += SS.a11yPanel();
   h += panel('Zorluk', `<ul class="kv">${SS.DIFF.map((d, i) => `<li><span>${d.name}</span><b>${d.opts[S.diff[i]][0]}</b></li>`).join('')}</ul>${rulesHtml()}`, { code: 'ZR' });
   return h;
 }
@@ -529,6 +545,9 @@ function bulletinModal() {
     ${night.notes.length ? `<p class="label">Gece olanlar</p>${night.notes.map(n => `<p class="note">${esc(n)}</p>`).join('')}` : ''}
     ${B.echoes.length ? `<p class="label">Dünün kararları</p><ul class="echo">${B.echoes.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
     <p class="label">Piyasa ve kulis</p>${B.tease ? `<p><b>Bugün:</b> ${esc(B.tease.text)}</p>` : ''}${mk}${B.event ? `<p>${esc(B.news)}</p>` : ''}
+    ${B.week && SS.weekSumHtml ? SS.weekSumHtml(B.week) : ''}
+    ${B.dailyJob ? `<p><b>Günün işi:</b> ${SS.JOB_NAMES[B.dailyJob]} ilanları bugün %25 fazla öder.</p>` : ''}${B.lucky ? '<p><b>Şanslı gece:</b> Nebula Kumarhanesi bu gece kasa avantajı almıyor.</p>' : ''}
+    ${B.mile ? `<div class="alert info">Yeni kilometre taşı: <b>${esc(B.mile)}</b> · ödül ${fmt(S.mile ? S.mile.reward : 0)}</div>` : ''}
     ${B.decision ? `<div class="alert info">Bugün seni bir karar bekliyor: <b>${B.decision}</b></div>` : ''}
     ${S.trial && !S.trial.done ? `<div class="alert">${esc(S.trial.head)}</div>` : ''}
     <div class="row">${btn(`Güne başla · ${SS.clock()}`, S.trial && !S.trial.done ? 'trial' : 'close', {}, 'primary')}${S.day > 1 ? btn('Dünü paylaş', 'shareDay', {}, 'ghost') : ''}</div></div>`, 'paper-sheet');
@@ -537,9 +556,10 @@ function bulletinModal() {
 /* ---------- sonuç modalları ---------- */
 function afterJob() { SS.afterJobCrew(); SS.checkGoals(); SS.checkAch(); SS.save(); }
 function helpLine(ids) { const h = ids.filter(SS.assist); return h.length ? `<p class="muted">Yardım eden: ${h.map(id => SS.comp(id).name).join(', ')} (bağ +2)</p>` : ''; }
-function resultModal(title, body, ok) {
+function resultModal(title, body, ok, again) {
   render();
-  SS.modal(`<p class="eyebrow">${ok === false ? 'Olmadı' : 'İş bitti'} · ${SS.clock()}</p><h2>${title}</h2>${body}<div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`);
+  const ag = again && SS.againBtn ? SS.againBtn(again) : '';
+  SS.modal(`<p class="eyebrow">${ok === false ? 'Olmadı' : 'İş bitti'} · ${SS.clock()}</p><h2>${title}</h2>${body}<div class="row">${btn('Tamam', 'close', {}, 'primary')}${ag}</div>`);
 }
 function scrapDone(res) {
   afterJob();
@@ -552,7 +572,7 @@ function scrapDone(res) {
     `${K ? `<p>${K.client} için ${K.got}/${K.qty} hedef teslim edildi${K.full ? ', tamamlama primi dahil. Hurda itibarı +1' : ''}. ${K.got ? `Ödeme: <b>${fmt(K.pay)}</b>.` : 'Hiç hedef getiremediğin için ödeme yok.'}</p>` : ''}${items.length ? `<ul class="kv">${Object.entries(counts).map(([k, n]) => `<li><span>${k}</span><b>×${n}</b></li>`).join('')}</ul><p>Pazardaki tahmini değer: <b>${fmt(est)}</b>. Pazarda sat ya da siparişlere teslim et.</p>` : ''}
      ${other.map(o => `<p>• ${o.label}</p>`).join('')}
      ${res.lost ? `<p class="neg">Kargo dolu olduğu için ${res.lost} parça uzayda kaldı.</p>` : ''}
-     ${!items.length && !other.length ? `<p>${SS.fun() ? 'Kanca boşluğu yakaladı. Boşluk değersizdir, denendi.' : 'Yakıt ve zaman gitti. Elde bir şey yok.'}</p>` : ''}${helpLine(['pit', 'tolga'])}${SS.highlight && !SS.highlight.shared ? `<div class="row">${btn('Anı karesini paylaş', 'shareMoment', {}, 'ghost sm')}</div>` : ''}`);
+     ${!items.length && !other.length ? `<p>${SS.fun() ? 'Kanca boşluğu yakaladı. Boşluk değersizdir, denendi.' : 'Yakıt ve zaman gitti. Elde bir şey yok.'}</p>` : ''}${helpLine(['pit', 'tolga'])}${SS.highlight && !SS.highlight.shared ? `<div class="row">${btn('Anı karesini paylaş', 'shareMoment', {}, 'ghost sm')}</div>` : ''}`, undefined, K ? 'hunt' : 'dive');
 }
 
 /* ---------- pazarlık ---------- */
@@ -680,7 +700,7 @@ const ACT = {
         S.fuel -= b.fuel; b.done = true; SS.useJob(b.energy, b.dur); S.stats.runs++; SS.bump('scrap'); S.zoneUse[b.zone] = (S.zoneUse[b.zone] || 0) + 1; SS.save();
         const ct = { kinds: b.kinds, qty: b.qty, per: b.per, label: b.label, got: 0 };
         return SS.Games.scrap(b.zone, res => {
-          const full = ct.got >= ct.qty, pay = ct.got ? b.fee + b.per * ct.got + (full ? Math.round(b.fee * .5) : 0) : 0;
+          const full = ct.got >= ct.qty, pay = ct.got ? Math.round((b.fee + b.per * ct.got + (full ? Math.round(b.fee * .5) : 0)) * (ct.fat || 1)) : 0;
           SS.earn(pay); if (ct.got) { SS.bump('hunt'); S.stats.hunts = (S.stats.hunts || 0) + 1; } if (full) SS.repGain('scrap');
           res.contract = { got: ct.got, qty: ct.qty, pay, full, client: b.client };
           scrapDone(res);
@@ -691,18 +711,19 @@ const ACT = {
       b.done = true; SS.useJob(b.energy, b.dur); SS.save();
       if (b.type === 'deliver') SS.Games.deliver(b, res => {
         const tip = res.tip || 0;
+        if (res.ok && SS.assist('tolga')) res.pay = Math.round(res.pay * 1.1);
         if (res.ok) { SS.earn(res.pay + tip); S.stats.deliver++; SS.bump('deliver'); SS.mood(3); SS.repGain('deliver'); }
         afterJob();
         resultModal(res.ok ? `${fmt(res.pay + tip)} kazandın` : res.quit ? 'Teslimattan vazgeçtin' : 'Kargo dağıldı',
-          (res.ok ? `<p>${b.what[0].toLocaleUpperCase('tr') + b.what.slice(1)} ${b.dest}'ya ulaştı.${tip ? ` Yumuşak iniş bahşişi: ${fmt(tip)}.` : ''} Kalan yakıt bonusu ödemeye eklendi. Teslimat itibarı +1.</p>`
-            : `<p>${res.quit ? 'Müşteri sinirli ama yaşıyorsun.' : SS.fun() ? 'Kargo pistin her yerine saçıldı. Müşteri yine de teşekkür kartı gönderdi. Para yok ama.' : 'Gövde sarsıldı, kargo mahvoldu. Ücret yok.'}</p>`) + helpLine(['tolga']), res.ok);
+          (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what[0].toLocaleUpperCase('tr') + b.what.slice(1)} ${b.dest}'ya ulaştı.${tip ? ` Yumuşak iniş bahşişi: ${fmt(tip)}.` : ''} Kalan yakıt bonusu ödemeye eklendi. Teslimat itibarı +1.</p>`
+            : `<p>${res.quit ? 'Müşteri sinirli ama yaşıyorsun.' : SS.fun() ? 'Kargo pistin her yerine saçıldı. Müşteri yine de teşekkür kartı gönderdi. Para yok ama.' : 'Gövde sarsıldı, kargo mahvoldu. Ücret yok.'}</p>`) + helpLine(['tolga']), res.ok, 'deliver');
       });
       else SS.Games.repair(b, res => {
         let pay = res.pay;
         if (res.ok && SS.assist('tolga') && S.rooms.tolga) pay = Math.round(pay * 1.15);
         if (res.ok) { SS.earn(pay); S.stats.repair++; SS.bump('repair'); SS.repGain('repair'); if ((b.mods || []).includes('loyal')) S.aff.vida = Math.min(100, S.aff.vida + 5); }
         afterJob();
-        resultModal(res.ok ? `${fmt(pay)} kazandın` : 'Tamir yarım kaldı', (res.ok ? `<p>${b.what} yeniden çalışıyor. Tamir itibarı +1.</p>` : '<p>Süre doldu. Müşteri başka bir tamirci çağırdı.</p>') + helpLine(['ela']), res.ok);
+        resultModal(res.ok ? `${fmt(pay)} kazandın` : 'Tamir yarım kaldı', (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what} yeniden çalışıyor. Tamir itibarı +1.</p>` : '<p>Süre doldu. Müşteri başka bir tamirci çağırdı.</p>') + helpLine(['ela', 'tolga']), res.ok, 'repair');
       });
     });
   },
@@ -711,7 +732,7 @@ const ACT = {
     SS.closeModal(); b.done = true; SS.useJob(b.energy, b.dur); SS.save();
     SS.Games.sort(b, res => {
       SS.earn(res.pay); S.stats.sort++; SS.bump('sort'); if (res.right >= res.wrong + res.missed) SS.repGain('sort'); afterJob();
-      resultModal(`${fmt(res.pay)} kazandın`, `<ul class="kv"><li><span>Doğru</span><b>${res.right}</b></li><li><span>Yanlış</span><b>${res.wrong}</b></li><li><span>Kaçan</span><b>${res.missed}</b></li></ul>${helpLine(['ela', 'pit'])}`);
+      resultModal(`${fmt(res.pay)} kazandın`, `<ul class="kv"><li><span>Doğru</span><b>${res.right}</b></li><li><span>Yanlış</span><b>${res.wrong}</b></li><li><span>Kaçan</span><b>${res.missed}</b></li></ul>${helpLine(['ela', 'pit'])}`, true, 'sort');
     });
   },
   scrap: d => job(SS.COST.scrap, SS.DUR.scrap, () => {
