@@ -14,7 +14,7 @@ Mobil öncelikli, Türkçe bir hayat simülasyonu. Çekirdeğinde kanca ile hurd
 
 Bu bağlantılar GitHub Actions ile her `main` güncellemesinde yeniden üretilir (`.github/workflows/`). Bağlantı adresleri değişmez.
 
-- **Web:** Depo ayarlarında Settings → Pages → Source: **GitHub Actions** seçili olmalı.
+- **Web:** Settings → Pages → Source: **Deploy from a branch**, Branch: **gh-pages** / **(root)** seçili olmalı.
 - **APK:** Ek ayar gerekmez. Telefona indirip açınca Android "bilinmeyen kaynaklardan yükleme" izni ister.
 - **Expo Go:** expo.dev'de ücretsiz bir hesap aç, Account settings → Access tokens'tan bir anahtar üret ve depoda Settings → Secrets and variables → Actions → **New repository secret** ile `EXPO_TOKEN` adıyla kaydet. Sonra Actions sekmesinden "Expo Go (EAS Update)" iş akışını bir kez çalıştır. QR kodu sürüm sayfasına yazılır ve her zaman en son yayını açar.
 
