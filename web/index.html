@@ -77,6 +77,8 @@ canvas.ico{display:block;flex:none}
 .coach b{color:var(--accent);margin-right:4px}
 .coach-x{flex:none;background:none;border:1px solid var(--line2);color:var(--muted);font:inherit;font-size:12px;padding:4px 8px;cursor:pointer}
 :root[data-style="pixel"] .coach{font-size:17px}
+.node::before{content:'';position:absolute;left:50%;bottom:100%;width:76px;height:58px;transform:translateX(-50%)}
+.map-area.compact .node::before{width:64px;height:46px}
 .node.aim{border-color:var(--accent);animation:pulse 1.8s infinite;box-shadow:0 0 0 2px var(--accent)}
 .paints{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px}
 .paint{font:inherit;display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:8px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink);cursor:pointer;text-align:left}

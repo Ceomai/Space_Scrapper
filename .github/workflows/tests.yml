@@ -1,0 +1,30 @@
+# Her main güncellemesinde oyunun otomatik testlerini çalıştırır (tests/README.md).
+name: Testler
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', 'app/**', 'tests/**', '.github/workflows/tests.yml']
+  workflow_dispatch:
+    inputs:
+      kapsam:
+        description: 'hızlı ya da tam'
+        default: 'hızlı'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Playwright kur
+        run: |
+          npm install --no-save --no-package-lock playwright@1.63.0
+          npx playwright install --with-deps chromium
+      - name: Uygulama paketini üret
+        run: GAME_SRC=web node app/scripts/build-game.js
+      - name: Testleri çalıştır
+        run: node tests/run.js ${{ github.event.inputs.kapsam == 'tam' && 'tam' || 'hızlı' }}

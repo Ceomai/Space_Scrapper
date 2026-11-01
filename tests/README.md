@@ -1,0 +1,19 @@
+# Space Scrapper testleri
+
+Oyunu gerçek tarayıcıda (Playwright + Chromium) binlerce farklı yoldan oynatan test paketi. GitHub'da her `main` güncellemesinde "Testler" iş akışı hızlı kapsamla çalışır; Actions sekmesinden `tam` kapsamla elle de başlatılabilir.
+
+```bash
+npm install --no-save playwright@1.63.0 && npx playwright install chromium
+node tests/run.js        # hızlı (~15 dk)
+node tests/run.js tam    # tam (~60 dk)
+```
+
+| Dosya | Ne yapar |
+| --- | --- |
+| `ultimate.js` | İçerik denetimi (her karar, yay, sınama ve olay sonucunun iki tonda metni), çift dokunuş, 4 ekran boyutu × 2 stilde yerleşim (taşma, ekran dışı düğme, dokunma alanı, harita çakışması), bellek ve kare süresi, Günün Avı determinizmi, uygulama kayıt köprüsü, 4×125 günlük Yeni Oyun+ zinciri, saat sınırları |
+| `winbots.js` | Her mini oyunu kusursuz oynayan botlarla kazanılabilirliği doğrular (iniş, tamir, ayrıştırma, laboratuvar, kalkan, savunma, güvenlik duvarı, evrak) |
+| `lander.js` | İniş oyununun bütün zorluk ve değiştirici birleşimlerini ölçer |
+| `edge.js` | Depolama kapalı, bozuk kayıt, eski kayıt geçişi, garip bağlantılar, bütün ekranlar × 3 tema × 2 stil, masaüstü ve yatay ekran |
+| `fast.js` | Mini oyunları atlayıp oyunun bütün eylemlerini rastgele girdilerle sürer; her adımda değerlerin geçerliliğini denetler |
+| `monkey.js` | Gerçek arayüzde rastgele dokunan oturumlar (7 ekran boyutu, rastgele ayarlar) |
+| `deep.js` + `bot.js` | 27 zorluk birleşimi × hane seçenekleriyle oyunu baştan sona oynar; rastgele kararlar, sınamalar, banka kredisi, kaydet-yükle ve Yeni Oyun+ |

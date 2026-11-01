@@ -11,11 +11,22 @@ const tx = o => SS.tx(o);
    ========================================================= */
 SS.migrate = s => {
   if (!s.lic) s.lic = { deliver: 1, repair: 1, sort: 1, order: 1, scrap2: 1, scrap3: 1 };
+  if (!s.rules2) { s.rules2 = 1; if (s.day > 1 && s.lender === 'krell' && s.loan > 0) s.deadlineOverride = Math.max(SS.RULES.deadline, Math.min(196, s.day + 60)); }
+  // Eksik her alanı yeni oyunun varsayılanlarıyla doldur (eski ya da yarım kalmış kayıtlar için)
+  try {
+    const prev = window.S, def = SS.newState(Array.isArray(s.diff) && s.diff.length === 3 ? s.diff : [1, 1, 1], s.tone || 'fun', s.name, Array.isArray(s.crewOrder) ? s.crewOrder : []); window.S = prev;
+    for (const k in def) {
+      if (s[k] === undefined || (s[k] === null && def[k] !== null && typeof def[k] === 'object')) s[k] = def[k];
+      else if (def[k] && typeof def[k] === 'object' && !Array.isArray(def[k]) && s[k] && typeof s[k] === 'object' && !Array.isArray(s[k])) { for (const kk in def[k]) if (s[k][kk] === undefined) s[k][kk] = def[k][kk]; }
+    }
+    for (const id of s.crewOrder || []) { const c = s.crew[id] = s.crew[id] || {}; const d0 = { bond: 50, task: 'with', down: 0, gone: false, hunger: 0, sick: false, sickDays: 0 }; for (const kk in d0) if (c[kk] === undefined) c[kk] = d0[kk]; }
+    ['cash', 'energy', 'hunger', 'health', 'morale', 'loan', 'arrears', 'fuel', 'time', 'day', 'torps'].forEach(k => { if (typeof s[k] !== 'number' || !isFinite(s[k])) s[k] = def[k]; });
+    if (!Array.isArray(s.cargo)) s.cargo = []; s.cargo = s.cargo.filter(c => c && SS.ITEMS[c.kind] && isFinite(c.value));
+  } catch (e) {}
   s.course = s.course || {}; s.trialLog = s.trialLog || [];
   s.casino = s.casino || { today: 0, net: 0, chips: 0, best: 0 };
   if (s.nextTrial == null) s.nextTrial = 0;
   if (s.trial === undefined) s.trial = null;
-  if (!s.rules2) { s.rules2 = 1; if (s.day > 1 && s.lender === 'krell' && s.loan > 0) s.deadlineOverride = Math.max(SS.RULES.deadline, Math.min(196, s.day + 60)); }
   return s;
 };
 
@@ -148,7 +159,8 @@ function quizView() {
     <small>Geçmek için 3 sorudan 2'sini bil. Doğru: ${QZ.right}</small>`);
 }
 function quizEnd() {
-  const L = SS.LICENSES[QZ.id], pass = QZ.right >= 2, c = S.course[QZ.id];
+  if (!window.S) { QZ = null; return; }
+  const L = SS.LICENSES[QZ.id], pass = QZ.right >= 2, c = S.course[QZ.id] = S.course[QZ.id] || { n: 0, last: 0 };
   if (pass) {
     S.lic[QZ.id] = 1; c.n = L.lessons; S.boardWin = -1; SS.refreshBoard(true); SS.sfx('big');
     S.today.lesson = (S.today.lesson || 0) + 1; SS.checkGoals(); SS.checkAch && SS.checkAch(); SS.save(); render();
@@ -203,12 +215,14 @@ Object.assign(ACT, {
     QZ = { id: d.id, qs: quizFor(d.id), i: 0, right: 0 }; render(); quizView();
   },
   quizAns: d => {
-    if (!QZ || QZ.locked) return;
+    if (!QZ || QZ.locked || !QZ.qs[QZ.i]) return;
     const ok = +d.k === 1; if (ok) QZ.right++;
     QZ.ok = ok; QZ.msg = ok ? 'Doğru!' : `Yanlış. Doğrusu: ${QZ.qs[QZ.i][1]}`; QZ.locked = true; SS.sfx(ok ? 'coin' : 'bad'); quizView();
-    setTimeout(() => { if (!QZ) return; QZ.locked = false; QZ.msg = ''; QZ.i++; if (QZ.i >= 3) quizEnd(); else quizView(); }, 900);
+    setTimeout(() => { if (!QZ || !window.S) { QZ = null; return; } QZ.locked = false; QZ.msg = ''; QZ.i++; if (QZ.i >= 3) quizEnd(); else quizView(); }, 900);
   },
 });
+
+SS.resetTransient = () => { QZ = null; AU = null; BUSY = false; };
 
 /* ---------- günlük hedefler lisanslara uysun ---------- */
 const GOAL_LIC = { deliver: 'deliver', repair: 'repair', sort: 'sort', order: 'order', crystal: 'scrap2' };
@@ -335,7 +349,7 @@ function raceView(msg) {
     <p class="cas-msg">${msg || '&nbsp;'}</p>${betRow()}
     <div class="row">${btn(`${RACERS[RPICK].n} için bahis · ${fmt(bet())}`, 'raceGo', {}, 'primary', BUSY || S.cash < bet() || !!casBlock())}</div>${endRow()}`);
 }
-ACT.racePick = d => { if (BUSY) return; RPICK = +d.i; raceView(); };
+ACT.racePick = d => { if (BUSY) return; const i = +d.i; if (!(i >= 0 && i < RACERS.length)) return; RPICK = i; raceView(); };
 ACT.raceGo = () => {
   if (BUSY) return; const n = bet(); if (!stake(n)) return;
   BUSY = true; RPOS = [0, 0, 0, 0]; raceView('Başladılar!'); SS.sfx('travel');
@@ -625,6 +639,7 @@ G.shooter = (opts, onEnd) => {
   const ship = { x: 180, y: 520 }, shots = [], foes = [], eshots = [], fx = SS.FX.make();
   const g = { title: opts.title, W, H, quitLabel: 'Pes et', helpers: opts.helpers, controls: [{ id: 'l', label: '◀ Sola', hold: true }, { id: 'r', label: 'Sağa ▶', hold: true }] };
   g.finish = why => { if (g.done) return; g.done = true; g.result = { win: why === 'time' && hp > 0, kills, quit: why === 'quit' }; };
+  g._dbg = () => ({ ship, foes, eshots, hp });
   g.pointer = x => { tx = x; };
   g.key = (k, down) => { const m = { ArrowLeft: 'l', a: 'l', ArrowRight: 'r', d: 'r' }; if (!(k in m)) return false; g.input[m[k]] = down; tx = null; };
   const hit = (x, y) => { hp--; hurt = .35; SS.FX.burst(fx, x, y, [SS.Art.P().bad, SS.Art.P().flame], 18, 4); SS.sfx('boom'); if (hp <= 0 && endT < 0) endT = .9; };
@@ -683,6 +698,7 @@ G.shield = (opts, onEnd) => {
   const rocks = [], fx = SS.FX.make(), pit = SS.hasCrew('pit');
   const g = { title: opts.title, W, H, quitLabel: 'Pes et', helpers: opts.helpers, controls: [{ id: 'l', label: '↺ Sola', hold: true }, { id: 'r', label: 'Sağa ↻', hold: true }] };
   g.finish = why => { if (g.done) return; g.done = true; g.result = { win: why === 'time' && hp > 0, quit: why === 'quit' }; };
+  g._dbg = () => ({ rocks, ang, cx, cy, R, hp });
   g.pointer = (x, y) => { tgt = Math.atan2(Math.min(y - cy, -5), x - cx); };
   g.key = (k, down) => { const m = { ArrowLeft: 'l', a: 'l', ArrowRight: 'r', d: 'r' }; if (!(k in m)) return false; g.input[m[k]] = down; tgt = null; };
   const adiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
@@ -735,6 +751,7 @@ G.whack = (opts, onEnd) => {
   const cells = Array.from({ length: COLS * ROWS }, () => null), fx = SS.FX.make();
   const g = { title: opts.title, W, H, quitLabel: 'Pes et', helpers: opts.helpers, controls: [] };
   g.finish = why => { if (g.done) return; g.done = true; g.result = { win: why === 'time' && inf < MAXI, quit: why === 'quit' }; };
+  g._dbg = () => ({ cells, COLS, CW, CH, X0, Y0, inf });
   const infect = (x, y, txt) => { inf++; SS.FX.text(fx, x, y, txt, SS.Art.P().bad); SS.sfx('bad'); if (inf >= MAXI && endT < 0) endT = .8; };
   g.pointer = (x, y) => {
     if (endT >= 0) return;
@@ -805,6 +822,7 @@ G.memory = (opts, onEnd) => {
   g.pointer = (x, y) => { PADS.forEach((p, i) => { if (Math.abs(x - p.x) < 75 && Math.abs(y - p.y) < 75) press(i); }); };
   g.key = (k, down) => { if (!down) return; const m = { '1': 0, '2': 1, '3': 2, '4': 3 }; if (k in m) press(m[k]); else return false; };
   let showI = 0;
+  g._dbg = () => ({ seq, pos, phase, PADS });
   g.update = (dt, f) => {
     SS.FX.step(fx, dt, f); flashT -= dt; if (flashT <= 0 && phase !== 'show') flash = -1;
     if (endT >= 0) { endT -= dt; if (endT <= 0) g.finish(g._lost ? 'dead' : 'won'); return; }

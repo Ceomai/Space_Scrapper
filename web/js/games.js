@@ -440,8 +440,9 @@ G.deliver = (ct, onEnd) => {
   const g = { title: 'Teslimat: ' + ct.dest, W, H, quitLabel: 'Vazgeç',
     helpers: [SS.assist('tolga') && 'Tolga: +40 yakıt, pist daha geniş', thr && `İtici ${thr}: güçlü itki`, gyro && `Jiroskop ${gyro}: toleranslı iniş`].filter(Boolean),
     controls: [{ id: 'left', label: '◀ Sol', hold: 1 }, { id: 'thrust', label: 'İtki', hold: 1, cls: 'primary big' }, { id: 'right', label: 'Sağ ▶', hold: 1 }] };
-  const grav = .014 + ct.diff * .005 + ((ct.mods || []).includes('heavy') ? .004 : 0), thrust = .052 * (1 + thr * .15), rotSp = .05, fuelMax = 100 + pilot * 15 + (SS.assist('tolga') ? 40 : 0), burn = .3 * (1 - thr * .1);
-  const padW = 78 - ct.diff * 12 + pilot * 4 + (SS.assist('tolga') ? 14 : 0) - ((ct.mods || []).includes('narrow') ? 14 : 0);
+  const grav = .014 + ct.diff * .005 + ((ct.mods || []).includes('heavy') ? .004 : 0), thrust = .052 * (1 + thr * .15), rotSp = .05, fuelMax = 100 + pilot * 15 + (SS.assist('tolga') ? 40 : 0) + (ct.diff - 1) * 35 + (ct.fragile ? 30 : 0) + ((ct.mods || []).includes('heavy') ? 25 : 0), burn = .3 * (1 - thr * .1);
+  // Pist en az 42 px: gemi 24 px, rüzgârda bile insanca bir pay kalsın
+  const padW = Math.max(42, 78 - ct.diff * 12 + pilot * 4 + (SS.assist('tolga') ? 14 : 0) - ((ct.mods || []).includes('narrow') ? 14 : 0));
   const vyMax = (ct.fragile ? .9 : 1.3) + pilot * .12 + gyro * .15, vxMax = .9 + pilot * .08 + gyro * .1, aMax = .3 + pilot * .03 + gyro * .06;
   const mods = ct.mods || [], shield = SS.takeBuff('shield');
   const wind = mods.includes('windy') ? (Math.random() < .5 ? -1 : 1) * rnd(.004, .007) : ct.diff === 3 ? rnd(-.004, .004) : 0;
@@ -455,6 +456,7 @@ G.deliver = (ct, onEnd) => {
   const gy = x => { for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + (y1 - y0) * (x - x0) / Math.max(1, x1 - x0); } return pts[pts.length - 1][1]; };
   const sh = { x: rnd(60, 300), y: 70, vx: rnd(-.7, .7), vy: 0, a: 0 };
   let fuel = fuelMax, state = 'fly', endT = 0, flame = false, softLanding = false;
+  g._dbg = () => ({ sh, px, padW, padY, fuel, fuelMax, state, vyMax, vxMax, aMax, grav, thrust, wind, rotSp, gy });
   g.finish = reason => {
     if (g.done) return; g.done = true;
     const ok = state === 'landed';
@@ -568,6 +570,7 @@ G.repair = (job, onEnd) => {
     return powered.has(r1 + ',' + (N - 1)) && !!(grid[r1][N - 1].m & EB);
   }
   do scramble(); while (check());
+  g._dbg = () => ({ grid, N, cs, ox, oy, solved });
   check();
   const rmods = job.mods || [], solder = SS.takeBuff('solder');
   let hints = rmods.includes('nohint') ? 0 : Math.floor(S.skills.eng / 2) + (SS.hard() ? 0 : 1) + (SS.assist('ela') ? 2 : 0) + tk + (solder ? 2 : 0) + (SS.perk('ela', 90) ? 1 : 0);
@@ -660,6 +663,7 @@ G.sort = (shift, onEnd) => {
   let time = timeMax, el = 0, spawnT = 0, score = 0, streak = 0, right = 0, wrong = 0, missed = 0, endT = -1;
   const falling = [], flying = [], fx = SS.FX.make();
   const binY = 505;
+  g._dbg = () => ({ falling, binY });
   g.finish = () => { if (g.done) return; g.done = true; g.result = { pay: Math.max(0, score), right, wrong, missed }; };
   const send = bi => {
     if (endT >= 0) return;

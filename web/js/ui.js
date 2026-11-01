@@ -604,7 +604,7 @@ function cardGuess(g) {
   if (nv === K.v && !SS.hard()) K.msg = 'Eşit! Pot olduğu gibi kaldı.';
   else if (ok) { K.pot = Math.round(K.pot * clamp(.92 / p, 1.1, 6)); K.streak++; K.msg = 'Bildin!'; SS.sfx('coin'); }
   else { K.stage = 'lost'; K.msg = SS.fun() ? 'Gus teselli için sana bir kraker uzattı.' : 'Gus potu sessizce kasaya çekiyor.'; SS.mood(SS.hard() ? -6 : -2); SS.sfx('bad'); render(); cardsView(); return; }
-  setTimeout(() => { if (K && K.stage === 'play') { K.v = K.next.v; K.s = K.next.s; K.next = null; cardsView(); } }, 700);
+  setTimeout(() => { if (K && K.stage === 'play' && K.next) { K.v = K.next.v; K.s = K.next.s; K.next = null; cardsView(); } }, 700);
   cardsView();
 }
 
@@ -649,13 +649,13 @@ const ACT = {
     <div class="menu-list">${btn('Oyuna dön', 'close', {}, 'primary block')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost block')}${btn('Nasıl oynanır', 'guide', { s: S.view === 'map' ? 'map' : S.view }, 'ghost block')}${btn('Seyir Defteri ve ayarlar', 'view', { v: 'log' }, 'ghost block')}${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'muteMenu', {}, 'ghost block')}${btn('Kaydet ve ana menüye dön', 'toMenu', {}, 'ghost block')}${btn('Yeni oyun başlat', 'askWipe', {}, 'ghost block danger-t')}</div>
     <small>Oyun her işlemde otomatik kaydedilir. Ana menüden kaldığın yerden devam edebilirsin.</small>`),
   muteMenu: () => { prefs.muted = !prefs.muted; savePrefs(); ACT.menu(); },
-  toMenu: () => { SS.save(); window.S = null; Q.length = 0; SS.closeModal(); titleScreen(); },
+  toMenu: () => { SS.save(); window.S = null; SS.resetTransient && SS.resetTransient(); Q.length = 0; SS.closeModal(); titleScreen(); },
   roomSel: d => { S.roomSel = d.r; SS.sfx('click'); render(); },
   skipTut: () => { S.tut = null; SS.toast('Rehber kapatıldı. Kılavuz her zaman ☰ menüsünde.'); render(); },
   renameShip: () => { const v = (document.getElementById('shipName').value || '').trim().slice(0, 20); if (!v) return; S.shipNames = S.shipNames || {}; S.shipNames[S.tier] = v; SS.toast(`Geminin adı artık ${v}.`, 'good'); render(); },
-  paint: d => { const p = SS.PAINTS.find(x => x.id === d.p); S.paints = S.paints || {}; const own = S.paints[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]);
+  paint: d => { const p = SS.PAINTS.find(x => x.id === d.p); if (!p) return; S.paints = S.paints || {}; const own = S.paints[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]);
     if (!own) { if (!SS.spend(p.price)) return; S.paints[p.id] = true; } S.paint = p.id; SS.sfx('big'); render(); },
-  tint: d => { const t = SS.HOME_TINTS.find(x => x.id === d.t); S.tintsOwned = S.tintsOwned || {}; if (t.price && !S.tintsOwned[t.id]) { if (!SS.spend(t.price)) return; S.tintsOwned[t.id] = true; } S.homeTint = t.id; SS.sfx('click'); render(); },
+  tint: d => { const t = SS.HOME_TINTS.find(x => x.id === d.t); if (!t) return; S.tintsOwned = S.tintsOwned || {}; if (t.price && !S.tintsOwned[t.id]) { if (!SS.spend(t.price)) return; S.tintsOwned[t.id] = true; } S.homeTint = t.id; SS.sfx('click'); render(); },
   askNG: () => SS.modal(`<h2>Yeni Oyun+ başlasın mı?</h2><p>Mevcut hayatın burada kapanır. Albüm, unvanlar, boyalar ve başarımlar korunur; para, gemi ve ev sıfırlanır.</p><div class="row">${btn('Başlat', 'doNG', {}, 'primary')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`),
   doNG: () => { SS.newGamePlus(); SS.save(); SS.closeModal(); SS.flow(); },
   sub: d => { S.sub = S.sub || {}; S.sub[d.v] = d.s; SS.sfx('click'); render(); document.getElementById('main').scrollTop = 0; },
@@ -781,7 +781,7 @@ const ACT = {
   cards: () => { if (S.cardsToday >= 4 || S.energy < 5 || !SS.timeOk(20)) return; K = { stage: 'bet' }; cardsView(); },
   cardBet: d => { const b = +d.b; if (!SS.spend(b)) return; S.cardsToday++; S.energy = Math.max(0, S.energy - 5); SS.passTime(20); K = { stage: 'play', bet: b, pot: b, streak: 0, v: rint(2, 12), s: pick(SUITS), next: null, msg: '' }; render(); cardsView(); },
   cardGuess: d => cardGuess(d.g),
-  cardCash: () => { if (K.streak === 0) return; SS.earn(K.pot); const profit = K.pot - K.bet; S.stats.cardsBest = Math.max(S.stats.cardsBest, profit); SS.mood(5); K.stage = 'won'; K.msg = `${fmt(K.pot)} aldın (kâr ${fmt(profit)}).`; SS.checkGoals(); SS.checkAch(); SS.sfx('big'); render(); cardsView(); },
+  cardCash: () => { if (!K || K.stage !== 'play' || !K.streak || !isFinite(K.pot)) return; SS.earn(K.pot); const profit = K.pot - K.bet; S.stats.cardsBest = Math.max(S.stats.cardsBest, profit); SS.mood(5); K.stage = 'won'; K.msg = `${fmt(K.pot)} aldın (kâr ${fmt(profit)}).`; SS.checkGoals(); SS.checkAch(); SS.sfx('big'); render(); cardsView(); },
   heal: () => { if (SS.timeOk(30) && SS.spend(healPrice())) { S.health = Math.min(100, S.health + 30); SS.passTime(30); SS.sfx('click'); render(); } },
   train: d => job(SS.COST.train, SS.DUR.train, () => { const lv = S.skills[d.id]; if (lv >= 5 || !SS.spend(trainCost(lv))) return; SS.useJob(SS.COST.train, SS.DUR.train); S.skills[d.id]++; SS.toast(`${SS.SKILLS.find(s => s.id === d.id).name} seviye ${S.skills[d.id]}`, 'good'); SS.sfx('big'); render(); }),
   home: () => { const nh = SS.HOMES[S.home + 1]; if (nh && SS.spend(nh.cost)) { S.home++; SS.mood(15); SS.toast(`${nh.name} artık senin.`, 'good'); SS.sfx('big'); SS.checkAch(); render(); } },
@@ -794,8 +794,8 @@ const ACT = {
   tone: d => { S.tone = d.t; SS.sfx('click'); render(); },
   mute: () => { prefs.muted = !prefs.muted; savePrefs(); render(); },
   askWipe: () => SS.modal(`<h2>Yeni oyun?</h2><p>Mevcut kayıt silinir: gün ${S.day}, ${fmt(S.cash)} nakit, ${fmt(S.loan)} borç.</p><div class="row">${btn('Sil ve baştan başla', 'wipe', {}, 'danger')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`),
-  wipe: () => { SS.wipe(); window.S = null; Q.length = 0; SS.closeModal(); titleScreen(); },
-  pickCrew: d => { const i = T.crew.indexOf(d.id); if (i >= 0) T.crew.splice(i, 1); else T.crew.push(d.id); titleScreen(); },
+  wipe: () => { SS.wipe(); window.S = null; SS.resetTransient && SS.resetTransient(); Q.length = 0; SS.closeModal(); titleScreen(); },
+  pickCrew: d => { if (!SS.COMPANIONS.some(c => c.id === d.id)) return; const i = T.crew.indexOf(d.id); if (i >= 0) T.crew.splice(i, 1); else T.crew.push(d.id); titleScreen(); },
   pickDiff: d => { T.diff[+d.i] = +d.j; titleScreen(); },
   pickTone: d => { T.tone = d.t; titleScreen(); },
   start: () => {
@@ -855,10 +855,22 @@ function titleScreen() {
 SS.titleScreen = titleScreen;
 
 /* ---------- dinleyiciler ---------- */
+// Çift dokunuş koruması: aynı düğmeye 400 ms içinde ikinci basış yok sayılır (sekme ve gezinme hariç)
+let lastTap = { key: '', t: 0 };
+const NO_DEBOUNCE = new Set(['sub', 'rhGo', 'casBet', 'racePick', 'pickCrew', 'pickDiff', 'pickTone', 'theme', 'style', 'roomSel', 'ltog', 'close', 'guide']);
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   const a = ACT[b.dataset.act]; if (!a) return;
-  e.preventDefault(); a({ ...b.dataset });
+  const key = JSON.stringify(b.dataset), now = Date.now();
+  if (!NO_DEBOUNCE.has(b.dataset.act) && key === lastTap.key && now - lastTap.t < 400) { e.preventDefault(); return; }
+  lastTap = { key, t: now };
+  e.preventDefault();
+  try { a({ ...b.dataset }); }
+  catch (err) {
+    // Son güvenlik ağı: beklenmedik bir hata oyunu kilitlemesin
+    console.warn('Eylem hatası:', b.dataset.act, err);
+    try { SS.sanitize && SS.sanitize(); if (document.getElementById('mini')) SS.Stage.close(); SS.closeModal(); render(); SS.toast('Bu işlem tamamlanamadı; oyun kaldığı yerden devam ediyor.', 'bad'); } catch (e2) {}
+  }
 });
 document.addEventListener('input', e => { if (e.target.id === 'hagRange' && H) { H.offer = +e.target.value; document.getElementById('hagVal').textContent = `%${H.offer} · ${fmt(H.total * H.offer / 100)}`; } });
 document.addEventListener('keydown', e => {

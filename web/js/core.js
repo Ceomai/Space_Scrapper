@@ -71,7 +71,19 @@ SS.newState = (diff, tone, name, crewIds) => {
   window.S = prev;
   return s;
 };
-SS.save = () => { try { if (S) localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+// Koruma ağı: geçersiz (NaN/sonsuz) ya da aralık dışı değerleri onarır; hiçbir durumda oyunu bozmaz
+SS.sanitize = () => {
+  if (!window.S) return;
+  const fix = (k, def, lo, hi) => { let v = S[k]; if (typeof v !== 'number' || !isFinite(v)) v = def; if (lo != null) v = Math.max(lo, v); if (hi != null) v = Math.min(hi, v); S[k] = v; };
+  try {
+    fix('cash', 0, 0); fix('loan', 0, 0); fix('arrears', 0, 0); fix('strikes', 0, 0, 3); fix('torps', 0, 0); fix('day', 1, 1);
+    fix('hunger', 50, 0, 100); fix('health', 50, 0, 100); fix('morale', 50, 0, 100); fix('energy', 50, 0, SS.maxEnergy()); fix('fuel', 0, 0, SS.tankCap()); fix('time', 420, 0);
+    for (const id of S.crewOrder || []) { const c = S.crew && S.crew[id]; if (c && (typeof c.bond !== 'number' || !isFinite(c.bond))) c.bond = 50; }
+    for (const k in S.aff) if (typeof S.aff[k] !== 'number' || !isFinite(S.aff[k])) S.aff[k] = 0;
+    if (Array.isArray(S.cargo)) S.cargo = S.cargo.filter(it => it && SS.ITEMS[it.kind] && isFinite(it.value));
+  } catch (e) {}
+};
+SS.save = () => { try { if (S) { SS.sanitize(); localStorage.setItem(KEY, JSON.stringify(S)); } } catch (e) {} };
 SS.load = () => { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 3) return SS.migrate ? SS.migrate(s) : s; } catch (e) {} return null; };
 SS.wipe = () => { try { localStorage.removeItem(KEY); } catch (e) {} };
 
@@ -110,9 +122,9 @@ SS.moraleTime = () => S.morale >= 70 ? 5 : S.morale < 30 ? -6 : 0;
 SS.monthDay = () => (S.day - 1) % 28 + 1;
 SS.daysTo = n => { const r = S.day % n; return r === 0 ? 0 : n - r; };
 
-SS.earn = n => { n = Math.round(n); if (n <= 0) return; S.cash += n; S.today.earned = (S.today.earned || 0) + n; S.stats.earned += n; S.weekEarned = (S.weekEarned || 0) + n; };
-SS.spend = n => { n = Math.round(n); if (S.cash < n) return false; S.cash -= n; return true; };
-SS.charge = n => { n = Math.round(n); if (S.cash >= n) S.cash -= n; else { S.arrears += Math.round((n - S.cash) * 1.1); S.cash = 0; } };
+SS.earn = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; S.cash += n; S.today.earned = (S.today.earned || 0) + n; S.stats.earned += n; S.weekEarned = (S.weekEarned || 0) + n; };
+SS.spend = n => { n = Math.round(n); if (!isFinite(n) || n < 0 || S.cash < n) return false; S.cash -= n; return true; };
+SS.charge = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; if (S.cash >= n) S.cash -= n; else { S.arrears += Math.round((n - S.cash) * 1.1); S.cash = 0; } };
 SS.bump = (k, n = 1) => { S.today[k] = (S.today[k] || 0) + n; };
 SS.mood = n => { S.morale = clamp(S.morale + n, 0, 100); };
 
@@ -288,7 +300,7 @@ SS.pickDecision = () => {
 SS.curDecision = () => !S.decision ? null : S.decision.startsWith('arc:') ? SS.arcDecision() : SS.DECISIONS.find(x => x.id === S.decision);
 SS.decide = i => {
   const d = SS.curDecision(); if (!d) return null;
-  const o = d.opts[i]; if (o.need && !o.need()) return null;
+  const o = d.opts[i]; if (!o || (o.need && !o.need())) return null;
   const res = o.run();
   S.decisionLog[d.id] = S.day; S.decision = null; S.stats.decisions++;
   if (d.arc) SS.arcAdvance();
@@ -485,6 +497,7 @@ SS.sleep = (sel) => {
   S.day++; S.time = 420; S.loc = 'home'; S.view = 'map'; S.weekEarned = S.day % 7 === 1 ? 0 : S.weekEarned;
   if (S.strikes >= m.strikesMax) S.over = S.lender === 'bank' ? 'repo' : S.lender === 'krell' ? 'evict' : 'evict_station';
   else if (m.deadline && S.day > m.deadline && S.loan > 0) S.over = S.lender === 'krell' ? 'deadline' : 'bankdue';
+  SS.sanitize();
   if (!S.over) SS.newDay(notes);
   SS.checkAch();
   return { R, notes };
@@ -499,7 +512,7 @@ SS.loanCheck = () => {
   S.lender = null;
 };
 SS.payLoan = n => {
-  n = Math.min(n, S.loan, S.cash); if (n <= 0) return 0;
+  n = Math.min(n, S.loan, S.cash); if (!isFinite(n) || n <= 0) return 0;
   S.cash -= n; S.loan -= n; SS.loanCheck(); SS.checkAch();
   return n;
 };
@@ -531,6 +544,10 @@ SS.buyShip = useBank => {
   S.tier++;
   S.ship = SS.blankShip(); S.upSpent = 0;
   S.fuel = SS.tankCap();
+  // Yeni geminin ambarına sığmayan yük Zara'ya satılır
+  let extra = 0, n = 0;
+  while (S.cargo.length && SS.cargoUsed() > SS.cargoCap()) { const it = S.cargo.pop(); extra += SS.priceOf(it); n++; }
+  if (n) { SS.earn(extra); SS.notes.push(`Yeni ambara sığmayan ${n} parça Zara'ya satıldı: ${fmt(extra)}.`); }
   SS.unlockChapter(nx.id);
   if (nx.id === 'balina') S.finale = true;
   SS.checkAch();
