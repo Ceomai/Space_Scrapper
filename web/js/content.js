@@ -145,9 +145,9 @@ D.push({ id: 'tolga_leave', who: 'tolga', title: 'Tolga Gitmek İstiyor', urgent
 SS.SHIPS = [
   { id: 'pelikan', name: 'Paslı Pelikan', price: 0, trade: 4000, cargo: 20, cargoStep: 10, tank: 50, tankStep: 30, base: { claw: 0, winch: 0, magnet: 0, hull: 0, radar: 0 },
     desc: 'Külüstür ama senin. Çoğunlukla.' },
-  { id: 'marti', name: 'Gezgin Martı', price: 18000, trade: 9000, cargo: 35, cargoStep: 12, tank: 90, tankStep: 35, base: { claw: 1, winch: 1, magnet: 0, hull: 1, radar: 0 },
+  { id: 'marti', name: 'Gezgin Martı', price: 22000, trade: 9000, cargo: 35, cargoStep: 12, tank: 90, tankStep: 35, base: { claw: 1, winch: 1, magnet: 0, hull: 1, radar: 0 },
     desc: 'Hızlı, temiz, sızdırmıyor. Kayıp Yıldız\'a kadar uçabilir.' },
-  { id: 'balina', name: 'Demir Balina', price: 42000, trade: 20000, cargo: 60, cargoStep: 15, tank: 150, tankStep: 40, base: { claw: 2, winch: 2, magnet: 1, hull: 2, radar: 1 },
+  { id: 'balina', name: 'Demir Balina', price: 52000, trade: 20000, cargo: 60, cargoStep: 15, tank: 150, tankStep: 40, base: { claw: 2, winch: 2, magnet: 1, hull: 2, radar: 1 },
     desc: 'Dev ambar, dahili radar. Bir hurdacının rüyası.' },
 ];
 SS.BANK = { interest: .01, rate: .06 }; // banka kredisi: aylık %1 faiz, taksit kredinin %6'sı, süre yok

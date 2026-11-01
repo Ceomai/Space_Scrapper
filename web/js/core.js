@@ -36,12 +36,12 @@ SS.winLabel = (w = SS.win()) => `${SS.clock(SS.DAY_START + w * 180)}–${SS.cloc
 SS.DUR = { scrap: 180, deliver: [90, 120, 180, 210], repair: [60, 90, 120, 150], sortShort: 60, sortLong: 120, talk: 60, nap: 90, train: 180, workshop: 60, order: 30, decision: 120 };
 SS.COST = { scrap: 30, deliver: 20, repair: 15, sortShort: 8, sortLong: 14, workshop: 10, train: 15 };
 SS.SORTS = [
-  { id: 'short', name: 'Kısa vardiya', time: 30, per: 6, speed: .9, energy: SS.COST.sortShort, desc: '30 saniye, yavaş bant, doğru başına ₡6' },
-  { id: 'long', name: 'Uzun vardiya', time: 60, per: 9, speed: 1.25, energy: SS.COST.sortLong, desc: '60 saniye, hızlanan bant, doğru başına ₡9' },
+  { id: 'short', name: 'Kısa vardiya', time: 30, per: 2, speed: .9, energy: SS.COST.sortShort, desc: '30 saniye, yavaş bant, doğru başına ₡2' },
+  { id: 'long', name: 'Uzun vardiya', time: 60, per: 3, speed: 1.25, energy: SS.COST.sortLong, desc: '60 saniye, hızlanan bant, doğru başına ₡3' },
 ];
 
 SS.blankShip = () => Object.fromEntries(SS.SHIP.map(u => [u.id, 0]));
-SS.SCRAP_VAL = .62; // hurda avı değer çarpanı (nakit işlerle denge için)
+SS.SCRAP_VAL = .36; // hurda avı değer çarpanı (nakit işlerle denge için)
 SS.newState = (diff, tone, name, crewIds) => {
   const s = {
     v: 3, diff: diff.slice(), tone, name: name || 'Kaptan', day: 1, time: 420, loc: 'home', view: 'map',
@@ -97,7 +97,7 @@ SS.zoneStock = z => clamp(1 - (S.zoneUse[z] || 0) * .22, .35, 1);
 // İş itibarı: başarılı iş sayısıyla seviye atlar, ödemeyi artırır
 SS.REP_T = [0, 2, 5, 9, 14, 20];
 SS.repLvl = k => SS.REP_T.filter(t => (S.rep[k] || 0) >= t).length - 1;
-SS.repMult = k => 1 + SS.repLvl(k) * .08;
+SS.repMult = k => 1 + SS.repLvl(k) * .04;
 SS.repGain = k => { const b = SS.repLvl(k); S.rep[k] = (S.rep[k] || 0) + 1; const a = SS.repLvl(k); if (a > b) SS.toast(`İtibar yükseldi: ${{ scrap: 'Hurda', deliver: 'Teslimat', repair: 'Tamir', sort: 'Ayrıştırma' }[k]} ${a}/5`, 'ach'); };
 SS.upgradeDiscount = () => S.aff.vida >= 60 ? .8 : S.aff.vida >= 30 ? .9 : 1;
 SS.foodPrice = f => Math.round(f.price * SS.M().foodMult);
@@ -176,16 +176,16 @@ SS.sellIdx = (idxs, mult = 1) => {
 const DESTS = ['Ay Üssü Tetra', 'Buz Madeni K-9', 'Çiftlik Uydusu Bereket', 'Kayalık Karakol', 'Neon Kumarhane', 'Hastane Gemisi Şifa', 'Kuyruklu Yıldız Kampı'];
 const CARGOS = ['tıbbi malzeme', 'dondurulmuş pizza', 'yedek reaktör', 'canlı tavuk (uzay ırkı)', 'gizli paket', 'düğün pastası', 'maden matkabı'];
 SS.DELIVERY_TIERS = [
-  { name: 'Kısa mesafe', diff: 1, pay: [150, 200], fuel: 6 },
-  { name: 'Orta mesafe', diff: 2, pay: [260, 330], fuel: 10 },
-  { name: 'Uzak sefer', diff: 3, pay: [400, 520], fuel: 15 },
-  { name: 'VIP sefer', diff: 3, pay: [600, 760], fuel: 18, vip: true },
+  { name: 'Kısa mesafe', diff: 1, pay: [45, 60], fuel: 6 },
+  { name: 'Orta mesafe', diff: 2, pay: [75, 95], fuel: 10 },
+  { name: 'Uzak sefer', diff: 3, pay: [115, 145], fuel: 15 },
+  { name: 'VIP sefer', diff: 3, pay: [170, 210], fuel: 18, vip: true },
 ];
 SS.REPAIR_TIERS = [
-  { name: 'Basit', size: 4, pay: [100, 130] },
-  { name: 'Standart', size: 5, pay: [170, 210] },
-  { name: 'Karmaşık', size: 6, pay: [260, 320] },
-  { name: 'Reaktör çekirdeği', size: 7, pay: [420, 520], vip: true },
+  { name: 'Basit', size: 4, pay: [45, 60] },
+  { name: 'Standart', size: 5, pay: [70, 90] },
+  { name: 'Karmaşık', size: 6, pay: [110, 135] },
+  { name: 'Reaktör çekirdeği', size: 7, pay: [170, 215], vip: true },
 ];
 const WHATS = ['Oksijen pompası', 'Asansör kontrol kartı', 'Kantin buzdolabı', 'Rıhtım kapısı', 'Su arıtıcı', 'Radyo vericisi', 'Yerçekimi jeneratörü'];
 SS.genJobs = () => {
@@ -365,7 +365,7 @@ SS.nightIncome = () => {
 SS.ledger = () => {
   const m = SS.M(), cm = m.cm, L = [];
   L.push({ id: 'oxy', name: 'Oksijen ve su', amt: Math.round(m.oxygen * (S.home === 2 ? 1.3 : 1)), req: true });
-  if (S.day % 7 === 0) L.push({ id: 'dock', name: 'Rıhtım ücreti (haftalık)', amt: m.dock, req: true });
+  if (S.day % 7 === 0) L.push({ id: 'dock', name: 'Rıhtım ücreti (haftalık)', amt: Math.round(m.dock * [1, 2.5, 4][S.tier || 0]), req: true });
   if (S.day % 28 === 0) {
     L.push({ id: 'rent', name: 'Kira: ' + SS.HOMES[S.home].name, amt: Math.round(m.rent * SS.HOMES[S.home].rent), req: true });
     const up = SS.BIZ.reduce((a, b) => a + (S.biz[b.id] ? b.upkeep : 0), 0);

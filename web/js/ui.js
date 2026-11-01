@@ -286,7 +286,7 @@ function jobsView() {
   const [tab, bar] = subTabs('jobs', [['all', 'Tümü'], ['hunt', 'Hurda'], ['deliver', 'Teslimat'], ['repair', 'Tamir'], ['other', 'Diğer']]);
   const nextAt = SS.DAY_START + (SS.win() + 1) * 180;
   let h = `<section class="panel window"><div class="ph"><span class="pcode">İLAN</span><h3>Pencere ${SS.winLabel()}</h3><span class="paside">Yenileme ${SS.clock(nextAt)}</span></div>
-    <p class="muted">İlanlar her 3 saatte bir değişir. ${SS.win() >= 4 ? '<b>Gece zammı: ödemeler %15 fazla.</b>' : '19:00 sonrası gece zammı başlar.'} Rütbe primi +%${Math.round((SS.rankPay() - 1) * 100)}.</p>
+    <p class="muted">İlanlar her 3 saatte bir değişir. ${SS.win() >= 4 ? '<b>Gece zammı: ödemeler %10 fazla.</b>' : '19:00 sonrası gece zammı başlar.'} Rütbe primi +%${Math.round((SS.rankPay() - 1) * 100)}.</p>
     ${SS.lockedJobsNote ? SS.lockedJobsNote() : ''}
     <div class="reps">${[['scrap', 'Hurda'], ['deliver', 'Teslimat'], ['repair', 'Tamir'], ['sort', 'Ayrıştırma']].map(([k, n]) => `<div><small>${n} itibarı</small><b>${SS.repLvl(k)}/5</b><div class="track"><i style="width:${pct(SS.repLvl(k), 5)}%"></i></div></div>`).join('')}</div></section>${bar}`;
   const helpers = ids => { const hs = ids.filter(SS.assist); return hs.length ? `<div class="assists">${hs.map(id => `<span class="assist">${face(id, 22)}${SS.comp(id).name} yardım ediyor</span>`).join('')}</div>` : ''; };
@@ -610,7 +610,7 @@ function sortBrief(b) {
   const bins = [['METAL', 0], ['ORGANİK', 1], ['TEHLİKELİ', 2]];
   SS.modal(`<p class="eyebrow">Vardiya talimatı · ${b.name}</p><h2>Hangi eşya hangi kutuya?</h2><p class="muted">${esc(b.text)}</p>
     <div class="sortbrief">${bins.map(([n, i]) => `<div class="sb b${i}"><b>${n}</b><span class="key">Tuş ${i + 1}</span>${SS.SORT_POOL.filter(o => o.bin === i).map(o => `<div class="sb-item">${icon(o.kind, 34)}<small>${o.name}</small></div>`).join('')}</div>`).join('')}</div>
-    <ul class="kv"><li><span>Doğru</span><b>+${fmt(b.per)}</b></li><li><span>Yanlış</span><b>−₡4</b></li><li><span>Kaçan</span><b>−₡2</b></li><li><span>Her 5'li seri</span><b>+₡5</b></li></ul>
+    <ul class="kv"><li><span>Doğru</span><b>+${fmt(b.per)}</b></li><li><span>Yanlış</span><b>−₡4</b></li><li><span>Kaçan</span><b>−₡2</b></li><li><span>Her 5'li seri</span><b>+₡2</b></li></ul>
     <p class="muted">Banttaki en alttaki eşya çerçevelidir; adı üstünde yazar. Kutuya dokun ya da alttaki düğmeleri kullan.</p>
     <div class="row">${btn(`Vardiyaya gir · ${dur(b.dur)}`, 'startSort', { id: b.id }, 'primary')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`);
 }

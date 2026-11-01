@@ -422,6 +422,8 @@ G.scrap = (zoneId, onEnd, ct) => {
     }
     actors = actors.filter(a => !a.dead);
   }
+  // Denge testleri için salt okunur durum (oyunda kullanılmaz)
+  g._dbg = () => ({ items, hook, time, OX, OY, reach, extendSp, ct, V, zm, daily, actors });
   g.onEnd = onEnd;
   SS.Stage.open(g);
 };
@@ -664,7 +666,7 @@ G.sort = (shift, onEnd) => {
     flying.push({ ...cur, tx: BINS[bi].x, ty: binY + 10, sx: cur.x, sy: cur.y, k: 0 });
     const P = SS.Art.P();
     if (cur.bin === bi) {
-      streak++; right++; let add = per; if (streak % 5 === 0) { add += 5; SS.FX.text(fx, BINS[bi].x, binY - 60, `Seri x${streak}!`, P.crystal); }
+      streak++; right++; let add = per; if (streak % 5 === 0) { add += 2; SS.FX.text(fx, BINS[bi].x, binY - 60, `Seri x${streak}!`, P.crystal); }
       score += add; SS.FX.text(fx, BINS[bi].x, binY - 30, '+' + add, P.good); SS.sfx('coin');
     } else { streak = 0; wrong++; if (!gloves) score -= 4; SS.FX.text(fx, BINS[bi].x, binY - 30, gloves ? 'Yanlış (eldiven)' : 'Yanlış! -4', P.bad); SS.sfx('bad'); }
   };

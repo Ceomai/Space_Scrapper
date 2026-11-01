@@ -30,7 +30,7 @@ SS.travel = to => {
 SS.rankIdx = () => SS.RANKS.reduce((a, r, i) => S.stats.earned >= r.at ? i : a, 0);
 SS.rank = () => SS.RANKS[SS.rankIdx()];
 SS.nextRank = () => SS.RANKS[SS.rankIdx() + 1] || null;
-SS.rankPay = () => 1 + Math.min(.25, SS.rankIdx() * .05);
+SS.rankPay = () => 1 + Math.min(.15, SS.rankIdx() * .03);
 SS.rankDiscount = () => [1, 1, 1, .95, .9, .85][SS.rankIdx()];
 
 /* ---------- hane yardımcıları ---------- */
@@ -59,7 +59,7 @@ SS.buyRoom = id => { const r = SS.ROOMS[id]; if (!SS.hasCrew(id) || S.rooms[id] 
 /* ---------- ilan panosu (3 saatlik pencereler) ---------- */
 const fill = (t, o) => t.replace(/\{(\w)\}/g, (_, k) => o[k] || '');
 const line = (type, o) => { const t = fill(pick(SS.JOB_LINES[type][SS.fun() ? 'easy' : 'hard']), o); return t.charAt(0).toLocaleUpperCase('tr') + t.slice(1); };
-SS.jobPayMult = () => (1 + S.day / 90 + S.tier * .25) * SS.rankPay() * SS.ngPay() * (SS.win() >= 4 ? 1.15 : 1) * (SS.hard() ? .95 : 1);
+SS.jobPayMult = () => (1 + Math.min(S.day, 200) / 250 + S.tier * .1) * SS.rankPay() * SS.ngPay() * (SS.win() >= 4 ? 1.1 : 1) * (SS.hard() ? .95 : 1);
 function mkDeliver(tierIdx, special) {
   const t = SS.DELIVERY_TIERS[tierIdx], [g, tag] = pick(SS.CARGOS);
   const mods = [];
@@ -85,17 +85,17 @@ function mkRepair(tierIdx, special) {
 }
 function mkSort() {
   const v = pick(SS.SORT_VARIANTS), long = Math.random() < .5, base = SS.SORTS[long ? 1 : 0];
-  const per = Math.round((base.per + v.bonus) * SS.rankPay() * (SS.win() >= 4 ? 1.15 : 1));
+  const per = Math.round((base.per + v.bonus) * SS.rankPay() * (SS.win() >= 4 ? 1.1 : 1));
   return { type: 'sort', id: Math.random().toString(36).slice(2), name: `${v.name} · ${long ? 'uzun' : 'kısa'}`, variant: v.id, mix: v.mix,
     time: base.time, per, speed: base.speed * v.speed, energy: base.energy, dur: long ? SS.DUR.sortLong : SS.DUR.sortShort,
     text: `${v.desc} ${line('sort', {})}`, done: false };
 }
 // Hurda sözleşmesi: belirli bölgede belirli eşyaları topla; hedefler müşteriye gider, kalanı senin
 const HUNTS = [
-  { id: 'salvage', name: 'Parça kurtarma', opts: [[['part'], 2, 3], [['plate'], 3, 4], [['sat'], 1, 1]], per: k => SS.ITEMS[k].val * SS.SCRAP_VAL * 1.1 },
-  { id: 'crystal', name: 'Kristal siparişi', opts: [[['crystal', 'slime'], 2, 2]], per: () => 300 * SS.SCRAP_VAL * 1.05, zone: 'gas' },
-  { id: 'clear', name: 'Enkaz temizliği', opts: [[['rock', 'boulder'], 4, 5]], per: () => 38 },
-  { id: 'rescue', name: 'Kara kutu kurtarma', opts: [[['box'], 2, 2]], per: () => 65 },
+  { id: 'salvage', name: 'Parça kurtarma', opts: [[['part'], 2, 3], [['plate'], 3, 4], [['sat'], 1, 1]], per: k => SS.ITEMS[k].val * SS.SCRAP_VAL * .7 },
+  { id: 'crystal', name: 'Kristal siparişi', opts: [[['crystal', 'slime'], 2, 2]], per: () => 300 * SS.SCRAP_VAL * .65, zone: 'gas' },
+  { id: 'clear', name: 'Enkaz temizliği', opts: [[['rock', 'boulder'], 4, 5]], per: () => 16 },
+  { id: 'rescue', name: 'Kara kutu kurtarma', opts: [[['box'], 2, 2]], per: () => 35 },
 ];
 function mkHunt() {
   const lic = SS.zoneLic || (() => true), deep = !SS.hasLic || SS.hasLic('scrap2');
@@ -103,10 +103,10 @@ function mkHunt() {
   const opts = H.opts.filter(o => deep || !o[0].some(k => k === 'sat' || k === 'crystal' || k === 'slime')), [kinds, q0, q1] = pick(opts.length ? opts : H.opts), qty = rint(q0, q1);
   const zones = SS.ZONES.filter(z => !z.story && z.fuel <= SS.tankCap() && lic(z.id));
   const Z = (H.zone && zones.find(z => z.id === H.zone)) || pick(zones);
-  const m = Z.mult * SS.repMult('scrap') * SS.rankPay() * (1 + S.tier * .2);
+  const m = Math.sqrt(Z.mult) * SS.repMult('scrap') * (1 + S.tier * .1);
   const c = pick(SS.CLIENTS), names = kinds.map(k => SS.ITEMS[k].name).join(' / ');
   return { type: 'hunt', id: Math.random().toString(36).slice(2), hunt: H.id, name: H.name, zone: Z.id, zoneName: Z.name, kinds, qty, client: c,
-    per: Math.round(H.per(kinds[0]) * m), fee: Math.round((50 + Z.mult * 40) * m), fuel: Z.fuel, dur: SS.DUR.scrap, energy: SS.COST.scrap,
+    per: Math.round(H.per(kinds[0]) * m), fee: Math.round((25 + Z.mult * 15) * m), fuel: Z.fuel, dur: SS.DUR.scrap, energy: SS.COST.scrap,
     label: `${qty} × ${names}`, text: line('hunt', { c, d: Z.name, g: names.toLocaleLowerCase('tr') }), done: false };
 }
 function mkOrder() {
@@ -126,8 +126,8 @@ SS.refreshBoard = (force) => {
   if (L('deliver')) for (let i = 0; i < dN; i++) B.push(mkDeliver(dRep && Math.random() < .3 ? 3 : rint(0, 2)));
   if (L('repair')) for (let i = 0; i < rN; i++) B.push(mkRepair(rRep && Math.random() < .3 ? 3 : rint(0, 2)));
   if (L('sort')) { B.push(mkSort()); if (night || Math.random() < .4) B.push(mkSort()); }
-  B.unshift(mkHunt()); if (Math.random() < .4) B.push(mkHunt());
-  if (B.length < 4) { B.push(mkHunt()); B.push(mkHunt()); }
+  if (w % 2 === 0 || Math.random() < .5) B.unshift(mkHunt());
+  if (B.length < 3) B.push(mkHunt());
   if (L('order')) { B.push(mkOrder()); if (Math.random() < .5) B.push(mkOrder()); }
   if (S.tolgaJob && L('deliver') && L('repair')) { B.unshift(Math.random() < .5 ? mkDeliver(rint(1, 2), true) : mkRepair(rint(1, 2), true)); S.tolgaJob = false; }
   S.board = B;

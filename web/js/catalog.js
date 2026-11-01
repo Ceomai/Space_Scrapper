@@ -43,9 +43,9 @@ SS.REPAIR_MODS = [
 ];
 SS.SORT_VARIANTS = [
   { id: 'std',   name: 'Standart bant',   mix: null,  speed: 1,    bonus: 0, desc: 'Her türden hurda.' },
-  { id: 'rad',   name: 'Radyoaktif gün',  mix: 2,     speed: 1.05, bonus: 3, desc: 'Tehlikeli madde ağırlıklı, doğru başına +₡3.' },
-  { id: 'bio',   name: 'Organik hafta',   mix: 1,     speed: .95,  bonus: 1, desc: 'Organik ağırlıklı, sakin bant.' },
-  { id: 'fast',  name: 'Hızlı bant',      mix: null,  speed: 1.4,  bonus: 4, desc: 'Bant çok hızlı, doğru başına +₡4.' },
+  { id: 'rad',   name: 'Radyoaktif gün',  mix: 2,     speed: 1.05, bonus: 1, desc: 'Tehlikeli madde ağırlıklı, doğru başına +₡1.' },
+  { id: 'bio',   name: 'Organik hafta',   mix: 1,     speed: .95,  bonus: 0, desc: 'Organik ağırlıklı, sakin bant.' },
+  { id: 'fast',  name: 'Hızlı bant',      mix: null,  speed: 1.4,  bonus: 1, desc: 'Bant çok hızlı, doğru başına +₡1.' },
 ];
 SS.ORDER_BUYERS = ['Zara\'nın kuzeni', 'Vega Müzesi', 'Titan Su Şirketi', 'Yıldız Tozu Atölyesi', 'Kayalık Karakol kantini', 'Bir koleksiyoncu', 'Rıhtım İdaresi', 'Profesör Gök', 'Galaktik Sirk', 'Kozmik Kafe'];
 // İlan metinleri: {c}=müşteri, {d}=varış, {g}=kargo, {o}=nesne

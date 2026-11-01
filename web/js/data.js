@@ -46,13 +46,13 @@ SS.CATS = { metal: 'Metal', part: 'Parça', mineral: 'Mineral', crystal: 'Krista
 SS.ZONES = [
   { id: 'belt', name: 'Asteroit Kuşağı', fuel: 10, mult: 1, desc: 'Sakin. Bol taş, biraz metal, nadiren kristal.',
     mix: { bolts: 5, plate: 3, sat: 1, part: 1, rock: 5, boulder: 2, crystal: 1, box: 1, bug: 2, tank: 0, slime: 0 }, relics: ['r1', 'r2', 'r3'] },
-  { id: 'yard', name: 'Gemi Mezarlığı', fuel: 22, mult: 1.35, desc: 'Batık filolar. Bol metal ve parça, arada patlayıcı tank.',
+  { id: 'yard', name: 'Gemi Mezarlığı', fuel: 22, mult: 1.25, desc: 'Batık filolar. Bol metal ve parça, arada patlayıcı tank.',
     mix: { bolts: 4, plate: 4, sat: 2, part: 3, rock: 2, boulder: 1, crystal: 1, box: 2, bug: 1, tank: 1, slime: 0 }, relics: ['r4', 'r5', 'r6'] },
-  { id: 'gas', name: 'Gaz Devi Halkası', fuel: 38, mult: 1.7, desc: 'Kristal cenneti. Sümüksüler kristalleri sırtında taşır.',
+  { id: 'gas', name: 'Gaz Devi Halkası', fuel: 38, mult: 1.5, desc: 'Kristal cenneti. Sümüksüler kristalleri sırtında taşır.',
     mix: { bolts: 2, plate: 2, sat: 1, part: 1, rock: 4, boulder: 2, crystal: 3, box: 2, bug: 2, tank: 1, slime: 2 }, relics: ['r7', 'r8', 'r9'] },
-  { id: 'pirate', name: 'Korsan Sektörü', fuel: 60, mult: 2.3, desc: 'Çok zengin, çok tehlikeli. Tanklar her yerde.',
+  { id: 'pirate', name: 'Korsan Sektörü', fuel: 60, mult: 1.9, desc: 'Çok zengin, çok tehlikeli. Tanklar her yerde.',
     mix: { bolts: 2, plate: 3, sat: 2, part: 3, rock: 2, boulder: 2, crystal: 3, box: 3, bug: 1, tank: 3, slime: 2 }, relics: ['r10', 'r11', 'r12'] },
-  { id: 'lost', name: 'Kayıp Yıldız', fuel: 75, mult: 3.2, desc: 'Halcyon gemisinin enkazı. Efsane gerçekmiş.', story: true,
+  { id: 'lost', name: 'Kayıp Yıldız', fuel: 75, mult: 2.4, desc: 'Halcyon gemisinin enkazı. Efsane gerçekmiş.', story: true,
     mix: { bolts: 2, plate: 2, sat: 3, part: 3, rock: 1, boulder: 1, crystal: 4, box: 3, bug: 0, tank: 2, slime: 2 }, relics: [] },
 ];
 
