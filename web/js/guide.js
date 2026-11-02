@@ -60,7 +60,7 @@ function jobsSec() {
   r.push(row('Hurda sözleşmesi', `${SS.COST.scrap} en · ${SS.DUR.scrap / 60} sa`, 'İş Merkezi. Müşteri belirli hurdayı ister: sabit ücret + hedef başına ödeme + tamamlama primi. Hedef olmayan her şey kargona girer. Lisans gerekmez.', 'sözleşme hurda'));
   SS.DELIVERY_TIERS.forEach((t, i) => r.push(row(`Teslimat · ${t.name}`, `${fmt(t.pay[0] * m)}–${fmt(t.pay[1] * m)}`, `${SS.COST.deliver} enerji · ${SS.DUR.deliver[i]} dk · ${t.fuel} yakıt${t.vip ? ' · teslimat itibarı 3 gerekir' : ''}. Kargo Pilotu Lisansı gerekir.`, 'teslimat')));
   SS.REPAIR_TIERS.forEach((t, i) => r.push(row(`Tamir · ${t.name}`, `${fmt(t.pay[0] * m)}–${fmt(t.pay[1] * m)}`, `${SS.COST.repair} enerji · ${SS.DUR.repair[i]} dk · ${t.size}×${t.size} devre. Devre Teknisyeni Belgesi gerekir.`, 'tamir')));
-  SS.SORTS.forEach(s => r.push(row(`Ayrıştırma · ${s.name}`, `${fmt(s.per)}/doğru`, `${s.energy} enerji · ${s.time} sn bant. Yanlış −₡4, kaçan −₡2, her 5'li seri +₡2. Ayrıştırma Sertifikası gerekir.`, 'ayrıştırma')));
+  SS.SORTS.forEach(s => r.push(row(`Ayrıştırma · ${s.name}`, `~${fmt(Math.round(s.per))}/doğru`, `${s.energy} enerji · ${s.time} sn bant. Yanlış −₡4, kaçan −₡2, her 5'li seri +₡2. Ayrıştırma Sertifikası gerekir.`, 'ayrıştırma')));
   r.push(row('Sipariş', 'pazarın ~1,7 katı', `Kargondaki eşyayı alıcıya teslim et; enerji harcamaz, ${SS.DUR.order} dk. Ticaret Ruhsatı gerekir.`, 'sipariş'));
   r.push(row('İlan saatleri', '', 'İlanlar 07, 10, 13, 16, 19 ve 22\'de yenilenir. 19:00 sonrası gece zammı %10.', 'ilan'));
   r.push(row('İtibar', '', 'Her başarılı iş kendi itibarını artırır; her seviye ödemeye %4 ekler. Teslimat ve tamirde 3. seviye VIP işleri açar.', 'itibar'));

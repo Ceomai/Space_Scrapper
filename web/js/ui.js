@@ -715,7 +715,7 @@ const ACT = {
         if (res.ok) { SS.earn(res.pay + tip); S.stats.deliver++; SS.bump('deliver'); SS.mood(3); SS.repGain('deliver'); }
         afterJob();
         resultModal(res.ok ? `${fmt(res.pay + tip)} kazandın` : res.quit ? 'Teslimattan vazgeçtin' : 'Kargo dağıldı',
-          (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what[0].toLocaleUpperCase('tr') + b.what.slice(1)} ${b.dest}'ya ulaştı.${tip ? ` Yumuşak iniş bahşişi: ${fmt(tip)}.` : ''} Kalan yakıt bonusu ödemeye eklendi. Teslimat itibarı +1.</p>`
+          (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what[0].toLocaleUpperCase('tr') + b.what.slice(1)} ${b.dest}'ya ulaştı.${res.rough ? ' Sert indin, kargo sarsıldı: ödeme %30 kesildi.' : ''}${tip ? ` Yumuşak iniş bahşişi: ${fmt(tip)}.` : ''} Kalan yakıt bonusu ödemeye eklendi. Teslimat itibarı +1.</p>`
             : `<p>${res.quit ? 'Müşteri sinirli ama yaşıyorsun.' : SS.fun() ? 'Kargo pistin her yerine saçıldı. Müşteri yine de teşekkür kartı gönderdi. Para yok ama.' : 'Gövde sarsıldı, kargo mahvoldu. Ücret yok.'}</p>`) + helpLine(['tolga']), res.ok, 'deliver');
       });
       else SS.Games.repair(b, res => {

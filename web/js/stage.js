@@ -93,7 +93,8 @@ function loop(now) {
   }
   g.draw(g.ctx, SS.Art.P(), g.t); g.ctx.restore();
   // Kenar dolgusu 6 karede bir yenilenir (her karede ~1 ms tutuyordu)
-  if ((g.dx || g.dy) && (g._padN = (g._padN || 0) + 1) % 6 === 1) padEdges(g);
+  // Oyun kenarda hareketli bir şey varsa (ör. kanca) o karede kopyalamaz; yoksa kenar şeridinde dikdörtgen leke kalıyordu
+  if ((g.dx || g.dy) && (g._padN = (g._padN || 0) + 1) % 6 === 1 && !(g.edgeBusy && g.edgeBusy())) padEdges(g);
   SS.Art.post(g.canvas, g.ctx, g.pixel);
   g.tctx.clearRect(0, 0, g.W, g.H);
   if (g.drawUI) { g.tctx.save(); if (g.dx || g.dy) g.tctx.translate(g.dx || 0, g.dy || 0); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }

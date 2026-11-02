@@ -317,7 +317,7 @@ SS.jobEst = b => {
   const mins = b.dur || 60;
   let pay = b.pay || 0;
   if (b.type === 'hunt') pay = b.fee + b.per * b.qty * .85 + b.fee * .5 * .6;
-  else if (b.type === 'sort') pay = b.per * b.time * .55;
+  else if (b.type === 'sort') pay = b.per * b.time * .42; // bant %25 yavaş: saniyede daha az parça
   else if (b.type === 'deliver') pay = b.pay * 1.0;
   else if (b.type === 'repair') pay = b.pay * .9;
   return { pay, mins, perHour: pay / mins * 60, perEn: b.energy ? pay / b.energy : 0 };

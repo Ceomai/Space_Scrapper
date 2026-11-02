@@ -228,7 +228,7 @@ SS.GUIDE = [
 <li><b>İşler</b>: Dört işin ödülü, riski ve becerisi farklıdır:
   <ul>
   <li><b>Hurda Avı</b>: Sallanan kancayla hurda toplarsın. Para değil <i>mal</i> verir; pazarda satman gerekir. Yakıt harcar. Aynı bölgeye sık dalarsan bölge tükenir (her gece kısmen yenilenir). Aynı gün aynı türden çok satarsan fiyat düşer.</li>
-  <li><b>Kargo Teslimatı</b>: İtkiyle yavaşlayıp piste düz inersin. Nakit öder; uzak sefer ve VIP en çok kazandırır, kaza sağlığa mal olur. Pilotluk, İtici ve Jiroskop işe yarar.</li>
+  <li><b>Kargo Teslimatı</b>: İtkiyle yavaşlayıp piste inersin; yön tuşunu bırakınca gemi kendini düzeltir, biraz sert iniş de az kesintiyle kabul edilir. Nakit öder; uzak sefer ve VIP en çok kazandırır, kaza sağlığa mal olur. Pilotluk, İtici ve Jiroskop işe yarar.</li>
   <li><b>Tamir İşi</b>: Kabloları döndürüp akımı lambaya ulaştırırsın. Risksiz nakit. Mühendislik ve Takım Çantası süre ve ipucu verir.</li>
   <li><b>Ayrıştırma Tesisi</b>: Düşen hurdayı doğru kutuya atarsın. Başlamadan önce hangi eşyanın hangi kutuya gittiği gösterilir. Az enerjiyle garanti para.</li>
   <li><b>İtibar</b>: Teslimat, tamir ve ayrıştırmada her başarı itibar kazandırır (0–5). Her seviye ödemeyi %8 artırır; 3. seviyede VIP sefer ve reaktör tamiri açılır.</li>

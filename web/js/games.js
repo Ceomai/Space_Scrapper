@@ -219,6 +219,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     }
   }
   const tip = () => ({ x: OX + Math.sin(hook.angle) * hook.len, y: OY + Math.cos(hook.angle) * hook.len });
+  g.edgeBusy = () => { const p = tip(); return p.x < 60 || p.x > W - 60 || p.y > H - 60; };
   const torps = () => daily ? dTorp : S.torps;
   function updCtl() { SS.Stage.setCtl('torp', `Torpido (${torps()})`, torps() <= 0); }
   function blowTank(m) {
@@ -444,10 +445,12 @@ G.deliver = (ct, onEnd) => {
   const g = { title: 'Teslimat: ' + ct.dest, W, H, quitLabel: 'Vazgeç',
     helpers: [SS.assist('tolga') && 'Tolga: +40 yakıt, pist daha geniş', thr && `İtici ${thr}: güçlü itki`, gyro && `Jiroskop ${gyro}: toleranslı iniş`].filter(Boolean),
     controls: [{ id: 'left', label: '◀ Sol', hold: 1 }, { id: 'thrust', label: 'İtki', hold: 1, cls: 'primary big' }, { id: 'right', label: 'Sağ ▶', hold: 1 }] };
-  const grav = .014 + ct.diff * .005 + ((ct.mods || []).includes('heavy') ? .004 : 0), thrust = .052 * (1 + thr * .15), rotSp = .05, fuelMax = 100 + pilot * 15 + (SS.assist('tolga') ? 40 : 0) + (ct.diff - 1) * 35 + (ct.fragile ? 30 : 0) + ((ct.mods || []).includes('heavy') ? 25 : 0), burn = .3 * (1 - thr * .1);
+  const grav = .012 + ct.diff * .004 + ((ct.mods || []).includes('heavy') ? .004 : 0), thrust = .052 * (1 + thr * .15), rotSp = .05, fuelMax = 100 + pilot * 15 + (SS.assist('tolga') ? 40 : 0) + (ct.diff - 1) * 35 + (ct.fragile ? 30 : 0) + ((ct.mods || []).includes('heavy') ? 25 : 0), burn = .3 * (1 - thr * .1);
   // Pist en az 42 px: gemi 24 px, rüzgârda bile insanca bir pay kalsın
-  const padW = Math.max(42, 78 - ct.diff * 12 + pilot * 4 + (SS.assist('tolga') ? 14 : 0) - ((ct.mods || []).includes('narrow') ? 14 : 0));
-  const vyMax = (ct.fragile ? .9 : 1.3) + pilot * .12 + gyro * .15, vxMax = .9 + pilot * .08 + gyro * .1, aMax = .3 + pilot * .03 + gyro * .06;
+  const padW = Math.max(56, 96 - ct.diff * 12 + pilot * 4 + (SS.assist('tolga') ? 14 : 0) - ((ct.mods || []).includes('narrow') ? 14 : 0));
+  // Toleranslar geniş: hızlıca inmek de kabul; sınırı biraz aşan iniş "sert ama teslim" sayılır (az ödeme, hasar yok)
+  const vyMax = (ct.fragile ? 1.5 : 2.1) + pilot * .12 + gyro * .15, vxMax = 1.4 + pilot * .08 + gyro * .1, aMax = .5 + pilot * .03 + gyro * .06;
+  const ROUGH = 1.45; // bu katsayıya kadar aşan iniş sert iniş sayılır
   const mods = ct.mods || [], shield = SS.takeBuff('shield');
   const wind = mods.includes('windy') ? (Math.random() < .5 ? -1 : 1) * rnd(.004, .007) : ct.diff === 3 ? rnd(-.004, .004) : 0;
   if (shield) g.helpers.push('Kalkan jeli: kaza hasarı yarıya iner');
@@ -459,12 +462,12 @@ G.deliver = (ct, onEnd) => {
   pts.push([px, padY], [px + padW, padY]); pts.sort((a, b) => a[0] - b[0]);
   const gy = x => { for (let i = 1; i < pts.length; i++) if (x <= pts[i][0]) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; return y0 + (y1 - y0) * (x - x0) / Math.max(1, x1 - x0); } return pts[pts.length - 1][1]; };
   const sh = { x: rnd(60, 300), y: 70, vx: rnd(-.7, .7), vy: 0, a: 0 };
-  let fuel = fuelMax, state = 'fly', endT = 0, flame = false, softLanding = false;
-  g._dbg = () => ({ sh, px, padW, padY, fuel, fuelMax, state, vyMax, vxMax, aMax, grav, thrust, wind, rotSp, gy });
+  let fuel = fuelMax, state = 'fly', endT = 0, flame = false, softLanding = false, rough = false;
+  g._dbg = () => ({ sh, px, padW, padY, fuel, fuelMax, state, vyMax, vxMax, aMax, grav, thrust, wind, rotSp, gy, rough });
   g.finish = reason => {
     if (g.done) return; g.done = true;
     const ok = state === 'landed';
-    g.result = { ok, tip: ok && mods.includes('tip') && softLanding ? Math.round(ct.pay * .25) : 0, pay: ok ? Math.round(ct.pay * (.8 + .4 * fuel / fuelMax)) : 0, quit: reason === 'quit' };
+    g.result = { ok, tip: ok && mods.includes('tip') && softLanding ? Math.round(ct.pay * .25) : 0, pay: ok ? Math.round(ct.pay * (.8 + .4 * fuel / fuelMax) * (rough ? .7 : 1)) : 0, rough, quit: reason === 'quit' };
   };
   g.key = (k, down) => {
     if (k === 'ArrowLeft' || k === 'a') g.input.left = down;
@@ -477,6 +480,8 @@ G.deliver = (ct, onEnd) => {
     if (state !== 'fly') { endT -= dt; if (endT <= 0) g.finish(state); return; }
     if (g.input.left) sh.a -= rotSp * f;
     if (g.input.right) sh.a += rotSp * f;
+    // Otomatik dengeleme: yön tuşu bırakılınca gemi kendiliğinden dikleşir
+    if (!g.input.left && !g.input.right) sh.a *= Math.pow(.94, f);
     sh.a = clamp(sh.a, -1.4, 1.4);
     flame = g.input.thrust && fuel > 0;
     if (flame) { sh.vx += Math.sin(sh.a) * thrust * f; sh.vy -= Math.cos(sh.a) * thrust * f; fuel = Math.max(0, fuel - burn * f); }
@@ -487,11 +492,12 @@ G.deliver = (ct, onEnd) => {
     if (sh.y < 24) { sh.y = 24; sh.vy = Math.max(0, sh.vy); }
     const bottom = sh.y + 13;
     if (bottom >= gy(sh.x)) {
-      const onPad = sh.x - 12 >= px && sh.x + 12 <= px + padW;
-      const ok = onPad && sh.vy <= vyMax && Math.abs(sh.vx) <= vxMax && Math.abs(sh.a) <= aMax;
-      softLanding = sh.vy < .6;
+      const onPad = sh.x - 6 >= px && sh.x + 6 <= px + padW; // gövdenin çoğu pistteyse yeter
+      const within = k => sh.vy <= vyMax * k && Math.abs(sh.vx) <= vxMax * k && Math.abs(sh.a) <= aMax * k;
+      const ok = onPad && within(1); rough = !ok && onPad && within(ROUGH);
+      softLanding = sh.vy < .9;
       const P = SS.Art.P();
-      if (ok) { state = 'landed'; sh.y = padY - 13; sh.a = 0; SS.FX.burst(fx, sh.x, padY, [P.good, P.accent, P.star], 30, 3); SS.FX.text(fx, sh.x, padY - 50, 'Teslim edildi!', P.good); SS.sfx('big'); }
+      if (ok || rough) { state = 'landed'; sh.y = padY - 13; sh.a = 0; sh.vx = sh.vy = 0; SS.FX.burst(fx, sh.x, padY, rough ? [P.warn, P.accent] : [P.good, P.accent, P.star], 30, 3); SS.FX.text(fx, sh.x, padY - 50, rough ? 'Sert ama teslim!' : 'Teslim edildi!', rough ? P.warn : P.good, rough ? 'Kargo sarsıldı: ödeme -%30' : ''); SS.sfx(rough ? 'coin' : 'big'); }
       else {
         state = 'crashed'; SS.FX.burst(fx, sh.x, sh.y, ['#ffcf5a', '#ff8a3d', '#ff4b3a'], 80, 6); SS.sfx('boom');
         const d = SS.hurt(shield ? 8 : 16, 'Sert iniş'); S.morale = clamp(S.morale - 6, 0, 100);
@@ -501,7 +507,7 @@ G.deliver = (ct, onEnd) => {
     }
     const P = SS.Art.P();
     const vyOk = sh.vy <= vyMax, aOk = Math.abs(sh.a) <= aMax;
-    SS.Stage.hud(`<span class="${fuel < 20 ? 'warn' : ''}">Yakıt ${Math.round(fuel / fuelMax * 100)}%</span><span class="${vyOk ? 'ok' : 'warn'}">Düşüş ${(sh.vy * 10).toFixed(0)}</span><span class="${aOk ? 'ok' : 'warn'}">Açı ${Math.round(sh.a * 57)}°</span>`);
+    SS.Stage.hud(`<span class="${fuel < 20 ? 'warn' : ''}">Yakıt ${Math.round(fuel / fuelMax * 100)}%</span><span class="${vyOk ? 'ok' : 'warn'}">Düşüş ${(sh.vy * 10).toFixed(0)}/${(vyMax * 10).toFixed(0)}</span><span class="${aOk ? 'ok' : 'warn'}">Açı ${Math.round(sh.a * 57)}°</span>`);
   };
   g.draw = (c, P, t) => {
     SS.Art.space(c, W, H, t, 'belt', stars, P);
@@ -664,6 +670,7 @@ G.sort = (shift, onEnd) => {
   const POOL = SS.SORT_POOL.map(o => [o.kind, o.bin]);
   const per = shift.per + (SS.assist('ela') ? 2 : 0) + repBonus;
   const timeMax = shift.time + SS.moraleTime();
+  const spd = shift.speed * .75; // bant ve gelme sıklığı %25 yavaş
   let time = timeMax, el = 0, spawnT = 0, score = 0, streak = 0, right = 0, wrong = 0, missed = 0, endT = -1;
   const falling = [], flying = [], fx = SS.FX.make();
   const binY = 505;
@@ -693,11 +700,11 @@ G.sort = (shift, onEnd) => {
     if (time <= 0) { time = 0; endT = .7; }
     spawnT -= dt;
     if (spawnT <= 0) {
-      spawnT = Math.max(.5, 1.35 - el * .022 * shift.speed) / shift.speed;
+      spawnT = Math.max(.5, 1.35 - el * .022 * spd) / spd;
       const [kind, bin] = shift.mix != null && Math.random() < .6 ? pick(POOL.filter(p => p[1] === shift.mix)) : pick(POOL);
       falling.push({ kind, bin, x: 180 + rnd(-16, 16), y: -20, r: 15, rot: rnd(-.5, .5), seed: Math.random() * 9, vx: 1 });
     }
-    const sp = (1.1 + el * .03) * shift.speed;
+    const sp = (1.1 + el * .03) * spd;
     for (let i = falling.length - 1; i >= 0; i--) {
       const o = falling[i]; o.y += sp * f;
       if (o.y > binY - 18) { falling.splice(i, 1); missed++; streak = 0; score -= 2; SS.FX.text(fx, o.x, binY - 30, 'Kaçtı! -2', SS.Art.P().bad); }
