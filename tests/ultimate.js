@@ -118,25 +118,46 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
       await p.ctx.close(); }
     r[0] && r[0] === r[1] ? ok('Günün Avı herkes için aynı', `${JSON.parse(r[0]).items.length} nesne, saha ${JSON.parse(r[0]).v}`) : fail('Günün Avı determinizmi', [String(r[0]).slice(0, 80), String(r[1]).slice(0, 80)]); }
 
-  /* 7. Uygulama köprüsü: AsyncStorage taklidiyle kayıt yeniden açılışta korunuyor mu */
-  { const html = fs.readFileSync('' + require('path').resolve(__dirname, '../app/game/gameHtml.js') + '', 'utf8').replace(/^\/\/.*\n/gm, '').replace(/^export default /m, '').replace(/;\s*$/, '');
-    const doc = JSON.parse(html.trim());
-    fs.writeFileSync(__dirname + '/out/bundled.html', doc);
-    const app = fs.readFileSync('' + require('path').resolve(__dirname, '../app/App.js') + '', 'utf8');
-    const tpl = app.slice(app.indexOf('const bridgeScript = store => `') + 31, app.indexOf("})(); true;`;") + 11).replace("${Platform.OS}", 'android');
-    const bridge = store => tpl.replace('${JSON.stringify(store)}', JSON.stringify(store));
-    let store = {}; const posts = [];
-    const boot = async () => { const ctx = await b.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message));
-      await p.exposeFunction('__rn', m => { const o = JSON.parse(m); posts.push(o.type); if (o.type === 'set') store[o.k] = o.v; if (o.type === 'remove') delete store[o.k]; if (o.type === 'clear') store = {}; });
-      await p.addInitScript(`window.ReactNativeWebView = { postMessage: m => window.__rn(m) }; ${bridge(store)}`);
-      await p.goto('file://' + __dirname + '/out/bundled.html'); await p.waitForTimeout(400); p.ctx = ctx; return p; };
-    let p = await boot();
-    await p.click('[data-act=start]'); await p.waitForTimeout(200); await p.evaluate(() => { SS.closeModal(); S.cash = 777; SS.save(); SS.ACT.ledger(); }); await p.click('[data-act=sleepNow]'); await p.waitForTimeout(300);
-    await p.evaluate(() => { SS.haptic && SS.haptic(true); SS.scheduleNotes && SS.scheduleNotes(); });
-    const day1 = await p.evaluate(() => S.day); const errs1 = p.errs; await p.ctx.close();
-    p = await boot(); const cont = await p.$('[data-act=cont]'); let day2 = null; if (cont) { await cont.click(); await p.waitForTimeout(200); day2 = await p.evaluate(() => S.day); }
-    (day2 === day1 && !errs1.length && !p.errs.length) ? ok('Uygulama köprüsü (APK kaydı)', `yeniden açılışta gün ${day2} geri geldi; mesajlar: ${[...new Set(posts)].join(', ')}`) : fail('Uygulama köprüsü', [`gün ${day1} → ${day2}`, ...errs1, ...p.errs]);
-    await p.ctx.close(); }
+  /* 7. PWA: yayın adımını taklit eder, yerel HTTP sunucusunda manifest, ikonlar, service worker ve çevrimdışı açılış */
+  { const path = require('path'), http = require('http'), web = path.resolve(__dirname, '../web');
+    const site = path.join(__dirname, 'out', 'site'); fs.rmSync(site, { recursive: true, force: true }); fs.mkdirSync(site, { recursive: true });
+    for (const f of ['index.html', 'manifest.webmanifest']) fs.copyFileSync(path.join(web, f), path.join(site, f));
+    for (const d of ['js', 'icons']) fs.cpSync(path.join(web, d), path.join(site, d), { recursive: true });
+    const files = ['./', './index.html', './manifest.webmanifest'].concat(fs.readdirSync(path.join(site, 'js')).map(f => './js/' + f)).concat(fs.readdirSync(path.join(site, 'icons')).filter(f => !f.includes('1024')).map(f => './icons/' + f));
+    fs.writeFileSync(path.join(site, 'sw.js'), fs.readFileSync(path.join(web, 'sw.js'), 'utf8').replace('__BUILD__', 'test').replace(/\/\*FILES\*\/[\s\S]*?\/\*FILES\*\//, JSON.stringify(files)));
+    const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
+    const srv = http.createServer((req, res) => { let u = decodeURIComponent(req.url.split('?')[0]); if (u.endsWith('/')) u += 'index.html'; const fp = path.join(site, u); if (!fp.startsWith(site) || !fs.existsSync(fp)) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': TYPES[path.extname(fp)] || 'application/octet-stream' }); fs.createReadStream(fp).pipe(res); });
+    await new Promise(r => srv.listen(0, '127.0.0.1', r)); const base = `http://127.0.0.1:${srv.address().port}/`;
+    const bad = []; let note = '';
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 } }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message));
+    try {
+      await p.goto(base); await p.waitForTimeout(300);
+      const info = await p.evaluate(async () => {
+        const mode = document.compatMode, link = document.querySelector('link[rel=manifest]');
+        const m = await (await fetch(link.href)).json();
+        const icons = await Promise.all(m.icons.map(ic => new Promise(res => { const i = new Image(); i.onload = () => res(`${i.naturalWidth}x${i.naturalHeight}` === ic.sizes); i.onerror = () => res(false); i.src = new URL(ic.src, link.href); })));
+        const reg = await Promise.race([navigator.serviceWorker.ready, new Promise(r => setTimeout(() => r(null), 8000))]);
+        return { mode, name: m.name, display: m.display, orientation: m.orientation, start: m.start_url, maskable: m.icons.some(i => i.purpose === 'maskable'), icons, sw: !!(reg && reg.active) };
+      });
+      if (info.mode !== 'CSS1Compat') bad.push('standart mod değil: ' + info.mode);
+      if (info.display !== 'standalone' || info.orientation !== 'portrait' || !info.maskable || !info.start) bad.push('manifest eksik: ' + JSON.stringify(info));
+      if (info.icons.some(x => !x)) bad.push('ikon boyutu manifestle uyuşmuyor: ' + JSON.stringify(info.icons));
+      if (!info.sw) bad.push('service worker etkinleşmedi');
+      await p.reload(); await p.waitForTimeout(400);
+      await p.click('[data-act=start]'); await p.waitForTimeout(150);
+      const day1 = await p.evaluate(() => { SS.closeModal(); S.tut = null; S.cash = 777; SS.ACT.goSleep(); SS.ACT.sleepNow(); SS.closeModal(); SS.save(); return S.day; });
+      await ctx.setOffline(true);
+      await p.reload(); await p.waitForTimeout(500);
+      const cont = await p.$('[data-act=cont]');
+      const day2 = cont ? (await cont.click(), await p.waitForTimeout(200), await p.evaluate(() => S.day)) : null;
+      if (day2 !== day1) bad.push(`çevrimdışı yeniden açılış: gün ${day1} → ${day2}`);
+      const share = await p.evaluate(async () => { let called = 0; navigator.share = async () => { called++; }; navigator.canShare = () => false; await SS.share({ text: 'x' }); return called; });
+      if (share !== 1) bad.push('paylaşım menüsü çağrılmadı');
+      note = `manifest "${info.name}", ${info.icons.length} ikon, service worker etkin, çevrimdışı gün ${day2}, telefonun paylaşım menüsü`;
+    } catch (e) { bad.push(e.message.split('\n')[0]); }
+    if (errs.length) bad.push(...errs.slice(0, 3));
+    await ctx.close(); srv.close();
+    bad.length ? fail('PWA (manifest, ikonlar, service worker, çevrimdışı)', bad) : ok('PWA (manifest, ikonlar, service worker, çevrimdışı)', note); }
 
   /* 8. Çok uzun oyun: 500 gün, 3 kez Yeni Oyun+, kayıt boyutu */
   { const p = await page({ fast: true }); await newGame(p, ['pit', 'ela', 'tolga'], [2, 2, 2], 'grim');

@@ -4,7 +4,7 @@ name: Testler
 on:
   push:
     branches: [main]
-    paths: ['web/**', 'app/**', 'tests/**', '.github/workflows/tests.yml']
+    paths: ['web/**', 'tests/**', '.github/workflows/tests.yml']
   workflow_dispatch:
     inputs:
       kapsam:
@@ -24,7 +24,5 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0
           npx playwright install --with-deps chromium
-      - name: Uygulama paketini üret
-        run: GAME_SRC=web node app/scripts/build-game.js
       - name: Testleri çalıştır
         run: node tests/run.js ${{ github.event.inputs.kapsam == 'tam' && 'tam' || 'hızlı' }}

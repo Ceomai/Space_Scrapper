@@ -3,6 +3,13 @@
 Denetim tarihi: 2026-11-01 / 02. Her kayıt: nasıl bulundu → kök neden → önem → düzeltme → doğrulama.
 Önem ölçeği: **Kritik** (çökme/veri kaybı, yaygın), **Yüksek**, **Orta**, **Düşük**.
 
+> **Güncelleme · 2026-11-02 — Expo kabuğu kaldırıldı, oyun PWA oldu.**
+> - `app/` (Expo/React Native), APK ve Expo Go iş akışları ile eski APK sürümü silindi. Telefonda oynama artık ana ekrana eklenebilir web uygulaması (PWA) ile oluyor: manifest, ikonlar, service worker ve çevrimdışı açılış var.
+> - Bu yüzden aşağıdaki şu maddeler artık geçerli değil: `app/` bağımlılık açıkları (G4: 13 açık, **kapandı**: projede npm bağımlılığı kalmadı), WebView gezinme kısıtı ve köprü doğrulaması (G2, G3, hata #9–10: kabukla birlikte kalktı), native geri tuşu (hata #8: web tarafındaki `SS.onBack` artık ana ekrandan açılan uygulamada tarayıcı geçmişiyle çalışıyor).
+> - PWA, `ultimate.js` içinde yerel HTTP sunucusunda test ediliyor: manifest alanları, ikon boyutları, service worker etkinleşmesi, **çevrimdışı yeniden açılışta kaydın korunması**, telefonun paylaşım menüsü.
+> - Yeni kısıtlar: web'de güvenilir zamanlanmış yerel bildirim yok (hatırlatmalar kalktı). iOS Safari, ana ekrana **eklenmemiş** sitelerin verisini uzun süre kullanılmazsa silebilir; ana ekrandaki uygulama bundan muaf.
+> - Mağaza yayını için yol (Google Play: Trusted Web Activity; App Store: ince sarmalayıcı) README'de.
+
 ## Bu denetimde bulunan ve düzeltilenler
 
 | # | Önem | Sorun | Nasıl bulundu | Kök neden | Düzeltme | Doğrulama |

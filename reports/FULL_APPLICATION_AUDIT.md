@@ -3,13 +3,20 @@
 Tarih: 2026-11-01 / 02 · Kapsam: `web/` (oyun), `app/` (Expo kabuğu), `tests/`, GitHub Actions.
 Bu rapordaki her sayı bu oturumda gerçekten çalıştırılmış testlerden gelir. Ölçülemeyenler ayrıca belirtilmiştir.
 
+> **Güncelleme · 2026-11-02 — Expo kabuğu kaldırıldı, oyun PWA oldu.**
+> - `app/` (Expo/React Native), APK ve Expo Go iş akışları ile eski APK sürümü silindi. Telefonda oynama artık ana ekrana eklenebilir web uygulaması (PWA) ile oluyor: manifest, ikonlar, service worker ve çevrimdışı açılış var.
+> - Bu yüzden aşağıdaki şu maddeler artık geçerli değil: `app/` bağımlılık açıkları (G4: 13 açık, **kapandı**: projede npm bağımlılığı kalmadı), WebView gezinme kısıtı ve köprü doğrulaması (G2, G3, hata #9–10: kabukla birlikte kalktı), native geri tuşu (hata #8: web tarafındaki `SS.onBack` artık ana ekrandan açılan uygulamada tarayıcı geçmişiyle çalışıyor).
+> - PWA, `ultimate.js` içinde yerel HTTP sunucusunda test ediliyor: manifest alanları, ikon boyutları, service worker etkinleşmesi, **çevrimdışı yeniden açılışta kaydın korunması**, telefonun paylaşım menüsü.
+> - Yeni kısıtlar: web'de güvenilir zamanlanmış yerel bildirim yok (hatırlatmalar kalktı). iOS Safari, ana ekrana **eklenmemiş** sitelerin verisini uzun süre kullanılmazsa silebilir; ana ekrandaki uygulama bundan muaf.
+> - Mağaza yayını için yol (Google Play: Trusted Web Activity; App Store: ince sarmalayıcı) README'de.
+
 Ayrıntılar:
 - [TEST_COVERAGE.md](TEST_COVERAGE.md)
 - [BUGS_AND_FIXES.md](BUGS_AND_FIXES.md)
 - [PERFORMANCE_REPORT.md](PERFORMANCE_REPORT.md)
 - [SECURITY_REPORT.md](SECURITY_REPORT.md)
 
-## 1. Genel sağlık puanı: **88 / 100**
+## 1. Genel sağlık puanı: **88 / 100** (Expo kaldırıldıktan sonra: **91 / 100** — bağımlılık açıkları ve doğrulanamayan native kod ortadan kalktı; bildirim kaybı ve bulut yedeği eksikliği kaldı)
 
 | Etken | Etki |
 |---|---|
