@@ -536,7 +536,7 @@ G.deliver = (ct, onEnd) => {
 G.repair = (job, onEnd) => {
   const N = job.size, W = 360, H = 470, cs = 300 / N, ox = 30, oy = 110;
   const tk = SS.lvl('toolkit');
-  const g = { title: 'Tamir: ' + job.what, W, H, fill: true, quitLabel: 'Vazgeç', controls: [{ id: 'hint', label: 'İpucu', cls: '' }],
+  const g = { title: 'Tamir: ' + job.what, W, H, quitLabel: 'Vazgeç', controls: [{ id: 'hint', label: 'İpucu', cls: '' }],
     helpers: [SS.assist('ela') && 'Ela: +2 ipucu, +15 sn', SS.assist('tolga') && 'Tolga: +15 sn', tk && `Takım çantası ${tk}: +${tk} ipucu, +${tk * 8} sn`, S.skills.eng && `Mühendislik ${S.skills.eng}: +${S.skills.eng * 6} sn`].filter(Boolean) };
   const NB = 1, EB = 2, SB = 4, WB = 8;
   const rot = m => ((m << 1) | (m >> 3)) & 15;

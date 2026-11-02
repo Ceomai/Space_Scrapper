@@ -8,12 +8,13 @@ SS.isOpen = (id, t = S.time) => { const l = SS.loc(id); if (!l) return true; con
 SS.openLabel = id => { const l = SS.loc(id); return l.open[0] === 0 && l.open[1] >= 26 ? 'Her zaman açık' : `${String(l.open[0]).padStart(2, '0')}:00–${String(l.open[1] % 24).padStart(2, '0')}:00`; };
 SS.travelCost = to => {
   if (to === S.loc) return { min: 0, energy: 0 };
-  const a = SS.loc(S.loc), b = SS.loc(to), d = Math.hypot(a.x - b.x, a.y - b.y);
+  const a = SS.loc(S.loc), b = SS.loc(to); if (!a || !b) return { min: 0, energy: 0 };
+  const d = Math.hypot(a.x - b.x, a.y - b.y);
   const min = 10 + Math.round(d * 45 / 5) * 5;
   return { min: SS.assist('pit') ? Math.round(min * .8 / 5) * 5 : min, energy: 1 + Math.round(d * 4) };
 };
 SS.travelCostFrom = (from, to) => {
-  if (to === from) return { min: 0, energy: 0 };
+  if (to === from || !SS.loc(from) || !SS.loc(to)) return { min: 0, energy: 0 };
   const a = SS.loc(from), b = SS.loc(to), d = Math.hypot(a.x - b.x, a.y - b.y), min = 10 + Math.round(d * 45 / 5) * 5;
   return { min: SS.assist('pit') ? Math.round(min * .8 / 5) * 5 : min, energy: 1 + Math.round(d * 4) };
 };

@@ -308,7 +308,7 @@ SS.pickDecision = () => {
   const pool = SS.DECISIONS.filter(d => !d.urgent && ok(d));
   return pool.length ? pick(pool).id : null;
 };
-SS.curDecision = () => !S.decision ? null : S.decision.startsWith('arc:') ? SS.arcDecision() : SS.DECISIONS.find(x => x.id === S.decision);
+SS.curDecision = () => { if (!S.decision) return null; const d = S.decision.startsWith('arc:') ? SS.arcDecision() : SS.DECISIONS.find(x => x.id === S.decision); if (!d) S.decision = null; return d || null; };
 SS.decide = i => {
   const d = SS.curDecision(); if (!d) return null;
   const o = d.opts[i]; if (!o || (o.need && !o.need())) return null;
@@ -335,8 +335,8 @@ SS.newDay = notes => {
     movers.push([k, S.trend[k]]);
   }
   S.event = null;
-  if (S.nextEvent) {
-    const ev = SS.EVENTS.find(e => e.id === S.nextEvent);
+  const ev = S.nextEvent && SS.EVENTS.find(e => e.id === S.nextEvent);
+  if (ev) {
     const res = ev.run(), text = SS.tx(res || ev.text);
     if (text) S.event = { id: ev.id, title: ev.title, text, bad: !!ev.bad };
   }
@@ -363,7 +363,7 @@ SS.newDay = notes => {
     news: pick(SS.NEWS[SS.fun() ? 'easy' : 'hard']),
     up: movers[0], down: movers[movers.length - 1],
     crew: SS.crewList().map(id => ({ id, status: SS.crewStatus(id) })),
-    decision: S.decision ? SS.curDecision().title : null, tease: S.teaseToday,
+    decision: S.decision && SS.curDecision() ? SS.curDecision().title : null, tease: S.teaseToday,
   };
 };
 

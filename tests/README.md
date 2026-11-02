@@ -13,6 +13,7 @@ node tests/run.js tam    # tam (~60 dk)
 | `ultimate.js` | İçerik denetimi (her karar, yay, sınama ve olay sonucunun iki tonda metni), çift dokunuş, 4 ekran boyutu × 2 stilde yerleşim (taşma, ekran dışı düğme, dokunma alanı, harita çakışması), bellek ve kare süresi, Günün Avı determinizmi, uygulama kayıt köprüsü, 4×125 günlük Yeni Oyun+ zinciri, saat sınırları |
 | `winbots.js` | Her mini oyunu kusursuz oynayan botlarla kazanılabilirliği doğrular (iniş, tamir, ayrıştırma, laboratuvar, kalkan, savunma, güvenlik duvarı, evrak) |
 | `lander.js` | İniş oyununun bütün zorluk ve değiştirici birleşimlerini ölçer |
+| `audit.js` | Denetim: ad alanına HTML/emoji/RTL girdileri, 30–60 rastgele kurcalanmış kayıt, 97 eylemin güvenlik ağı olmadan 4000+ rastgele çağrısı, 7 saat dilimi ve yaz saati geçişleri, kalıcılık ve depolama dolu durumu, mini oyun ortasında kapanma, köprü mesaj doğrulaması, Android geri tuşu, açılış süresi ve bellek |
 | `edge.js` | Depolama kapalı, bozuk kayıt, eski kayıt geçişi, garip bağlantılar, bütün ekranlar × 3 tema × 2 stil, masaüstü ve yatay ekran |
 | `fast.js` | Mini oyunları atlayıp oyunun bütün eylemlerini rastgele girdilerle sürer; her adımda değerlerin geçerliliğini denetler |
 | `monkey.js` | Gerçek arayüzde rastgele dokunan oturumlar (7 ekran boyutu, rastgele ayarlar) |

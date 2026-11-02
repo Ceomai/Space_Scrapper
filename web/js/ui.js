@@ -176,7 +176,7 @@ function mapView() {
 }
 function mapPanel(p) {
   if (p === 'decision' && S.decision) {
-    const d = SS.curDecision();
+    const d = SS.curDecision(); if (!d) { S.decision = null; return SS.closeModal(); }
     return SS.modal(`<div class="story">${d.who ? face(d.who, 52) : icon('fragment', 48)}<div><p class="eyebrow">Karar anı</p><h2>${d.title}</h2></div></div><p>${esc(SS.tx(d.text))}</p>
       <div class="row">${d.opts.map((o, i) => btn(o.label, 'decide', { i }, i === 0 ? 'primary' : 'ghost', o.need && !o.need())).join('')}</div><small>Karar vermezsen gün sonunda kaybolur.</small><div class="row">${btn('Sonra', 'close', {}, 'ghost')}</div>`);
   }
@@ -521,11 +521,11 @@ function ledgerModal() {
   const incSum = inc.reduce((a, i) => a + i.amt, 0), req = L.filter(i => i.req), opt = L.filter(i => !i.req);
   const reqSum = req.reduce((a, i) => a + i.amt, 0), optSum = opt.filter(i => LSEL.has(i.id)).reduce((a, i) => a + i.amt, 0);
   const after = S.cash + incSum - reqSum - optSum, over = optSum > 0 && after < 0;
-  const row = (l, v, cls = '') => `<li class="${cls}"><span>${l}</span><b>${v >= 0 ? '+' : '−'}${fmt(Math.abs(v))}</b></li>`;
+  const row = (l, v, cls = '') => `<li class="${cls}"><span>${esc(l)}</span><b>${v >= 0 ? '+' : '−'}${fmt(Math.abs(v))}</b></li>`;
   SS.modal(`<div class="ledger"><div class="lg-head"><p class="eyebrow">Akşam defteri</p><h2>Gün ${S.day} · ${SS.clock()}</h2></div>
     <ul class="lg">${row('Bakiye', S.cash)}${inc.map(i => row(i.name, i.amt, 'inc')).join('')}</ul>
     <p class="label">Zorunlu</p><ul class="lg">${req.map(i => row(i.name, -i.amt)).join('')}</ul>
-    <p class="label">Kararın senin</p><ul class="lg opt">${opt.map(i => `<li class="${LSEL.has(i.id) ? '' : 'off'}"><button class="chk ${LSEL.has(i.id) ? 'on' : ''}" data-act="ltog" data-id="${i.id}" aria-pressed="${LSEL.has(i.id)}" aria-label="${i.name}">${LSEL.has(i.id) ? '✓' : ''}</button><span>${i.name}${LSEL.has(i.id) ? '' : `<small>${i.warn}</small>`}</span><b>−${fmt(i.amt)}</b></li>`).join('')}</ul>
+    <p class="label">Kararın senin</p><ul class="lg opt">${opt.map(i => `<li class="${LSEL.has(i.id) ? '' : 'off'}"><button class="chk ${LSEL.has(i.id) ? 'on' : ''}" data-act="ltog" data-id="${i.id}" aria-pressed="${LSEL.has(i.id)}" aria-label="${esc(i.name)}">${LSEL.has(i.id) ? '✓' : ''}</button><span>${esc(i.name)}${LSEL.has(i.id) ? '' : `<small>${i.warn}</small>`}</span><b>−${fmt(i.amt)}</b></li>`).join('')}</ul>
     <ul class="lg total">${row('Kalan', after, after < 0 ? 'neg' : '')}</ul>
     ${S.tease ? `<div class="alert info">Yarın: ${esc(S.tease.text)}</div>` : ''}
     ${SS.crewList().length ? `<div class="crew-mini">${SS.crewList().map(id => { const st = SS.crewStatus(id); return `<div>${face(id, 30)}<span><b>${SS.comp(id).name}</b><em class="st ${st.cls}">${st.label}</em></span></div>`; }).join('')}</div>` : ''}
@@ -540,7 +540,7 @@ function bulletinModal() {
     <h2 class="headline">${B.event ? B.event.title : 'İstasyonda sakin bir sabah'}</h2>
     ${S.morning && S.morningKey && SS.hasCrew(S.morningKey) ? `<div class="react">${face(S.morningKey, 36)}<p>${esc(S.morning)}</p></div>` : ''}
     <p class="lede">${esc(B.event ? B.event.text : B.news)}</p>
-    ${night.R.length ? `<p class="label">Dün gece</p><ul class="kv">${night.R.map(([l, v, ok]) => `<li class="${ok === false ? 'neg' : ''}"><span>${l}</span><b>${v < 0 ? '−' + fmt(-v) : (ok !== null ? '+' : '') + fmt(v)}</b></li>`).join('')}</ul>` : ''}
+    ${night.R.length ? `<p class="label">Dün gece</p><ul class="kv">${night.R.map(([l, v, ok]) => `<li class="${ok === false ? 'neg' : ''}"><span>${esc(l)}</span><b>${v < 0 ? '−' + fmt(-v) : (ok !== null ? '+' : '') + fmt(v)}</b></li>`).join('')}</ul>` : ''}
     ${B.crew.length ? `<p class="label">Hane</p><div class="crew-mini">${B.crew.map(c => `<div>${face(c.id, 30)}<span><b>${SS.comp(c.id).name}</b><em class="st ${c.status.cls}">${c.status.label}</em></span></div>`).join('')}</div>` : ''}
     ${night.notes.length ? `<p class="label">Gece olanlar</p>${night.notes.map(n => `<p class="note">${esc(n)}</p>`).join('')}` : ''}
     ${B.echoes.length ? `<p class="label">Dünün kararları</p><ul class="echo">${B.echoes.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}

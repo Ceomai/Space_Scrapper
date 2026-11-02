@@ -1,7 +1,7 @@
 // Space Scrapper — Expo kabuğu: oyunu WebView'da çalıştırır, kaydı telefonda tutar,
 // paylaşım / titreşim / yerel bildirim isteklerini oyundan alıp yerine getirir.
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, BackHandler, Linking, Platform, Share, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
@@ -49,6 +49,9 @@ async function shareCard({ image, text }) {
 }
 
 async function scheduleReminders(list) {
+  // Oyundan gelen listeyi doğrula: en fazla 10 bildirim, 1 dk – 30 gün arası, kısa metin
+  list = (Array.isArray(list) ? list : []).filter(n => n && Number.isFinite(n.inMinutes) && n.inMinutes >= 1 && n.inMinutes <= 43200)
+    .slice(0, 10).map(n => ({ inMinutes: n.inMinutes, title: String(n.title || '').slice(0, 80), body: String(n.body || '').slice(0, 200) }));
   try {
     let { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') ({ status } = await Notifications.requestPermissionsAsync());
@@ -79,17 +82,30 @@ export default function App() {
     })();
   }, []);
 
+  // Android geri tuşu: önce oyun kendi içinde geri gider (mini oyun, pencere, harita); haritadaysa uygulama kapanır
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (!web.current) return false;
+      web.current.injectJavaScript('try{window.SS&&SS.onBack?SS.onBack():window.SS_NATIVE&&SS_NATIVE.post({type:"exit"})}catch(e){};true;');
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
+
+  const okKey = k => typeof k === 'string' && k.length > 0 && k.length < 100;
   const onMessage = async e => {
     let m; try { m = JSON.parse(e.nativeEvent.data); } catch { return; }
+    if (!m || typeof m.type !== 'string') return;
     switch (m.type) {
-      case 'set': AsyncStorage.setItem(PREFIX + m.k, m.v).catch(() => {}); break;
-      case 'remove': AsyncStorage.removeItem(PREFIX + m.k).catch(() => {}); break;
+      case 'set': if (okKey(m.k) && typeof m.v === 'string' && m.v.length < 5e6) AsyncStorage.setItem(PREFIX + m.k, m.v).catch(() => {}); break;
+      case 'remove': if (okKey(m.k)) AsyncStorage.removeItem(PREFIX + m.k).catch(() => {}); break;
+      case 'exit': BackHandler.exitApp(); break;
       case 'clear': {
         const keys = (await AsyncStorage.getAllKeys()).filter(k => k.startsWith(PREFIX));
         AsyncStorage.multiRemove(keys).catch(() => {}); break;
       }
       case 'haptic': Haptics.impactAsync(m.strong ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light).catch(() => {}); break;
-      case 'share': shareCard(m); break;
+      case 'share': if ((!m.image || (typeof m.image === 'string' && m.image.length < 8e6)) && (!m.text || typeof m.text === 'string')) shareCard(m); break;
       case 'notify': scheduleReminders(m.list); break;
     }
   };
@@ -112,6 +128,13 @@ export default function App() {
             bounces={false}
             overScrollMode="never"
             setSupportMultipleWindows={false}
+            // Oyun sayfası dışına gezinme WebView içinde açılmaz (köprüye erişemez); dış bağlantılar tarayıcıda açılır
+            onShouldStartLoadWithRequest={req => {
+              const u = req.url || '';
+              if (u.startsWith('about:') || u.startsWith('data:') || u.startsWith('https://space-scrapper.local')) return true;
+              Linking.openURL(u).catch(() => {});
+              return false;
+            }}
             textZoom={100}
             style={styles.web}
           />

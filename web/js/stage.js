@@ -23,11 +23,12 @@ Stage.open = game => {
   game.canvas = cv;
   const fit = () => {
     const st = el.querySelector('#miniStage'), bw = st.clientWidth, bh = st.clientHeight;
-    // fill: oyun alanı dikeyde ekrana yayılır, içerik ortalanır (siyah boşluk kalmaz)
-    if (game.fill && bw > 0 && bh > 0) {
-      const baseH = game.baseH || (game.baseH = game.H);
-      game.H = Math.max(baseH, Math.min(Math.round(game.W * bh / bw), Math.round(baseH * 1.7)));
-      game.dy = Math.round((game.H - baseH) / 2);
+    // Oyun alanı ekranın en-boy oranına genişler, içerik ortalanır; kenarlar yıldızlı uzayla dolar (siyah boşluk kalmaz)
+    if (game.fill !== false && bw > 0 && bh > 0) {
+      const baseW = game.baseW || (game.baseW = game.W), baseH = game.baseH || (game.baseH = game.H);
+      if (bw / bh < baseW / baseH) { game.W = baseW; game.H = Math.min(Math.round(baseW * bh / bw), Math.round(baseH * 1.7)); }
+      else { game.H = baseH; game.W = Math.min(Math.round(baseH * bw / bh), Math.round(baseW * 1.6)); }
+      game.dx = Math.round((game.W - baseW) / 2); game.dy = Math.round((game.H - baseH) / 2); game._padN = 0;
     }
     const s = Math.min(bw / game.W, bh / game.H);
     wrap.style.width = Math.floor(game.W * s) + 'px'; wrap.style.height = Math.floor(game.H * s) + 'px';
@@ -40,7 +41,7 @@ Stage.open = game => {
   };
   game._fit = fit; fit();
   window.addEventListener('resize', fit);
-  const toLocal = e => { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) / b.width * game.W, y: (e.clientY - b.top) / b.height * game.H - (game.dy || 0) }; };
+  const toLocal = e => { const b = cv.getBoundingClientRect(); return { x: (e.clientX - b.left) / b.width * game.W - (game.dx || 0), y: (e.clientY - b.top) / b.height * game.H - (game.dy || 0) }; };
   cv.addEventListener('pointerdown', e => { e.preventDefault(); const p = toLocal(e); game.pointer && game.pointer(p.x, p.y, 'down'); });
   el.querySelectorAll('[data-ctl]').forEach(b => {
     const id = b.dataset.ctl;
@@ -61,6 +62,22 @@ Stage.setCtl = (id, label, disabled) => {
 };
 Stage.hud = html => { const h = document.getElementById('miniHud'); if (h && h._last !== html) { h.innerHTML = html; h._last = html; } };
 
+// Kenar dolgusu: oyun alanının en dış satır/sütun piksellerini boşluğa doğru uzatır (gökyüzü yukarı, zemin aşağı devam eder)
+function padEdges(g) {
+  try {
+    const c = g.ctx, cv = g.canvas, k = cv.width / g.W, bw = g.baseW, bh = g.baseH, dx = g.dx || 0, dy = g.dy || 0;
+    c.save(); c.imageSmoothingEnabled = false;
+    if (dy) {
+      c.drawImage(cv, dx * k, dy * k, bw * k, 1, dx, 0, bw, dy);
+      c.drawImage(cv, dx * k, (dy + bh) * k - 1, bw * k, 1, dx, dy + bh, bw, g.H - dy - bh);
+    }
+    if (dx) {
+      c.drawImage(cv, dx * k, 0, 1, g.H * k, 0, 0, dx, g.H);
+      c.drawImage(cv, (dx + bw) * k - 1, 0, 1, g.H * k, dx + bw, 0, g.W - dx - bw, g.H);
+    }
+    c.restore();
+  } catch (e) {}
+}
 function loop(now) {
   if (!cur) return;
   const dt = Math.min(.05, (now - last) / 1000) * (SS.miniSpeed ? SS.miniSpeed() : 1); last = now;
@@ -68,11 +85,18 @@ function loop(now) {
   if (!g.done) { g.t += dt; g.update(dt, dt * 60); }
   if (cur !== g) return;
   g.ctx.save();
-  if (g.dy) { g.ctx.fillStyle = SS.Art.P().space0; g.ctx.fillRect(0, 0, g.W, g.H); g.ctx.translate(0, g.dy); }
+  if (g.dx || g.dy) {
+    // Kenar alanı yalnızca ilk karede boyanır; oyun kendi alanına kırpılı çizdiği için kenarlar arada korunur
+    if (!g._padN) { g.ctx.fillStyle = SS.Art.P().space0; g.ctx.fillRect(0, 0, g.W, g.H); }
+    g.ctx.translate(g.dx || 0, g.dy || 0);
+    g.ctx.beginPath(); g.ctx.rect(0, 0, g.baseW, g.baseH); g.ctx.clip();
+  }
   g.draw(g.ctx, SS.Art.P(), g.t); g.ctx.restore();
+  // Kenar dolgusu 6 karede bir yenilenir (her karede ~1 ms tutuyordu)
+  if ((g.dx || g.dy) && (g._padN = (g._padN || 0) + 1) % 6 === 1) padEdges(g);
   SS.Art.post(g.canvas, g.ctx, g.pixel);
   g.tctx.clearRect(0, 0, g.W, g.H);
-  if (g.drawUI) { g.tctx.save(); if (g.dy) g.tctx.translate(0, g.dy); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }
+  if (g.drawUI) { g.tctx.save(); if (g.dx || g.dy) g.tctx.translate(g.dx || 0, g.dy || 0); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }
   if (g.done) {
     const res = g.result; Stage.close();
     g.onEnd && g.onEnd(res);

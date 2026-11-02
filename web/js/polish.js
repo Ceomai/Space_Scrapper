@@ -333,6 +333,7 @@ SS.planStrip = () => {
   const parts = [`<span>⏱ <b>${left >= 60 ? Math.floor(left / 60) + ' sa ' : ''}${left % 60} dk</b> kaldı</span>`, `<span>≈ <b>${jobs}</b> iş daha</span>`];
   if (closeIn > 0 && closeIn <= 60) parts.push(`<span class="neg">${here.name} ${closeIn} dk sonra kapanıyor</span>`);
   if (S.dailyJob) parts.push(`<span>Günün işi: <b>${JOB_NAMES[S.dailyJob]}</b> +%25</span>`);
+  if (S.route && S.route.some(id => !SS.loc(id))) S.route = S.route.filter(id => SS.loc(id));
   const route = S.route && S.route.length ? `<button class="plan-go" data-act="routeNext">▶ ${SS.loc(S.route[0]).name}${S.route.length > 1 ? ` <small>+${S.route.length - 1}</small>` : ''}</button>` : '';
   return `<div class="plan">${parts.join('')}${route}</div>`;
 };
@@ -480,4 +481,128 @@ SS.flow = () => {
   }
   return _flow();
 };
+
+/* =========================================================
+   ANDROID GERİ TUŞU: mini oyun → modal → harita → uygulamadan çık
+   ========================================================= */
+SS.onBack = () => {
+  try {
+    const q = document.getElementById('miniQuit');
+    if (document.getElementById('mini') && q) { q.click(); return 'mini'; }
+    const m = document.getElementById('modal');
+    if (m && !m.hidden) { if (window.S && S.over) return 'over'; ACT.close(); return 'modal'; }
+    if (window.S && S.view !== 'map') { S.view = 'map'; render(); return 'map'; }
+  } catch (e) {}
+  try { window.S && SS.save(); } catch (e) {}
+  const n = SS.native && SS.native(); if (n) n.post({ type: 'exit' });
+  return 'exit';
+};
+
+/* =========================================================
+   KAYIT ONARIMI: tür ve kimlik doğrulaması (bozuk / kurcalanmış / yarım kayıt asla çökertmez)
+   ========================================================= */
+const clone = o => JSON.parse(JSON.stringify(o));
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+const NULL_OBJ = ['trial', 'bill', 'billFix', 'mile', 'arc', 'bulletin', 'event', 'tease', 'teaseToday', 'weekSnap', 'weekSum', 'incomeRoll', 'lastDay'];
+const NULL_STR = ['decision', 'nextEvent', 'pitZone', 'morningKey', 'over', 'dailyJob'];
+SS.repairSave = s => {
+  if (!isObj(s)) return null;
+  const prev = window.S; let def;
+  try { def = SS.newState([1, 1, 1], 'fun', 'Kaptan', []); } finally { window.S = prev; }
+  for (const k in def) {
+    const d = def[k], v = s[k];
+    if (v === undefined) continue;
+    if (k === 'tut' && v === null) continue;
+    if (k === 'lender' && v === null) continue;
+    if (Array.isArray(d)) { if (!Array.isArray(v)) s[k] = clone(d); }
+    else if (isObj(d)) { if (!isObj(v)) s[k] = clone(d); else for (const kk in d) if (typeof d[kk] === 'number' && (typeof v[kk] !== 'number' || !isFinite(v[kk]))) v[kk] = d[kk]; }
+    else if (typeof d === 'number') { if (typeof v !== 'number' || !isFinite(v)) s[k] = d; }
+    else if (typeof d === 'string') { if (typeof v !== 'string') s[k] = d; }
+    else if (typeof d === 'boolean') { if (typeof v !== 'boolean') s[k] = d; }
+  }
+  for (const k of NULL_OBJ) if (s[k] != null && !isObj(s[k])) s[k] = null;
+  for (const k of NULL_STR) if (s[k] != null && typeof s[k] !== 'string') s[k] = null;
+  for (const k of ['bankDeadline', 'deadlineOverride']) if (s[k] != null && !(typeof s[k] === 'number' && isFinite(s[k]))) delete s[k];
+  if (s.lender != null && !['krell', 'bank'].includes(s.lender)) s.lender = s.loan > 0 ? 'krell' : null;
+  // alan değerleri
+  const int = (v, lo, hi, d) => Number.isFinite(v) ? Math.max(lo, Math.min(hi, Math.round(v))) : d;
+  s.tier = int(s.tier, 0, SS.SHIPS.length - 1, 0); s.home = int(s.home, 0, SS.HOMES.length - 1, 0);
+  s.day = int(s.day, 1, 1e6, 1); s.strikes = int(s.strikes, 0, 3, 0); s.time = int(s.time, 0, 1700, 420);
+  if (!Array.isArray(s.diff) || s.diff.length !== 3) s.diff = [1, 1, 1]; s.diff = s.diff.map(x => int(x, 0, 2, 1));
+  if (!SS.TONES.some(t => t.id === s.tone)) s.tone = 'fun';
+  if (!SS.loc(s.loc)) s.loc = 'home';
+  if (!SS.VIEWS[s.view]) s.view = 'map';
+  if (!isObj(s.crew)) s.crew = {};
+  s.crewOrder = [...new Set((s.crewOrder || []).filter(id => SS.COMPANIONS.some(c => c.id === id)))];
+  for (const id of Object.keys(s.crew)) if (!s.crewOrder.includes(id) || !isObj(s.crew[id])) { if (s.crewOrder.includes(id)) s.crew[id] = {}; else delete s.crew[id]; }
+  for (const id of s.crewOrder) { const c = s.crew[id] = isObj(s.crew[id]) ? s.crew[id] : {}; if (!['with', 'work', 'rest'].includes(c.task)) c.task = 'with'; c.bond = int(c.bond, 0, 100, 50); c.down = int(c.down, 0, 9, 0); c.hunger = int(c.hunger, 0, 9, 0); c.sickDays = int(c.sickDays, 0, 9, 0); c.sick = c.sick === true; c.gone = c.gone === true; }
+  if (typeof s.decision === 'string' && !s.decision.startsWith('arc:') && !SS.DECISIONS.some(d => d.id === s.decision)) s.decision = null;
+  if (s.arc && !(SS.ARCS || []).some(a => a.id === s.arc.id && Number.isInteger(s.arc.step) && s.arc.step >= 0 && s.arc.step < a.steps.length)) { s.arc = null; if (typeof s.decision === 'string' && s.decision.startsWith('arc:')) s.decision = null; }
+  if (s.decision && s.decision.startsWith('arc:') && !s.arc) s.decision = null;
+  if (s.mile && (!MILES.some(m => m.id === s.mile.id) || !isObj(s.mile.base) || !Number.isFinite(s.mile.due))) s.mile = null;
+  if (s.bill && !(Number.isFinite(s.bill.amt) && typeof s.bill.name === 'string')) s.bill = null;
+  if (s.billFix && !(Number.isFinite(s.billFix.amt) && typeof s.billFix.name === 'string')) s.billFix = null;
+  if (s.trial && typeof s.trial.head !== 'string') s.trial = null;
+  if (s.dailyJob && !['deliver', 'repair', 'sort'].includes(s.dailyJob)) s.dailyJob = null;
+  if (s.nextEvent && !SS.EVENTS.some(e => e.id === s.nextEvent)) s.nextEvent = null;
+  if (s.pitZone && !SS.ZONES.some(z => z.id === s.pitZone)) s.pitZone = null;
+  if (s.morningKey && !SS.COMPANIONS.some(c => c.id === s.morningKey)) s.morningKey = null;
+  s.route = s.route.filter(id => typeof id === 'string' && SS.loc(id)).slice(0, 5);
+  s.billLater = s.billLater.filter(b => isObj(b) && Number.isFinite(b.amt) && Number.isFinite(b.due)).map(b => ({ ...b, name: String(b.name || 'Masraf') }));
+  s.decor = s.decor.map(id => (typeof id === 'string' && SS.DECOR.some(d => d.id === id)) ? id : null);
+  s.decorStore = s.decorStore.filter(id => typeof id === 'string' && SS.DECOR.some(d => d.id === id));
+  s.rexLog = s.rexLog.filter(x => isObj(x) && Number.isFinite(x.mine) && Number.isFinite(x.rex));
+  for (const r of Object.keys(s.album)) if (!SS.RELICS[r]) delete s.album[r];
+  s.board = s.board.filter(b => isObj(b) && typeof b.id === 'string' && ['hunt', 'deliver', 'repair', 'sort', 'order'].includes(b.type));
+  s.stock = s.stock.filter(x => isObj(x) && typeof x.key === 'string' && typeof x.name === 'string' && Number.isFinite(x.price));
+  s.goals = s.goals.filter(g => isObj(g) && typeof g.txt === 'string' && typeof g.key === 'string' && Number.isFinite(g.target));
+  for (const k of ['stats', 'today', 'aff', 'prices', 'skills', 'ship', 'rep', 'inv', 'buffs', 'zoneUse', 'satur']) if (isObj(s[k])) for (const kk of Object.keys(s[k])) if (typeof s[k][kk] === 'number' && !isFinite(s[k][kk])) s[k][kk] = 0;
+  for (const k of ['inv', 'buffs']) for (const kk of Object.keys(s[k])) if (!(Number.isFinite(s[k][kk]) && s[k][kk] >= 0)) delete s[k][kk];
+  for (const k of Object.keys(s.prices)) s.prices[k] = Number.isFinite(s.prices[k]) && s.prices[k] > 0 ? Math.min(5, s.prices[k]) : 1;
+  if (!isObj(s.shipNames)) s.shipNames = {}; for (const k of Object.keys(s.shipNames)) if (typeof s.shipNames[k] !== 'string') delete s.shipNames[k]; else s.shipNames[k] = s.shipNames[k].slice(0, 20);
+  if (typeof s.name !== 'string' || !s.name.trim()) s.name = 'Kaptan'; s.name = s.name.slice(0, 40);
+  if (s.sub && isObj(s.sub)) for (const k of Object.keys(s.sub)) if (typeof s.sub[k] !== 'string') delete s.sub[k];
+  return s;
+};
+const _migrate = SS.migrate;
+SS.migrate = s => {
+  if (!isObj(s)) return null;
+  try { SS.repairSave(s); } catch (e) {}
+  s = _migrate(s);
+  try { SS.repairSave(s); } catch (e) {}
+  return s;
+};
+
+/* =========================================================
+   EYLEM GİRİŞ DOĞRULAMASI: geçersiz veriyle gelen eylem sessizce yok sayılır
+   ========================================================= */
+const isLoc = v => !!SS.loc(v);
+const has = (list, key = 'id') => v => Array.isArray(list) && list.some(x => x[key] === v);
+const GUARD = {
+  go: d => isLoc(d.to),
+  view: d => d.v === 'map' || d.v === 'log' || isLoc(d.v),
+  routeTog: d => isLoc(d.id),
+  scrap: d => SS.ZONES.some(z => z.id === d.z),
+  drink: d => has(SS.DRINKS)(d.id),
+  eat: d => has(SS.FOOD)(d.id),
+  upgrade: d => has(SS.SHIP)(d.id),
+  extra: d => has(SS.EXTRAS)(d.id),
+  story: d => !!(SS.STORY && SS.STORY[d.id]),
+  talk: d => !!(SS.NPCS ? SS.NPCS.some(n => n.id === d.id) : S && S.aff && d.id in S.aff),
+  pickTone: d => SS.TONES.some(t => t.id === d.t),
+  pickDiff: d => +d.i >= 0 && +d.i < 3 && +d.j >= 0 && +d.j < 3,
+  casPlay: d => ['cards', 'wheel', 'dice', 'race', 'slot'].includes(d.g),
+  renameShip: () => !!document.getElementById('shipName'),
+  hagOffer: () => !!document.getElementById('hagRange'),
+  ltog: d => !!document.querySelector('.ledger') && typeof d.id === 'string',
+  task: d => ['with', 'work', 'rest'].includes(d.t),
+  theme: d => SS.THEMES.some(t => t.id === d.t),
+  style: d => d.s === 'pixel' || d.s === 'vector',
+  tone: d => SS.TONES.some(t => t.id === d.t),
+  pref: d => ['autoFuel', 'autoSell', 'slow', 'big', 'haptic', 'left'].includes(d.k),
+};
+for (const [k, ok] of Object.entries(GUARD)) {
+  const f = ACT[k]; if (!f) continue;
+  ACT[k] = (d = {}) => { let pass = false; try { pass = !!ok(d || {}); } catch (e) {} if (!pass) return; return f(d); };
+}
 })(window.SS);
