@@ -387,6 +387,7 @@ SS.againBtn = type => {
 SS.a11yPanel = () => {
   const tog = (k, label, desc) => `<div class="row-item"><div><b>${label}</b><small>${desc}</small></div><button class="chk ${prefs[k] ? 'on' : ''}" data-act="pref" data-k="${k}" aria-pressed="${!!prefs[k]}" aria-label="${label}">${prefs[k] ? '✓' : ''}</button></div>`;
   return panel('Kolaylık ve erişilebilirlik', `<div class="list">
+    <div class="row-item"><div><b>Dil · Language</b><small>Türkçe / English</small></div><div class="row">${btn('TR', 'lang', { l: 'tr' }, SS.lang() === 'tr' ? 'primary sm' : 'ghost sm')}${btn('EN', 'lang', { l: 'en' }, SS.lang() === 'en' ? 'primary sm' : 'ghost sm')}</div></div>
     ${tog('autoFuel', 'Otomatik yakıt', 'Dalış ve teslimattan önce yakıt azsa tankı doldurur.')}
     ${tog('autoSell', 'Otomatik satış', 'Dalıştan önce ambar %60\'tan doluysa eser ve sipariş eşyaları dışındakileri %5 aracı payıyla satar.')}
     ${tog('slow', 'Yavaş mini oyunlar', 'Mini oyunlar %80 hızda akar (süreler de aynı oranda uzar).')}

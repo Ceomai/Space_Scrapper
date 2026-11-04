@@ -384,7 +384,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     SS.FX.drawText(fx, c, P);
     if (intro > 0) { c.globalAlpha = Math.min(1, intro); c.textAlign = 'center'; c.fillStyle = P.ui; c.fillRect(20, 250, W - 40, 62);
       c.fillStyle = P.accent; c.font = SS.tfont(20); c.fillText(V.name, W / 2, 272); c.fillStyle = P.text; c.font = SS.tfont(12);
-      const words = V.hint.split(' '), lines = ['']; for (const wd of words) { if (c.measureText(lines[lines.length - 1] + ' ' + wd).width > W - 70) lines.push(wd); else lines[lines.length - 1] += (lines[lines.length - 1] ? ' ' : '') + wd; }
+      const words = SS.T(V.hint).split(' '), lines = ['']; for (const wd of words) { if (c.measureText(lines[lines.length - 1] + ' ' + wd).width > W - 70) lines.push(wd); else lines[lines.length - 1] += (lines[lines.length - 1] ? ' ' : '') + wd; }
       lines.slice(0, 2).forEach((l, i) => c.fillText(l, W / 2, 292 + i * 15)); c.globalAlpha = 1; }
   };
   function cutRope(why) {

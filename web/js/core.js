@@ -5,7 +5,7 @@ const rnd = SS.rnd = (a, b) => a + Math.random() * (b - a);
 const rint = SS.rint = (a, b) => Math.floor(rnd(a, b + 1));
 const pick = SS.pick = a => a[Math.floor(Math.random() * a.length)];
 const clamp = SS.clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const fmt = SS.fmt = n => '₡' + Math.round(n).toLocaleString('tr-TR');
+const fmt = SS.fmt = n => '₡' + Math.round(n).toLocaleString(SS.lang && SS.lang() === 'en' ? 'en-US' : 'tr-TR');
 
 window.S = null;
 

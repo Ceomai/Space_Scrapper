@@ -8,6 +8,7 @@ const full = process.argv[2] === 'tam';
 const T = [
   ['Kapsamlı paket (içerik, çift dokunuş, yerleşim, bellek, köprü, uzun oyun)', ['ultimate.js']],
   ['Mini oyunlar kazanılabilir mi', ['winbots.js']],
+  ['İngilizce dil (bütün ekranlar, mini oyunlar, kalan Türkçe ≤ 25, Türkçe mod etkilenmez)', ['i18n.js']],
   ['Uç durumlar (bozuk/eski kayıt, depolama kapalı, bütün ekranlar)', ['edge.js']],
   ['Denetim (enjeksiyon, kurcalanmış kayıt, eylem fuzz, saat dilimi/DST, kalıcılık, köprü, geri tuşu, performans)', ['audit.js', full ? '2' : '1']],
   ['Hızlı rastgele oyunlar', ['fast.js', full ? '120' : '30', full ? '150' : '100']],

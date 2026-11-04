@@ -10,7 +10,7 @@ const cm = () => window.S ? SS.dv('costs') : 1;
 const FX_NAME = { energy: 'enerji', hunger: 'tokluk', health: 'sağlık', morale: 'moral', sleep: 'uyku enerjisi', heat: 'ısıtma indirimi ₡', bond: 'hane bağı', energyMax: 'maks. enerji' };
 const fxText = fx => Object.entries(fx || {}).map(([k, v]) => `${FX_NAME[k] || k} ${v > 0 ? '+' : ''}${v}`).join(', ');
 const hours = id => { const l = SS.loc(id); return l ? SS.openLabel(id) : ''; };
-const row = (name, val, desc, tags = '') => `<div class="rh-row" data-k="${esc((name + ' ' + desc + ' ' + tags).toLocaleLowerCase('tr'))}"><div><b>${name}</b><small>${desc}</small></div>${val !== '' ? `<em>${val}</em>` : ''}</div>`;
+const row = (name, val, desc, tags = '') => `<div class="rh-row" data-k="${esc((name + ' ' + desc + ' ' + tags + (SS.lang() === 'en' ? ' ' + [name, desc, tags].map(SS.T).join(' ') : '')).toLocaleLowerCase('tr'))}"><div><b>${name}</b><small>${desc}</small></div>${val !== '' ? `<em>${val}</em>` : ''}</div>`;
 const sec = (id, title, intro, rows) => `<section class="rh-sec" id="rh-${id}"><h3>${title}</h3>${intro ? `<p class="muted">${intro}</p>` : ''}<div class="rh-list">${rows.join('')}</div></section>`;
 const scrapVal = k => Math.round(SS.ITEMS[k].val * SS.SCRAP_VAL);
 

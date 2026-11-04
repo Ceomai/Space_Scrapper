@@ -15,6 +15,7 @@ node tests/run.js tam    # tam (~60 dk)
 | `lander.js` | İniş oyununun bütün zorluk ve değiştirici birleşimlerini ölçer |
 | `audit.js` | Denetim: ad alanına HTML/emoji/RTL girdileri, 30–60 rastgele kurcalanmış kayıt, 97 eylemin güvenlik ağı olmadan 4000+ rastgele çağrısı, 7 saat dilimi ve yaz saati geçişleri, kalıcılık ve depolama dolu durumu, mini oyun ortasında kapanma, köprü mesaj doğrulaması, geri tuşu (ana ekrandan açılan uygulama), açılış süresi ve bellek |
 | `edge.js` | Depolama kapalı, bozuk kayıt, eski kayıt geçişi, garip bağlantılar, bütün ekranlar × 3 tema × 2 stil, masaüstü ve yatay ekran |
+| `i18n.js` | İngilizce mod: bütün ekranlar, pencereler, 4 mini oyun ve sabah akışı; ekranda/tuvalde kalan Türkçe satırları listeler, Türkçe modun değişmediğini doğrular |
 | `fast.js` | Mini oyunları atlayıp oyunun bütün eylemlerini rastgele girdilerle sürer; her adımda değerlerin geçerliliğini denetler |
 | `monkey.js` | Gerçek arayüzde rastgele dokunan oturumlar (7 ekran boyutu, rastgele ayarlar) |
 | `deep.js` + `bot.js` | 27 zorluk birleşimi × hane seçenekleriyle oyunu baştan sona oynar; rastgele kararlar, sınamalar, banka kredisi, kaydet-yükle ve Yeni Oyun+ |

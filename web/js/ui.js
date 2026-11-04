@@ -848,6 +848,7 @@ function titleScreen() {
   const sc = document.getElementById('main'), st = sc && sc.classList.contains('title') ? sc.scrollTop : 0;
   const cost = T.crew.reduce((a, id) => a + SS.comp(id).daily, 0);
   app().innerHTML = `<main class="title" id="main">
+    <div class="row lang-pick" role="group" aria-label="Dil · Language"><span class="muted">Dil · Language</span>${btn('Türkçe', 'lang', { l: 'tr' }, SS.lang() === 'tr' ? 'primary sm' : 'ghost sm')}${btn('English', 'lang', { l: 'en' }, SS.lang() === 'en' ? 'primary sm' : 'ghost sm')}</div>
     <div class="logo"><span class="pcode">PELIKAN-OS · v3</span><canvas id="logoShip" width="180" height="90" aria-hidden="true"></canvas>
       <h1>Space<span>Scrapper</span></h1><p class="muted">Borçlu bir hurdacının istasyondaki hayatı. Kanca at, iş kovala, haneni doyur, gemini büyüt.</p>
       <div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost sm')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost sm')}</div></div>
@@ -874,11 +875,12 @@ function titleScreen() {
   SS.Art.paint(ls, 180, 90, (c, P) => { SS.Art.ship(c, 90, 52, 1.3, 0, P, { flame: true }); }, .5);
 }
 SS.titleScreen = titleScreen;
+ACT.lang = d => { if (d.l === 'tr' || d.l === 'en') { SS.save && window.S && SS.save(); SS.setLang(d.l); } };
 
 /* ---------- dinleyiciler ---------- */
 // Çift dokunuş koruması: aynı düğmeye 400 ms içinde ikinci basış yok sayılır (sekme ve gezinme hariç)
 let lastTap = { key: '', t: 0 };
-const NO_DEBOUNCE = new Set(['sub', 'rhGo', 'casBet', 'racePick', 'pickCrew', 'pickDiff', 'pickTone', 'theme', 'style', 'roomSel', 'ltog', 'close', 'guide']);
+const NO_DEBOUNCE = new Set(['lang', 'sub', 'rhGo', 'casBet', 'racePick', 'pickCrew', 'pickDiff', 'pickTone', 'theme', 'style', 'roomSel', 'ltog', 'close', 'guide']);
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   const a = ACT[b.dataset.act]; if (!a) return;
