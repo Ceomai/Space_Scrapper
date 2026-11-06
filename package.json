@@ -1,0 +1,15 @@
+{
+  "name": "space-scrapper",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Space Scrapper — Android paketi (Capacitor). Oyun dosyaları web/ klasöründe.",
+  "scripts": {
+    "android:sync": "cap sync android"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0"
+  }
+}

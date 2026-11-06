@@ -3,10 +3,12 @@
 // window.SS_NATIVE sağlarsa oyun onu kullanmaya devam eder; yoksa bu web karşılıkları devreye girer.
 (function(SS){
 const ACT = SS.ACT, { btn } = SS.ui;
-const standalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+// Play Store uygulaması (Capacitor) içinde mi? Oradayken service worker ve 'ana ekrana ekle' gerekmez
+const isApp = SS.isApp = () => !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const standalone = () => isApp() || (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
 
 /* ---------- service worker ---------- */
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+if (!isApp() && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
   window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
 }
 
@@ -37,7 +39,10 @@ SS.haptic = strong => {
 };
 
 /* ---------- ana ekrandan açıldığında geri tuşu: mini oyun → pencere → harita → çıkış ---------- */
-if (standalone() && window.history && history.pushState) {
+// Android uygulaması: donanım geri tuşu oyunun geri mantığını kullanır (mini oyun → pencere → harita → çıkış)
+const capApp = isApp() && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+if (capApp) capApp.addListener('backButton', () => { const r = SS.onBack ? SS.onBack() : 'exit'; if (r === 'exit') capApp.exitApp(); });
+if (!capApp && standalone() && window.history && history.pushState) {
   try { history.replaceState({ ss: 0 }, ''); history.pushState({ ss: 1 }, ''); } catch (e) {}
   window.addEventListener('popstate', () => {
     const r = SS.onBack ? SS.onBack() : 'exit';

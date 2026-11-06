@@ -24,7 +24,7 @@ jobs:
       - name: Sayfayı hazırla
         run: |
           mkdir -p _site
-          cp -r web/js web/icons web/index.html web/manifest.webmanifest _site/
+          cp -r web/js web/icons web/index.html web/manifest.webmanifest web/privacy.html _site/
           touch _site/.nojekyll
           # Service worker: sürüm adı commit kimliği, önbelleğe alınacak dosyalar yayınlanan dosyaların listesi
           node -e "

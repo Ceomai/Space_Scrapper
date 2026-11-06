@@ -1,0 +1,7 @@
+{
+  "appId": "io.github.ceomai.spacescrapper",
+  "appName": "Space Scrapper",
+  "webDir": "web",
+  "backgroundColor": "#0c0a1d",
+  "android": { "allowMixedContent": false, "captureInput": true, "webContentsDebuggingEnabled": false }
+}
