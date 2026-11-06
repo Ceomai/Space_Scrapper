@@ -220,6 +220,9 @@ main.v-map>.map-wrap{border:0}
   clip-path:polygon(5px 0,100% 0,100% calc(100% - 5px),calc(100% - 5px) 100%,0 100%,0 5px)}
 .node .n-name{font-family:var(--display);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 .node .n-cost{font-family:var(--mono);font-size:10px;color:var(--accent2);white-space:nowrap}
+/* kenara yakın düğümlerin etiketi içeri kayar; dokunma alanı (::before) simgenin üstünde kalır */
+.node.edge-r{transform:translate(calc(-100% + 26px),26px)} .node.edge-r::before{left:calc(100% - 26px)}
+.node.edge-l{transform:translate(-26px,26px)} .node.edge-l::before{left:26px}
 .node.here{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)} .node.here .n-cost{color:var(--accent)}
 .node.closed{opacity:.7} .node.closed .n-cost{color:var(--bad)}
 .node:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -452,6 +455,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .map-bottom .qb.hot{background:var(--accent)}
 .map-area.compact .node .n-cost{display:none}
 .map-area.compact .node{transform:translate(-50%,16px);padding:1px 5px}
+.map-area.compact .node.edge-r{transform:translate(calc(-100% + 26px),16px)} .map-area.compact .node.edge-l{transform:translate(-26px,16px)}
 .map-area.compact .node .n-name{font-size:9.5px}
 .map-bottom .qb span{font-size:10px;letter-spacing:0;text-transform:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 :root[data-style="pixel"] .map-bottom .qb span{font-size:13px}
@@ -593,6 +597,7 @@ button.hud-loc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <script charset="utf-8" src="js/polish.js"></script>
 <script charset="utf-8" src="js/guide.js"></script>
 <script charset="utf-8" src="js/fun.js"></script>
+<script charset="utf-8" src="js/music.js"></script>
 <script charset="utf-8" src="js/pwa.js"></script>
 <script>
 (function(){

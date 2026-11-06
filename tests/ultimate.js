@@ -43,12 +43,12 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
       if (act === 'upgrade') await p.evaluate(() => { S.sub = { hangar: 'upg' }; SS.render(); });
       if (act === 'buy') await p.evaluate(() => { S.sub = { market: 'buy' }; SS.render(); });
       if (act === 'train') await p.evaluate(() => { S.sub = { academy: 'skill' }; SS.render(); });
-      const before = await p.evaluate(() => JSON.stringify({ cash: S.cash, tier: S.tier, ship: S.ship, done: S.board.filter(x => x.done).length, sk: S.skills, course: S.course, en: S.energy, t: S.time, fuel: S.fuel }));
+      const before = await p.evaluate(() => JSON.stringify({ cash: S.cash, tier: S.tier, ship: S.ship, done: S.board.filter(x => x.done && !x.expired).length, sk: S.skills, course: S.course, en: S.energy, t: S.time, fuel: S.fuel }));
       const el = await p.$(`#main [data-act=${act}]:not([disabled])`);
       if (!el) { issues.push(`${act}: düğme bulunamadı (${loc})`); continue; }
       await el.dblclick({ delay: 15 }).catch(() => {});
       await p.waitForTimeout(250);
-      const after = await p.evaluate(() => ({ minis: document.querySelectorAll('#mini').length, cash: S.cash, tier: S.tier, ship: JSON.stringify(S.ship), done: S.board.filter(x => x.done).length, sk: JSON.stringify(S.skills), course: JSON.stringify(S.course), en: S.energy }));
+      const after = await p.evaluate(() => ({ minis: document.querySelectorAll('#mini').length, cash: S.cash, tier: S.tier, ship: JSON.stringify(S.ship), done: S.board.filter(x => x.done && !x.expired).length, sk: JSON.stringify(S.skills), course: JSON.stringify(S.course), en: S.energy }));
       const B = JSON.parse(before);
       if (after.minis > 1) issues.push(`${act}: ${after.minis} mini oyun birden açıldı`);
       if (after.tier - B.tier > 1) issues.push(`${act}: iki gemi birden alındı`);

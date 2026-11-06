@@ -3243,7 +3243,9 @@ window.SS.I18N_EN = {"Yaşam Modülü":"Habitat",
 "Rex düellosu, kombo, acil ilan, haftalık av, yol arkadaşı görevi gibi başarılarla açılır. Rıhtım › Gemi ve tersane'den takılır.":"Unlocked by achievements such as Rex duels, combos, urgent jobs, the weekly hunt and companion quests. Apply them at Dock › Ship & shipyard.",
 "çıkartma kozmetik gemi":"decal cosmetic ship",
 "Yol arkadaşı görevleri":"Companion quests",
-"Bağ 50 ve 80'de her yol arkadaşı küçük bir görev ister (eşya ya da para). Tamamlayınca para, bağ ve moral kazanırsın.":"At bond 50 and 80 each companion asks for a small favour (an item or cash). Complete it for cash, bond and morale.",
+"Bağ 65 ve 85'te her yol arkadaşı küçük bir görev ister (eşya ya da para). Tamamlayınca para, bağ ve moral kazanırsın.":"At bond 65 and 85 each companion asks for a small favour (an item or cash). Complete it for cash, bond and morale.",
 "görev bağ arkadaş":"quest bond companion",
-"+%15'e kadar":"up to +15%"
+"+%15'e kadar":"up to +15%",
+"Müziği aç":"Music on",
+"Müziği kapat":"Music off"
 };

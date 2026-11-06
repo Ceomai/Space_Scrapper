@@ -161,7 +161,7 @@ function mapView() {
     ${SS.LOCS.map(l => {
       const here = l.id === S.loc, c = SS.travelCost(l.id), open = l.id === 'home' || SS.isOpen(l.id, S.time + c.min);
       const st = SS.tutStep(), aim = st && st.to === l.id && !here, rk = (S.route || []).indexOf(l.id);
-      return `<button class="node ${here ? 'here' : ''} ${open ? '' : 'closed'} ${aim ? 'aim' : ''}" style="left:${l.x * 100}%;top:${l.y * 100}%" data-act="go" data-to="${l.id}" aria-label="${l.name}, ${here ? 'buradasın' : open ? `${c.min} dakika` : 'kapalı'}">
+      return `<button class="node ${here ? 'here' : ''} ${open ? '' : 'closed'} ${aim ? 'aim' : ''} ${l.x > .78 ? 'edge-r' : l.x < .22 ? 'edge-l' : ''}" style="left:${l.x * 100}%;top:${l.y * 100}%" data-act="go" data-to="${l.id}" aria-label="${l.name}, ${here ? 'buradasın' : open ? `${c.min} dakika` : 'kapalı'}">
         <span class="n-name">${rk >= 0 ? `<i class="rk">${rk + 1}</i>` : ''}${l.name}</span><span class="n-cost">${here ? 'Buradasın' : open ? `${c.min} dk · ${c.energy} en` : `Kapalı · ${SS.openLabel(l.id)}`}</span></button>`;
     }).join('')}</div>
     <div class="map-bottom">
@@ -481,7 +481,7 @@ function logView() {
       <small>${Z.name} · ödül: ${fmt(st.reward.cash)}, "${SS.DECOR.find(d => d.id === st.reward.decor).name}" dekoru, "${st.reward.title}" unvanı${done ? ' · alındı' : ''}</small>`, { code: 'SET', aside: `${have}/${all}` }); }).join('');
   return h; }
   if (tab === 'ach') return h + panel('Başarımlar', `<ul class="ach">${SS.ACH.map(a => `<li class="${S.ach[a.id] ? 'on' : ''}"><b>${a.name}</b><small>${a.desc}</small></li>`).join('')}</ul>`, { code: 'BŞ', aside: `${Object.keys(S.ach).length}/${SS.ACH.length}` });
-  h += panel('Görünüm ve anlatım', `${lookControls(false)}${toneControls(S.tone, 'tone')}<div class="row">${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'mute', {}, 'ghost sm')}${btn('Kılavuz', 'guide', { s: 'start' }, 'ghost sm')}${btn('Yeni oyun', 'askWipe', {}, 'ghost sm danger-t')}</div>`, { code: 'AY' });
+  h += panel('Görünüm ve anlatım', `${lookControls(false)}${toneControls(S.tone, 'tone')}<div class="row">${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'mute', {}, 'ghost sm')}${btn(prefs.music === false ? 'Müziği aç' : 'Müziği kapat', 'musicToggle', {}, 'ghost sm')}${btn('Kılavuz', 'guide', { s: 'start' }, 'ghost sm')}${btn('Yeni oyun', 'askWipe', {}, 'ghost sm danger-t')}</div>`, { code: 'AY' });
   if (SS.a11yPanel) h += SS.a11yPanel();
   h += panel('Zorluk', `<ul class="kv">${SS.DIFF.map((d, i) => `<li><span>${d.name}</span><b>${d.opts[S.diff[i]][0]}</b></li>`).join('')}</ul>${rulesHtml()}`, { code: 'ZR' });
   return h;

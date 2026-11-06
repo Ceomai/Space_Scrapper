@@ -70,7 +70,7 @@ function jobsSec() {
   r.push(row("Patlayıcı tank", "", "Tank patlaması kayaları ve kırıntıyı temizler, değerli eşyaları sadece savurur. Derindeki bir tankı patlatırsan gemin hasar almaz; yakındakiler yaralar.", "tank patlama kaya temizlik"));
   r.push(row("Haftanın Avı", "", "Günün Avı panelinde: herkese aynı, daha zor bir alan; her pazartesi yenilenir. Ekonomini etkilemez.", "haftalık meydan okuma"));
   r.push(row("Gemi çıkartmaları", "", "Rex düellosu, kombo, acil ilan, haftalık av, yol arkadaşı görevi gibi başarılarla açılır. Rıhtım › Gemi ve tersane'den takılır.", "çıkartma kozmetik gemi"));
-  r.push(row("Yol arkadaşı görevleri", "", "Bağ 50 ve 80'de her yol arkadaşı küçük bir görev ister (eşya ya da para). Tamamlayınca para, bağ ve moral kazanırsın.", "görev bağ arkadaş"));
+  r.push(row("Yol arkadaşı görevleri", "", "Bağ 65 ve 85'te her yol arkadaşı küçük bir görev ister (eşya ya da para). Tamamlayınca para, bağ ve moral kazanırsın.", "görev bağ arkadaş"));
   r.push(row('Günün işi', '+%25', 'Her sabah teslimat, tamir ya da ayrıştırmadan biri seçilir; o türün ilanları gün boyu %25 fazla öder. İş kartında "Günün işi" etiketi görünür.', 'günün işi bonus çeşitlilik'));
   r.push(row('Hurda yorgunluğu', '−%15/dalış', 'Günün ilk 3 dalışı (sözleşme ya da serbest) tam değer getirir; 4. dalıştan itibaren her biri %15 daha az. Günün Avı sayılmaz.', 'yorgunluk dalış hurda'));
   r.push(row('Moral primi', '+%5 / −%10', 'Moral 85 ve üstündeyken iş ödemeleri %5 fazla, 50\'nin altındayken %10 az.', 'moral ödeme'));

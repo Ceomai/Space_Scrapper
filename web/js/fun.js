@@ -114,25 +114,25 @@ SS.decalHtml = () => `<p class="label">Çıkartmalar · başarılarla açılır<
 </div><div class="row">${btn('Çıkartmayı kaldır', 'decal', { d: 'none' }, 'ghost sm', !S.decal)}</div>`;
 ACT.decal = d => { const id = d && d.d; if (id === 'none') S.decal = null; else { const x = SS.DECALS.find(k => k.id === id); if (!x || !x.test()) return; S.decal = id; } SS.sfx('click'); render(); };
 /* =========================================================
-   YOL ARKADAŞI GÖREVLERİ: bağ 50 ve 80'de birer küçük hikâye görevi
+   YOL ARKADAŞI GÖREVLERİ: bağ 65 ve 85'te (herkes 50 ile başlar) birer küçük hikâye görevi
    ========================================================= */
 SS.CQUESTS = {
   pit: [
-    { at: 50, id: 'pit50', title: 'Pıtırcık\'ın hazinesi', text: { easy: 'Pıtırcık bir kristal kokusu almış, gözlerini senden ayırmıyor: "Kaptan, iki tane. Biri bana, biri sana. İkisi de bana."', hard: 'Pıtırcık gece boyunca kristal kokusunu izledi. İki tane istiyor; yatağının altına saklayacak.' },
+    { at: 65, id: 'pit50', title: 'Pıtırcık\'ın hazinesi', text: { easy: 'Pıtırcık bir kristal kokusu almış, gözlerini senden ayırmıyor: "Kaptan, iki tane. Biri bana, biri sana. İkisi de bana."', hard: 'Pıtırcık gece boyunca kristal kokusunu izledi. İki tane istiyor; yatağının altına saklayacak.' },
       need: { kind: 'crystal', qty: 2 }, reward: { cash: 320, bond: 10, morale: 8 }, done: 'Pıtırcık kristalleri yatağının kenarına dizdi ve bütün gece mırıldandı. Ödül olarak sana kendi bulduğu ₡320\'yi getirdi. Nereden bulduğunu sorma.' },
-    { at: 80, id: 'pit80', title: 'Eski koloninin sinyali', text: { easy: 'Pıtırcık eski koloninin sinyalini yakaladı: "Evimin bir parçası Gemi Mezarlığı\'nda. İki motor parçası, lütfen."', hard: 'Pıtırcık koloninin eski sinyal kodunu buldu. Hafızasını onarmak için iki motor parçası gerekiyor.' },
+    { at: 85, id: 'pit80', title: 'Eski koloninin sinyali', text: { easy: 'Pıtırcık eski koloninin sinyalini yakaladı: "Evimin bir parçası Gemi Mezarlığı\'nda. İki motor parçası, lütfen."', hard: 'Pıtırcık koloninin eski sinyal kodunu buldu. Hafızasını onarmak için iki motor parçası gerekiyor.' },
       need: { kind: 'part', qty: 2 }, reward: { cash: 500, bond: 10, morale: 12 }, done: 'Pıtırcık\'ın hafızası düzeldi. İlk sözü: "Seni hatırlıyorum. Hep hatırlıyordum." Koloninin eski hesabından ₡500 aktardı.' },
   ],
   ela: [
-    { at: 50, id: 'ela50', title: 'Bilim fuarı', text: { easy: 'Ela bilim fuarına uydu enkazından bir anten yapmak istiyor: "Kazanırsam adını afişe yazarım. Küçük harfle."', hard: 'Ela\'nın okulu bilim fuarı düzenliyor. Projesi için bir uydu enkazı gerekiyor.' },
+    { at: 65, id: 'ela50', title: 'Bilim fuarı', text: { easy: 'Ela bilim fuarına uydu enkazından bir anten yapmak istiyor: "Kazanırsam adını afişe yazarım. Küçük harfle."', hard: 'Ela\'nın okulu bilim fuarı düzenliyor. Projesi için bir uydu enkazı gerekiyor.' },
       need: { kind: 'sat', qty: 1 }, reward: { cash: 260, bond: 12, morale: 12 }, done: 'Ela fuarda birinci oldu. Ödül parasını (₡260) sana verdi: "Gemi için. Ama bir kısmı dondurma."' },
-    { at: 80, id: 'ela80', title: 'Burs sınavı', text: { easy: 'Ela burs sınavına hazırlanıyor ama kitaplar pahalı: ₡300. "Kazanırsam okul bedava. Matematik bunu söylüyor."', hard: 'Ela burs sınavına çalışıyor. Kitaplar için ₡300 gerekiyor. Kazanırsa okul ücreti kalkar.' },
+    { at: 85, id: 'ela80', title: 'Burs sınavı', text: { easy: 'Ela burs sınavına hazırlanıyor ama kitaplar pahalı: ₡300. "Kazanırsam okul bedava. Matematik bunu söylüyor."', hard: 'Ela burs sınavına çalışıyor. Kitaplar için ₡300 gerekiyor. Kazanırsa okul ücreti kalkar.' },
       need: { cash: 300 }, reward: { bond: 15, morale: 10, later: { days: 6, cash: 900, text: 'Ela bursu kazandı! Okul bir yıllık ücreti iade etti: ₡900. Ela bütün gün sınav kâğıdını gösterdi.' } }, done: 'Kitapları aldınız. Ela gece geç saate kadar çalışıyor; sonuç birkaç gün içinde gelecek.' },
   ],
   tolga: [
-    { at: 50, id: 'tolga50', title: 'Eski borç', text: { easy: 'Tolga\'nın eski bir borcu var: ₡250. "Öde, iki katını getiririm. Söz. Bu sefer gerçek söz."', hard: 'Tolga eski bir alacaklıya ₡250 borçlu. Ödersen kısa sürede fazlasıyla döneceğini söylüyor.' },
+    { at: 65, id: 'tolga50', title: 'Eski borç', text: { easy: 'Tolga\'nın eski bir borcu var: ₡250. "Öde, iki katını getiririm. Söz. Bu sefer gerçek söz."', hard: 'Tolga eski bir alacaklıya ₡250 borçlu. Ödersen kısa sürede fazlasıyla döneceğini söylüyor.' },
       need: { cash: 250 }, reward: { bond: 12, later: { days: 4, cash: 560, text: 'Tolga söz verdiği gibi ₡560 getirdi. "Faiz benden. Krell\'den öğrendim."' } }, done: 'Tolga borcunu kapattı ve günlerdir ilk kez rahat uyudu.' },
-    { at: 80, id: 'tolga80', title: 'Eski geminin kaydı', text: { easy: 'Tolga eski gemisinin kaydını kurtarmak istiyor: "İki gövde plakası. Gerisini ben hallederim. Muhtemelen."', hard: 'Tolga eski mürettebatının gemi kaydını onarmak istiyor. İki gövde plakası lazım.' },
+    { at: 85, id: 'tolga80', title: 'Eski geminin kaydı', text: { easy: 'Tolga eski gemisinin kaydını kurtarmak istiyor: "İki gövde plakası. Gerisini ben hallederim. Muhtemelen."', hard: 'Tolga eski mürettebatının gemi kaydını onarmak istiyor. İki gövde plakası lazım.' },
       need: { kind: 'plate', qty: 2 }, reward: { cash: 450, bond: 10, morale: 10 }, done: 'Kayıt kurtarıldı. Eski mürettebattan biri teşekkür olarak ₡450 gönderdi. Tolga bir süre konuşamadı.' },
   ],
 };
