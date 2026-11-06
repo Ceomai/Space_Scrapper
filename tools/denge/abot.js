@@ -198,6 +198,7 @@
     window.S = SS.newState([1, 1, 1], 'fun', 'Bot', opts.crew || ['pit']);
     S.nextEvent = null; SS.newDay([]); S.tut = null;
     const G = opts.give || {};
+    if (G.flags) Object.assign(SS, G.flags);
     if (G.cash) S.cash += G.cash;
     for (const k in G.ship || {}) S.ship[k] = G.ship[k];
     for (const k in G.skills || {}) S.skills[k] = G.skills[k];

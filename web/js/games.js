@@ -147,6 +147,10 @@ G.scrap = (zoneId, onEnd, ct) => {
   const hook = { phase: 0, angle: 0, len: MIN, st: 'swing', held: null };
   const fx = SS.FX.make(), stars = SS.Art.makeStars(70, W, H);
   const got = []; let items = [], time = 0, timeMax = 0, lost = 0, shake = 0, endT = -1;
+  // kombo (değerli yakalamalar art arda), sözleşme anı (kısa duraklama), Rex düellosu (rakip kanca aynı alanda)
+  let combo = 0, bestCombo = 0, myVal = 0, freeze = 0;
+  const weekly = !!(ct && ct.weekly);
+  const rex = !daily && !weekly && !SS.noRex && S.day >= 3 && (SS.forceRex || Math.random() < (SS.hard() ? .35 : .28)) ? { x: 300, y: 92, ang: 0, len: 18, st: 'idle', held: null, wait: 3, val: 0, tgt: null } : null;
   let V = HUNT_VARIANTS[0], scene = null, actors = [], warns = [], meteorT = 3, eelT = 2, droneT = 3, intro = 3.2;
   const deepOK = daily || !SS.hasLic || SS.hasLic('scrap2');
   // Serbest dalış primi: sözleşmesiz dalışta yükün tamamı senin, değerler %25 fazla ve eser şansı yüksek
@@ -190,7 +194,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     if (!daily && SS.hasLic && !SS.hasLic('scrap2')) { mix.crystal = 0; mix.sat = 0; mix.slime = 0; }
     if (B.bait) mix.slime = (mix.slime || 0) + 2;
     if (sniffed) mix.crystal = (mix.crystal || 0) + 1;
-    mix.tank = daily ? (mix.tank || 0) + 1 : Math.round((mix.tank || 0) * SS.M().hazard);
+    mix.tank = weekly ? (mix.tank || 0) + 3 : daily ? (mix.tank || 0) + 1 : Math.round((mix.tank || 0) * SS.M().hazard);
     for (const [k, n] of Object.entries(ZONE_EXTRA[zoneId] || {})) if (Math.random() < n) mix[k] = (mix[k] || 0) + 1;
     if (V.mix) V.mix(mix);
     if (!deepOK) DEEP_KINDS.forEach(k => { mix[k] = 0; });
@@ -225,9 +229,15 @@ G.scrap = (zoneId, onEnd, ct) => {
   function blowTank(m) {
     SS.FX.burst(fx, m.x, m.y, ['#ffcf5a', '#ff8a3d', '#ff4b3a', '#fff3c4'], 70, 6);
     shake = 14; SS.sfx('boom');
+    // Patlama bir araçtır: kaya, dev kaya ve yanık hurdayı temizler; değerli eşyalar yalnızca savrulur
+    const JUNK = ['rock', 'boulder', 'debris', 'tank', 'bug'];
     const hit = items.filter(o => Math.hypot(o.x - m.x, o.y - m.y) < 95);
-    items = items.filter(o => !hit.includes(o));
-    hit.filter(o => o.kind === 'tank').forEach(blowTank);
+    const cleared = hit.filter(o => JUNK.includes(o.kind));
+    items = items.filter(o => !cleared.includes(o));
+    hit.filter(o => !JUNK.includes(o.kind)).forEach(o => { const a = Math.atan2(o.y - m.y, o.x - m.x), d = 40; o.x = clamp(o.x + Math.cos(a) * d, 20, W - 20); o.y = clamp(o.y + Math.sin(a) * d, 170, H - 20); if (o.by != null) o.by = o.y; });
+    const rocks = cleared.filter(o => o.kind === 'rock' || o.kind === 'boulder').length;
+    if (rocks >= 2) SS.FX.text(fx, m.x, m.y + 20, `${rocks} kaya temizlendi`, SS.Art.P().good);
+    cleared.filter(o => o.kind === 'tank').forEach(blowTank);
   }
   function grab(it) {
     const P0 = SS.Art.P();
@@ -240,7 +250,10 @@ G.scrap = (zoneId, onEnd, ct) => {
     items = items.filter(o => o !== it); hook.st = 'retract';
     if (it.kind === 'tank') {
       blowTank(it);
-      const d = daily ? 0 : SS.hurt(14, 'Patlama');
+      // gemiye yakın patlama yaralar, derindeki patlama yalnızca alanı temizler
+      const far = it.y > 360;
+      const d = daily || far ? 0 : SS.hurt(14, 'Patlama');
+      if (far) SS.FX.text(fx, it.x, it.y - 26, 'Uzak patlama · hasar yok', SS.Art.P().accent);
       if (d) SS.FX.text(fx, it.x, it.y - 10, `-${d} sağlık`, SS.Art.P().bad);
       const p = tip(); hook.held = mk('debris', p.x, p.y);
     } else { hook.held = it; SS.sfx('grab'); }
@@ -248,9 +261,18 @@ G.scrap = (zoneId, onEnd, ct) => {
   const isTarget = it => ct && !daily && ct.kinds.includes(it.kind) && ct.got < ct.qty;
   // Anı karesi: büyük yakalamanın görüntüsü paylaşım kartına girer
   const snap = (text, v) => { try { if (!SS.highlight || v >= SS.highlight.value) SS.highlight = { img: g.canvas.toDataURL('image/jpeg', .72), text, value: v, zone: Z.name }; } catch (e) {} };
+  const JUNK_K = ['rock', 'boulder', 'debris', 'bug'];
+  function comboStep(it) {
+    const P = SS.Art.P();
+    if (JUNK_K.includes(it.kind)) { if (combo >= 3) SS.FX.text(fx, OX - 80, OY - 20, 'Kombo bitti', P.metalL); combo = 0; return 1; }
+    combo++; bestCombo = Math.max(bestCombo, combo);
+    if (combo >= 2) { SS._combo = combo; SS.sfx('combo'); SS.FX.text(fx, OX - 80, OY - 20, `Kombo ×${combo}`, combo >= 5 ? P.crystal : P.good, `+%${Math.min(15, (combo - 1) * 3)} değer`); if (combo % 5 === 0) SS.haptic && SS.haptic(false); }
+    return 1 + Math.min(.15, (combo - 1) * .03);
+  }
   function collect(it) {
+    const cm = comboStep(it);
     if (daily) {
-      const P = SS.Art.P(), v = it.kind === 'box' ? 120 : Math.round(SS.ITEMS[it.kind].val * Z.mult * SS.SCRAP_VAL);
+      const P = SS.Art.P(), v = Math.round((it.kind === 'box' ? 120 : SS.ITEMS[it.kind].val * Z.mult * SS.SCRAP_VAL) * cm);
       score += v; got.push({ kind: it.kind, value: v });
       SS.FX.text(fx, OX + 80, OY - 20, '+' + v, v >= 150 ? P.crystal : P.accent, it.kind === 'box' ? 'Kara kutu' : SS.ITEMS[it.kind].name);
       SS.FX.burst(fx, OX, OY, [P.accent, P.star], 12, 2.5); SS.sfx(v >= 150 ? 'big' : 'coin');
@@ -258,9 +280,10 @@ G.scrap = (zoneId, onEnd, ct) => {
       return;
     }
     if (isTarget(it)) {
-      ct.got++; const P = SS.Art.P();
+      ct.got++; const P = SS.Art.P(); myVal += ct.per;
       SS.FX.text(fx, OX + 80, OY - 20, `Hedef ${ct.got}/${ct.qty}`, P.good, `+${SS.fmt(ct.per)} · müşteriye`);
       SS.FX.burst(fx, OX, OY, [P.good, P.accent], 20, 3); SS.sfx('big');
+      if (ct.got === ct.qty) { freeze = .22; shake = 6; SS.FX.burst(fx, W / 2, H / 2, [P.good, P.accent, P.star, P.crystal], 90, 7); SS.FX.text(fx, W / 2, H / 2, 'Sözleşme tamam!', P.good, '+%50 tamamlama primi'); SS.sfx('win'); SS.haptic && SS.haptic(true); }
       if (it.kind !== 'box') return;
     }
     const P = SS.Art.P(), tx = OX + 80, ty = OY - 20;
@@ -283,7 +306,8 @@ G.scrap = (zoneId, onEnd, ct) => {
       return;
     }
     const T = SS.ITEMS[it.kind];
-    const v = it.kind === 'relic' ? T.val * Z.mult * .8 : T.val * zm * rnd(.9, 1.1) * SS.SCRAP_VAL;
+    const v = it.kind === 'relic' ? T.val * Z.mult * .8 : T.val * zm * rnd(.9, 1.1) * SS.SCRAP_VAL * cm;
+    myVal += v;
     if (SS.addCargo(it.kind, v, it.relic ? { relic: it.relic } : {})) {
       got.push({ kind: it.kind, value: Math.round(v), relic: it.relic });
       const name = it.relic ? SS.RELICS[it.relic].name : T.name;
@@ -293,15 +317,51 @@ G.scrap = (zoneId, onEnd, ct) => {
       SS.sfx(v > 250 ? 'big' : 'coin');
     } else { lost++; SS.FX.text(fx, tx, ty, 'Kargo dolu!', P.bad, T.name + ' uzaya bırakıldı'); SS.sfx('bad'); }
   }
+  // Rakip Rex: sağ üstteki gemiden kendi kancasını atar, değerli ve yakın olanı seçer, aldığını götürür
+  function stepRex(dt, f) {
+    const R0 = rex, P = SS.Art.P();
+    if (R0.st === 'idle') {
+      R0.wait -= dt; if (R0.wait > 0 || endT >= 0) return;
+      const pool = items.filter(o => !['tank', 'mimic', 'rock', 'boulder', 'debris'].includes(o.kind) && !(o.kind === 'jelly' && o.charged) && o !== hook.held);
+      if (!pool.length) { R0.wait = 2; return; }
+      const sc = o => (o.kind === 'box' ? 60 : SS.ITEMS[o.kind].val) / (Math.hypot(o.x - R0.x, o.y - R0.y) * SS.ITEMS[o.kind].wt);
+      R0.tgt = pool.sort((a, b) => sc(b) - sc(a))[Math.random() < .7 ? 0 : Math.min(pool.length - 1, 1)];
+      R0.ang = Math.atan2(R0.tgt.x - R0.x, R0.tgt.y - R0.y); R0.st = 'extend';
+    } else if (R0.st === 'extend') {
+      R0.len += 5.2 * f;
+      const px = R0.x + Math.sin(R0.ang) * R0.len, py = R0.y + Math.cos(R0.ang) * R0.len;
+      const it = items.find(o => o !== hook.held && Math.hypot(o.x - px, o.y - py) < o.r + 6);
+      if (it) {
+        items = items.filter(o => o !== it);
+        if (it.kind === 'tank') { blowTank(it); R0.st = 'retract'; SS.FX.text(fx, it.x, it.y - 12, 'Rex tankı patlattı!', P.bad); }
+        else { R0.held = it; R0.st = 'retract'; }
+      } else if (px < 0 || px > W || py > H || !items.includes(R0.tgt)) R0.st = 'retract';
+    } else {
+      R0.len -= (R0.held ? 7 / R0.held.wt : 9) * f;
+      if (R0.held) { R0.held.x = R0.x + Math.sin(R0.ang) * (R0.len + R0.held.r * .8); R0.held.y = R0.y + Math.cos(R0.ang) * (R0.len + R0.held.r * .8); }
+      if (R0.len <= 18) {
+        R0.len = 18;
+        if (R0.held) { const v = R0.held.kind === 'box' ? 60 * Z.mult : SS.ITEMS[R0.held.kind].val * Z.mult * SS.SCRAP_VAL; R0.val += v; SS.FX.text(fx, R0.x - 30, R0.y - 30, `Rex +${SS.fmt(v)}`, P.bad); }
+        R0.held = null; R0.st = 'idle'; R0.wait = rnd(1.6, 3.2) * (SS.hard() ? .85 : 1.1);
+      }
+    }
+  }
   g.finish = reason => {
     if (g.done) return;
     g.done = true;
-    g.result = { got, lost, reason, score, daily };
+    if (!daily) { S.stats.bestCombo = Math.max(S.stats.bestCombo || 0, bestCombo); }
+    if (rex && reason !== 'quit') {
+      S.stats.rexDuels = (S.stats.rexDuels || 0) + 1;
+      if (myVal > rex.val) { const prize = Math.round(40 + rex.val * .25); SS.earn(prize); SS.mood(5); S.stats.rexDuelWins = (S.stats.rexDuelWins || 0) + 1; got.push({ label: `Rex düellosu kazanıldı: ${SS.fmt(Math.round(myVal))} / Rex ${SS.fmt(Math.round(rex.val))} · ödül ${SS.fmt(prize)}` }); }
+      else got.push({ label: `Rex düellosu kaybedildi: ${SS.fmt(Math.round(myVal))} / Rex ${SS.fmt(Math.round(rex.val))}` });
+    }
+    g.result = { got, lost, reason, score, daily, combo: bestCombo };
   };
   g.init = () => {
-    timeMax = time = daily ? 45 : SS.M().jobTime + SS.moraleTime() + (SS.lvl('radar') ? 6 : 0);
+    timeMax = time = weekly ? 40 : daily ? 45 : SS.M().jobTime + SS.moraleTime() + (SS.lvl('radar') ? 6 : 0);
     const setup = () => { V = pickVariant(zoneId, deepOK); scene = mkScene(zoneId); spawn(); };
-    if (daily) { const r0 = Math.random; Math.random = SS.mulberry(ct.seed); try { setup(); } finally { Math.random = r0; } } else setup();
+    if (daily) { const r0 = Math.random; Math.random = SS.mulberry(ct.seed); try { setup(); if (weekly) { V = HUNT_VARIANTS.find(v => v.id === ['storm', 'dark', 'drift'][ct.seed % 3]) || V; } } finally { Math.random = r0; } } else setup();
+    if (rex) g.helpers.push('Rex de bu alanda! Senden çok değer toplarsa düelloyu o kazanır.');
     if (V.id === 'drift') for (const it of items) if (!it.vx) it.vx = (it.y % 2 < 1 ? -1 : 1) * rnd(.22, .42) / Math.max(1, it.wt * .5);
     if (V.id === 'whale') actors.push({ type: 'whale', x: -150, y: rnd(270, 400), vx: .55, dropped: false });
     const tEl = document.querySelector('#mini .mini-title'); if (tEl) tEl.textContent = `${g.title} · ${V.name}`;
@@ -321,6 +381,7 @@ G.scrap = (zoneId, onEnd, ct) => {
   g.update = (dt, f) => {
     SS.FX.step(fx, dt, f);
     if (shake > 0) shake = Math.max(0, shake - f * .8);
+    if (freeze > 0) { freeze -= dt; return; }
     if (endT >= 0) { endT -= dt; if (endT <= 0) g.finish('time'); return; }
     time -= dt;
     if (time <= 0) { time = 0; endT = .6; return; }
@@ -331,6 +392,7 @@ G.scrap = (zoneId, onEnd, ct) => {
       else if (it.kind === 'mimic') it.teeth = Math.sin(g.t * 1.3 + it.seed) > .82;
     }
     stepActors(dt, f);
+    if (rex) stepRex(dt, f);
     if (hook.st === 'swing') { hook.phase += .032 * f; hook.angle = 1.2 * Math.sin(hook.phase); }
     else if (hook.st === 'extend') {
       hook.len += extendSp * f; const p = tip();
@@ -346,7 +408,7 @@ G.scrap = (zoneId, onEnd, ct) => {
       }
     }
     const low = time <= 8;
-    SS.Stage.hud(`<span class="${low ? 'warn' : ''}">⏱ ${Math.ceil(time)}</span>${daily ? `<span class="ok">Skor ${score}</span><span>${got.length} parça</span>` : `${ct ? `<span class="${ct.got >= ct.qty ? 'ok' : ''}">Hedef ${ct.got}/${ct.qty}</span>` : ''}<span>Kargo ${SS.cargoUsed()}/${SS.cargoCap()}</span>`}`);
+    SS.Stage.hud(`<span class="${low ? 'warn' : ''}">⏱ ${Math.ceil(time)}</span>${rex ? `<span class="${myVal > rex.val ? 'ok' : 'warn'}">Sen ${SS.fmt(Math.round(myVal))} · Rex ${SS.fmt(Math.round(rex.val))}</span>` : ''}${combo >= 2 ? `<span class="ok">Kombo ×${combo}</span>` : ''}${daily ? `<span class="ok">Skor ${score}</span><span>${got.length} parça</span>` : `${ct ? `<span class="${ct.got >= ct.qty ? 'ok' : ''}">Hedef ${ct.got}/${ct.qty}</span>` : ''}<span>Kargo ${SS.cargoUsed()}/${SS.cargoCap()}</span>`}`);
   };
   g.draw = (c, P, t) => {
     if (shake > 0) c.translate(rnd(-shake, shake) * .5, rnd(-shake, shake) * .5);
@@ -356,6 +418,14 @@ G.scrap = (zoneId, onEnd, ct) => {
     for (const it of items) { if (isTarget(it)) { c.strokeStyle = P.good; c.lineWidth = 2; c.globalAlpha = .45 + .45 * Math.sin(t * 6); c.beginPath(); c.arc(it.x, it.y, it.r + 7, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1; } SS.Art.item(c, it, t, P); }
     const bob = Math.sin(t * 1.6) * 2;
     SS.Art.ship(c, OX, 58 + bob, 1, t, P, { tier: S.tier });
+    if (rex) {
+      const rb = Math.sin(t * 1.4 + 1) * 2, rp = { x: rex.x + Math.sin(rex.ang) * rex.len, y: rex.y + Math.cos(rex.ang) * rex.len };
+      SS.Art.ship(c, rex.x, 52 + rb, .55, t, { ...P, hull: '#5a6b8c', hullD: '#2b3550', hull2: '#c9d2ea' }, { raw: true, tier: 1 });
+      c.strokeStyle = P.bad; c.lineWidth = 1.5; c.beginPath(); c.moveTo(rex.x, rex.y); c.lineTo(rp.x, rp.y); c.stroke();
+      if (rex.held) SS.Art.item(c, rex.held, t, P);
+      SS.Art.claw(c, rp.x, rp.y, rex.ang, rex.held ? .12 : .5, P);
+      c.fillStyle = P.bad; c.font = SS.tfont(10); c.textAlign = 'center'; c.fillText('REX', rex.x, 30);
+    }
     const p = tip();
     c.strokeStyle = P.rope; c.lineWidth = 2; c.beginPath(); c.moveTo(OX, 82 + bob); c.lineTo(OX, OY); c.lineTo(p.x, p.y); c.stroke();
     c.fillStyle = P.metalD; c.beginPath(); c.arc(OX, OY, 5, 0, TAU); c.fill();
@@ -431,7 +501,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     actors = actors.filter(a => !a.dead);
   }
   // Denge testleri için salt okunur durum (oyunda kullanılmaz)
-  g._dbg = () => ({ items, hook, time, OX, OY, reach, extendSp, ct, V, zm, daily, actors });
+  g._dbg = () => ({ items, hook, time, OX, OY, reach, extendSp, ct, V, zm, daily, actors, rex, combo, myVal });
   g.onEnd = onEnd;
   SS.Stage.open(g);
 };

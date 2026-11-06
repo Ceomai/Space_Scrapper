@@ -33,7 +33,7 @@ SS.migrate = s => {
 /* =========================================================
    GÜNÜN AVI VE MEYDAN OKUMA
    ========================================================= */
-const huntTitle = h => h.mode === 'daily' ? `Günün Avı #${SS.dailyNo()}` : h.mode === 'challenge' ? 'Meydan okuma' : 'Antrenman turu';
+const huntTitle = h => h.mode === 'weekly' ? `Haftanın Avı #${SS.weekNo()}` : h.mode === 'daily' ? `Günün Avı #${SS.dailyNo()}` : h.mode === 'challenge' ? 'Meydan okuma' : 'Antrenman turu';
 SS.huntResultModal = () => {
   const h = SS.lastHunt, d = SS.dailyData();
   if (window.S) render();
@@ -42,6 +42,7 @@ SS.huntResultModal = () => {
     : `<div class="alert">${h.target} puanı geçemedin; arada ${h.target - h.score} puan var. Bir daha dene.</div>`;
   SS.modal(`<p class="eyebrow">${huntTitle(h)} · ${SS.ZONES.find(z => z.id === h.zone).name}</p><h2>${h.score} puan</h2>
     <p class="grid-emoji">${h.grid || '—'}</p>${ch}
+    ${h.mode === 'weekly' ? `<p class="muted">Bu haftaki en iyi skorun: <b>${h.best}</b>. Haftanın Avı her pazartesi yenilenir.</p>` : ''}
     ${h.mode === 'daily' && h.first ? '<p class="muted">Bugünkü resmî skorun kaydedildi. Yarın herkes için yeni bir alan açılır.</p>' : ''}
     <ul class="kv"><li><span>Meydan okuma kodun</span><b>${SS.challengeCode(h.seed, h.score)}</b></li><li><span>En iyi skorun</span><b>${d.best}</b></li></ul>
     <div class="row">${btn('Paylaş', 'shareHunt', {}, 'primary')}${btn('Tekrar oyna', 'playAgain', {}, 'ghost')}${btn('Tamam', 'close', {}, 'ghost')}</div>`);

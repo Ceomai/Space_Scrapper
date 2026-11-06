@@ -28,6 +28,7 @@ SS.sfx = k => {
     switch (k) {
       case 'fire': tone(220, .12, w, v, 140); break;
       case 'grab': tone(140, .08, 'square', .04); break;
+      case 'combo': { const n = Math.min(8, SS._combo || 2), f0 = 440 * Math.pow(1.0595, n * 2); tone(f0, .09, w, v); tone(f0 * 1.5, .12, w, v * .8, 0, .06); break; }
       case 'coin': tone(660, .09, w, v); tone(990, .12, w, v, 0, .07); break;
       case 'big': [523, 659, 784, 1046].forEach((f, i) => tone(f, .14, w, v, 0, i * .07)); break;
       case 'bad': tone(220, .25, 'sawtooth', .05, -100); break;
@@ -169,6 +170,7 @@ function mapView() {
       <button class="qb" data-act="route"><b>${S.route && S.route.length ? S.route.length : '↝'}</b><span>Rota</span></button>
       ${S.billFix ? `<button class="qb hot" data-act="billFix"><b>🔧</b><span>Onar</span></button>` : ''}
       ${SS.crewList().length ? `<button class="qb ${sickN ? 'warn' : ''}" data-act="mapPanel" data-p="crew"><b>${SS.crewList().length}</b><span>Hane</span></button>` : ''}
+      ${SS.cquestActive && SS.cquestActive() ? `<button class="qb hot" data-act="cquest"><b>♥</b><span>Görev</span></button>` : ''}
       ${S.trial && !S.trial.done ? `<button class="qb hot" data-act="trial"><b>⚠</b><span>Tehdit</span></button>` : ''}
       <button class="qb daily" data-act="dailyPanel"><b>${SS.pendingChallenge ? '⚔' : '★'}</b><span>Günün Avı</span></button>
       ${S.bulletin ? `<button class="qb" data-act="bulletin"><b>${S.event ? '●' : '○'}</b><span>Bülten</span></button>` : ''}
@@ -316,9 +318,9 @@ function jobsView() {
     else if (b.type === 'sort') { body = `<p>${esc(b.text)}</p>${helpers(['ela', 'pit'])}`; meta = `${b.time} sn · ${dur(b.dur)} · ${b.energy} enerji`; pay = `${fmt(b.per)}/doğru`; }
     else { const have = SS.orderHave(b); body = `<div class="row-i">${icon(b.kind, 40)}<p><b>${b.buyer}</b> ${b.qty} adet <b>${SS.ITEMS[b.kind].name}</b> istiyor. Kargonda ${have} var. Pazardan çok daha iyi fiyat.</p></div>`; meta = `${dur(b.dur)} · enerji yok`; pay = fmt(b.pay); }
     const enBlk = blk && !b.done && S.energy < b.energy && SS.adsLeft && SS.adsLeft() > 0 && S.energy + SS.AD.energy >= b.energy;
-    const flags = `${b.hot ? '<span class="tag hot">Günün işi +%25</span>' : ''}${best === b.id ? '<span class="tag star">★ En verimli</span>' : ''}`;
+    const flags = `${SS.rushTag ? SS.rushTag(b) : ''}${b.hot ? '<span class="tag hot">Günün işi +%25</span>' : ''}${best === b.id ? '<span class="tag star">★ En verimli</span>' : ''}`;
     return `<article class="job ${cls} ${b.done ? 'done' : ''} ${b.special ? 'special' : ''} ${best === b.id ? 'best' : ''}"><header><span class="pcode">${code}</span><h3>${b.type === 'sort' ? b.name : title}${b.special ? ' · özel' : ''}</h3><b class="pay">${pay}</b></header>
-      ${flags ? `<div class="tags">${flags}</div>` : ''}${body}<footer><small>${meta}${b.done ? '' : effTxt}</small>${b.done ? '<span class="pill">Bitti</span>' : btn(b.type === 'order' ? 'Teslim et' : 'Kabul et', 'job', { id: b.id }, 'sm primary', !!blk)}</footer>${blk ? `<small class="why">${blk}</small>` : ''}${enBlk ? `<div class="row">${btn(`⚡ Reklam izle · +${SS.AD.energy} enerji (${SS.adsLeft()}/${SS.AD.perDay})`, 'adEnergy', {}, 'sm ghost ad-inline')}</div>` : ''}</article>`;
+      ${flags ? `<div class="tags">${flags}</div>` : ''}${body}<footer><small>${meta}${b.done ? '' : effTxt}</small>${b.done ? `<span class="pill">${b.expired ? 'Süresi doldu' : 'Bitti'}</span>` : btn(b.type === 'order' ? 'Teslim et' : 'Kabul et', 'job', { id: b.id }, 'sm primary', !!blk)}</footer>${blk ? `<small class="why">${blk}</small>` : ''}${enBlk ? `<div class="row">${btn(`⚡ Reklam izle · +${SS.AD.energy} enerji (${SS.adsLeft()}/${SS.AD.perDay})`, 'adEnergy', {}, 'sm ghost ad-inline')}</div>` : ''}</article>`;
   }).join('');
   return h;
 }
@@ -358,7 +360,7 @@ function hangarView() {
   h += panel('Boya atölyesi', `<label class="field" for="shipName"><span>Geminin adı</span><input id="shipName" maxlength="20" value="${esc(SS.shipName())}" autocomplete="off"></label>
     <div class="row">${btn('Adı kaydet', 'renameShip', {}, 'ghost sm')}</div>
     <div class="paints">${SS.PAINTS.map(p => { const own = (S.paints || {})[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]); const on = S.paint === p.id;
-      return `<button class="paint ${on ? 'on' : ''}" data-act="paint" data-p="${p.id}" ${!own && S.cash < p.price ? 'disabled' : ''}><i style="background:${p.hull ? p.hull[0] : '#ff8a3d'}"></i><span>${p.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : p.unlock ? 'Korsan seti ödülü' : fmt(p.price)}</small></button>`; }).join('')}</div>`, { code: 'BY' });
+      return `<button class="paint ${on ? 'on' : ''}" data-act="paint" data-p="${p.id}" ${!own && S.cash < p.price ? 'disabled' : ''}><i style="background:${p.hull ? p.hull[0] : '#ff8a3d'}"></i><span>${p.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : p.unlock ? 'Korsan seti ödülü' : fmt(p.price)}</small></button>`; }).join('')}</div>${SS.decalHtml ? SS.decalHtml() : ''}`, { code: 'BY' });
   const nx = SS.nextShip();
   if (!nx) h += panel('Tersane', '<p>Demir Balina\'dan büyüğü yok. Rıhtımın en gösterişli gemisi senin.</p>', { code: 'TR' });
   else {

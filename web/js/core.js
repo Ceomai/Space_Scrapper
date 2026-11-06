@@ -41,7 +41,7 @@ SS.SORTS = [
 ];
 
 SS.blankShip = () => Object.fromEntries(SS.SHIP.map(u => [u.id, 0]));
-SS.SCRAP_VAL = .315; // hurda avı değer çarpanı (nakit işlerle denge için)
+SS.SCRAP_VAL = .27; // hurda avı değer çarpanı (nakit işlerle denge için)
 SS.newState = (diff, tone, name, crewIds) => {
   const s = {
     v: 3, diff: diff.slice(), tone, name: name || 'Kaptan', day: 1, time: 420, loc: 'home', view: 'map',

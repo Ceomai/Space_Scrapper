@@ -64,6 +64,13 @@ function jobsSec() {
   r.push(row('Sipariş', 'pazarın ~1,7 katı', `Kargondaki eşyayı alıcıya teslim et; enerji harcamaz, ${SS.DUR.order} dk. Ticaret Ruhsatı gerekir.`, 'sipariş'));
   r.push(row('İlan saatleri', '', 'İlanlar 07, 10, 13, 16, 19 ve 22\'de yenilenir. 19:00 sonrası gece zammı %10.', 'ilan'));
   r.push(row('İtibar', '', 'Her başarılı iş kendi itibarını artırır; her seviye ödemeye %4 ekler. Teslimat ve tamirde 3. seviye VIP işleri açar.', 'itibar'));
+  r.push(row("Acil ilan", "+%40", "Bazı teslimat, tamir ve sipariş ilanları acildir: kartta yazan saate kadar kabul edersen %40 fazla öder; süre dolunca ilan kalkar.", "acil ilan bonus süre"));
+  r.push(row("Rex düellosu", "", "Bazı dalışlarda Rex de aynı alanda kanca atar. Ondan çok değer toplarsan ödül kazanırsın; onun aldığı eşya senin olamaz.", "rex düello rakip"));
+  r.push(row("Kombo", "+%15'e kadar", "Art arda değerli eşya yakaladıkça kombo artar ve her yakalama %3 daha değerli olur (en fazla +%15). Kaya ya da hurda kırıntısı komboyu bozar.", "kombo seri değer"));
+  r.push(row("Patlayıcı tank", "", "Tank patlaması kayaları ve kırıntıyı temizler, değerli eşyaları sadece savurur. Derindeki bir tankı patlatırsan gemin hasar almaz; yakındakiler yaralar.", "tank patlama kaya temizlik"));
+  r.push(row("Haftanın Avı", "", "Günün Avı panelinde: herkese aynı, daha zor bir alan; her pazartesi yenilenir. Ekonomini etkilemez.", "haftalık meydan okuma"));
+  r.push(row("Gemi çıkartmaları", "", "Rex düellosu, kombo, acil ilan, haftalık av, yol arkadaşı görevi gibi başarılarla açılır. Rıhtım › Gemi ve tersane'den takılır.", "çıkartma kozmetik gemi"));
+  r.push(row("Yol arkadaşı görevleri", "", "Bağ 50 ve 80'de her yol arkadaşı küçük bir görev ister (eşya ya da para). Tamamlayınca para, bağ ve moral kazanırsın.", "görev bağ arkadaş"));
   r.push(row('Günün işi', '+%25', 'Her sabah teslimat, tamir ya da ayrıştırmadan biri seçilir; o türün ilanları gün boyu %25 fazla öder. İş kartında "Günün işi" etiketi görünür.', 'günün işi bonus çeşitlilik'));
   r.push(row('Hurda yorgunluğu', '−%15/dalış', 'Günün ilk 3 dalışı (sözleşme ya da serbest) tam değer getirir; 4. dalıştan itibaren her biri %15 daha az. Günün Avı sayılmaz.', 'yorgunluk dalış hurda'));
   r.push(row('Moral primi', '+%5 / −%10', 'Moral 85 ve üstündeyken iş ödemeleri %5 fazla, 50\'nin altındayken %10 az.', 'moral ödeme'));
