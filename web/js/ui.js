@@ -274,13 +274,13 @@ function homeView() {
     ${buffs.length ? `<p class="label">Hazır sarf malzemeleri · sıradaki işe otomatik uygulanır</p><div class="tags">${buffs.map(([k, n]) => `<span class="tag">${SS.GOODS.find(x => x.id === k).name} ×${n}</span>`).join('')}</div>` : ''}`, { code: 'DL' });
   const store = S.decorStore || [], dfx = SS.decorFx();
   h += panel('Dekor deposu', `${store.length ? `<div class="list">${store.map((id, i) => { const d = SS.DECOR.find(x => x.id === id); return `<div class="row-item"><div><b>${d.name}</b><small>${d.desc}</small></div>${btn('Sat +' + fmt(d.price * .4), 'sellDecor', { i }, 'sm ghost')}</div>`; }).join('')}</div><p class="muted">Yerleştirmek için Odalar sekmesinde boş bir yuvaya dokun.</p>` : '<p class="empty">Depo boş.</p>'}
-    <p class="muted">Yerleştirilmiş dekorların toplam etkisi: ${[dfx.morale && `moral +${dfx.morale}/gece`, dfx.sleep && `uyku +${dfx.sleep}`, dfx.heat && `ısıtma −${fmt(dfx.heat)}`, dfx.bond && `hane bağı +${dfx.bond}/gece`, dfx.energyMax && `maks. enerji +${dfx.energyMax}`].filter(Boolean).join(' · ') || 'yok'}.</p>`, { code: 'DP', aside: `${SS.decorPlaced().length}/${SS.decorSlots()} yuva dolu` });
+    <p class="muted">Yerleştirilmiş dekorların toplam etkisi: ${[dfx.morale && `moral +${dfx.morale}/gece`, dfx.sleep && `uyku +${Math.min(SS.DECOR_SLEEP_CAP, dfx.sleep)}${dfx.sleep > SS.DECOR_SLEEP_CAP ? ` (en fazla ${SS.DECOR_SLEEP_CAP}; fazlası işe yaramaz)` : ''}`, dfx.heat && `ısıtma −${fmt(Math.min(dfx.heat, Math.round([12, 16, 22][S.home] * SS.M().cm)))}${dfx.heat > Math.round([12, 16, 22][S.home] * SS.M().cm) ? ' (ısıtma faturası bitti; fazlası boşa gider)' : ''}`, dfx.bond && `hane bağı +${dfx.bond}/gece`, dfx.energyMax && `maks. enerji +${dfx.energyMax}`].filter(Boolean).join(' · ') || 'yok'}.</p>`, { code: 'DP', aside: `${SS.decorPlaced().length}/${SS.decorSlots()} yuva dolu` });
   }
   if (tab === 'house') {
   const nh = SS.HOMES[S.home + 1], m = SS.M(), dfx = SS.decorFx();
   h += panel('Duvar renkleri', `<div class="paints">${SS.HOME_TINTS.map(t => { const own = (S.tintsOwned || {})[t.id] || !t.price; const on = (S.homeTint || 'std') === t.id;
     return `<button class="paint ${on ? 'on' : ''}" data-act="tint" data-t="${t.id}" ${!own && S.cash < t.price ? 'disabled' : ''}><i style="background:${t.tint || 'var(--line2)'}"></i><span>${t.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : fmt(t.price)}</small></button>`; }).join('')}</div>`, { code: 'RN' });
-  h += panel(SS.HOMES[S.home].name, `<p class="muted">Uyku +${SS.HOMES[S.home].sleep + (dfx.sleep || 0)} enerji · aylık kira ${fmt(m.rent * SS.HOMES[S.home].rent)}</p>
+  h += panel(SS.HOMES[S.home].name, `<p class="muted">Uyku +${SS.HOMES[S.home].sleep + SS.sleepBonus()} enerji · aylık kira ${fmt(m.rent * SS.HOMES[S.home].rent)}</p>
     ${nh ? `<div class="row-item"><div><b>Taşın: ${nh.name}</b><small>Uyku +${nh.sleep}, ${SS.DECOR_SLOTS[S.home + 1]} dekor yuvası, kira ${fmt(m.rent * nh.rent)}</small></div>${btn(fmt(nh.cost), 'home', {}, 'sm', S.cash < nh.cost)}</div>` : ''}
     ${SS.EXTRAS.map(x => `<div class="row-item"><div><b>${x.name}</b><small>${x.desc}${S.home < x.needHome ? ' · önce eve taşın' : ''}</small></div>${S.extras[x.id] ? (x.id === 'workshop' ? btn('İşle · 1 sa', 'workshop', {}, 'sm', !S.cargo.some(c => c.cat === 'metal' && !c.proc) || !!SS.jobBlock(SS.COST.workshop, 60)) : '<span class="pill good">Kuruldu</span>') : btn(fmt(x.cost), 'extra', { id: x.id }, 'sm', S.cash < x.cost || S.home < x.needHome)}</div>`).join('')}`, { code: 'EV' });
   }
@@ -435,7 +435,7 @@ function cantinaView() {
 /* ---------- KLİNİK VE AKADEMİ ---------- */
 const trainCost = SS.trainCost = lv => Math.round(250 * (lv + 1) * SS.dv('costs'));
 const healPrice = () => Math.round(70 * SS.dv('costs'));
-const SKILL_FX = SS.SKILL_FX = { pilot: lv => `iniş toleransı +%${lv * 10}, yakıt +${lv * 15}`, eng: lv => `tamirde +${lv * 6} sn, +${Math.floor(lv / 2)} ipucu`, trade: lv => `tüm satışlar +%${lv * 3}`, fit: lv => `maksimum enerji +${lv * 10}` };
+const SKILL_FX = SS.SKILL_FX = { pilot: lv => `iniş toleransı +%${lv * 10}, yakıt +${lv * 15}, teslimat ödemesi +%${lv * 4}`, eng: lv => `tamirde +${lv * 6} sn, +${Math.floor(lv / 2)} ipucu`, trade: lv => `tüm satışlar +%${lv * 3}`, fit: lv => `maksimum enerji +${lv * 10}, uyku +${lv * 3} enerji` };
 function clinicView() {
   let h = panel('Klinik', `<div class="row-item"><div><b>Tedavi</b><small>Sağlık +30 · 30 dakika</small></div>${btn(fmt(healPrice()), 'heal', {}, 'sm', S.cash < healPrice() || S.health >= 100 || !SS.timeOk(30))}</div>`, { code: 'KL' });
   if (SS.CLINIC_EXTRA) h += SS.CLINIC_EXTRA();

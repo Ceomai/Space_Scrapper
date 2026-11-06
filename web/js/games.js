@@ -299,7 +299,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     g.result = { got, lost, reason, score, daily };
   };
   g.init = () => {
-    timeMax = time = daily ? 45 : SS.M().jobTime + SS.moraleTime();
+    timeMax = time = daily ? 45 : SS.M().jobTime + SS.moraleTime() + (SS.lvl('radar') ? 6 : 0);
     const setup = () => { V = pickVariant(zoneId, deepOK); scene = mkScene(zoneId); spawn(); };
     if (daily) { const r0 = Math.random; Math.random = SS.mulberry(ct.seed); try { setup(); } finally { Math.random = r0; } } else setup();
     if (V.id === 'drift') for (const it of items) if (!it.vx) it.vx = (it.y % 2 < 1 ? -1 : 1) * rnd(.22, .42) / Math.max(1, it.wt * .5);
@@ -467,7 +467,7 @@ G.deliver = (ct, onEnd) => {
   g.finish = reason => {
     if (g.done) return; g.done = true;
     const ok = state === 'landed';
-    g.result = { ok, tip: ok && mods.includes('tip') && softLanding ? Math.round(ct.pay * .25) : 0, pay: ok ? Math.round(ct.pay * (.8 + .4 * fuel / fuelMax) * (rough ? .7 : 1)) : 0, rough, quit: reason === 'quit' };
+    g.result = { ok, tip: ok && mods.includes('tip') && softLanding ? Math.round(ct.pay * .25) : 0, pay: ok ? Math.round(ct.pay * (.8 + .4 * fuel / fuelMax) * (rough ? .7 : 1 + gyro * .08) * (1 + pilot * .04)) : 0, rough, quit: reason === 'quit' };
   };
   g.key = (k, down) => {
     if (k === 'ArrowLeft' || k === 'a') g.input.left = down;

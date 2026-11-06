@@ -76,7 +76,7 @@ function mkDeliver(tierIdx, special) {
   let pay = rint(t.pay[0], t.pay[1]) * SS.jobPayMult() * SS.repMult('deliver');
   mods.forEach(m => pay *= m.pay);
   if (special) pay *= 1.8;
-  return { type: 'deliver', id: Math.random().toString(36).slice(2), tier: tierIdx, tierName: special ? 'Tolga\'nın tanıdığı' : t.name, diff: t.diff, fuel: t.fuel,
+  return { type: 'deliver', id: Math.random().toString(36).slice(2), tier: tierIdx, tierName: special ? 'Tolga\'nın tanıdığı' : t.name, diff: t.diff, fuel: Math.max(1, Math.round(t.fuel * (1 - SS.lvl('thruster') * .1))),
     dest: d, what: g, client: c, mods: mods.map(m => m.id), modNames: mods.map(m => m.name), fragile: mods.some(m => m.id === 'fragile'),
     pay: Math.round(pay), dur: SS.DUR.deliver[tierIdx], energy: SS.COST.deliver, text: line('deliver', { c, d, g }), special: !!special, done: false };
 }

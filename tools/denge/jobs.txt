@@ -1,0 +1,128 @@
+temel	{}	0
+reklamli	{"ads": 1}	0
+nakit8000	{"cash": 8000}	0
+uyku+10	{"fx": {"sleep": 10}}	0
+moral+3	{"fx": {"morale": 3}}	0
+gemi claw	{"ship": {"claw": 4}}	0
+gemi winch	{"ship": {"winch": 4}}	0
+gemi magnet	{"ship": {"magnet": 3}}	0
+gemi radar	{"ship": {"radar": 1}}	0
+gemi cargo	{"ship": {"cargo": 4}}	0
+gemi tank	{"ship": {"tank": 3}}	0
+beceri trade	{"skills": {"trade": 3}}	0
+beceri fit	{"skills": {"fit": 3}}	0
+ev istasyon	{"home": 2}	0
+isletme drone	{"biz": {"drone": 1}}	0
+isletme dukkan	{"biz": {"shop": 1}}	0
+temel	{}	1
+reklamli	{"ads": 1}	1
+nakit8000	{"cash": 8000}	1
+uyku+10	{"fx": {"sleep": 10}}	1
+moral+3	{"fx": {"morale": 3}}	1
+gemi claw	{"ship": {"claw": 4}}	1
+gemi winch	{"ship": {"winch": 4}}	1
+gemi magnet	{"ship": {"magnet": 3}}	1
+gemi radar	{"ship": {"radar": 1}}	1
+gemi cargo	{"ship": {"cargo": 4}}	1
+gemi tank	{"ship": {"tank": 3}}	1
+beceri trade	{"skills": {"trade": 3}}	1
+beceri fit	{"skills": {"fit": 3}}	1
+ev istasyon	{"home": 2}	1
+isletme drone	{"biz": {"drone": 1}}	1
+isletme dukkan	{"biz": {"shop": 1}}	1
+temel	{}	2
+reklamli	{"ads": 1}	2
+nakit8000	{"cash": 8000}	2
+uyku+10	{"fx": {"sleep": 10}}	2
+moral+3	{"fx": {"morale": 3}}	2
+gemi claw	{"ship": {"claw": 4}}	2
+gemi winch	{"ship": {"winch": 4}}	2
+gemi magnet	{"ship": {"magnet": 3}}	2
+gemi radar	{"ship": {"radar": 1}}	2
+gemi cargo	{"ship": {"cargo": 4}}	2
+gemi tank	{"ship": {"tank": 3}}	2
+beceri trade	{"skills": {"trade": 3}}	2
+beceri fit	{"skills": {"fit": 3}}	2
+ev istasyon	{"home": 2}	2
+isletme drone	{"biz": {"drone": 1}}	2
+isletme dukkan	{"biz": {"shop": 1}}	2
+temel	{}	3
+reklamli	{"ads": 1}	3
+nakit8000	{"cash": 8000}	3
+uyku+10	{"fx": {"sleep": 10}}	3
+moral+3	{"fx": {"morale": 3}}	3
+gemi claw	{"ship": {"claw": 4}}	3
+gemi winch	{"ship": {"winch": 4}}	3
+gemi magnet	{"ship": {"magnet": 3}}	3
+gemi radar	{"ship": {"radar": 1}}	3
+gemi cargo	{"ship": {"cargo": 4}}	3
+gemi tank	{"ship": {"tank": 3}}	3
+beceri trade	{"skills": {"trade": 3}}	3
+beceri fit	{"skills": {"fit": 3}}	3
+ev istasyon	{"home": 2}	3
+isletme drone	{"biz": {"drone": 1}}	3
+isletme dukkan	{"biz": {"shop": 1}}	3
+temel	{}	4
+reklamli	{"ads": 1}	4
+nakit8000	{"cash": 8000}	4
+uyku+10	{"fx": {"sleep": 10}}	4
+moral+3	{"fx": {"morale": 3}}	4
+gemi claw	{"ship": {"claw": 4}}	4
+gemi winch	{"ship": {"winch": 4}}	4
+gemi magnet	{"ship": {"magnet": 3}}	4
+gemi radar	{"ship": {"radar": 1}}	4
+gemi cargo	{"ship": {"cargo": 4}}	4
+gemi tank	{"ship": {"tank": 3}}	4
+beceri trade	{"skills": {"trade": 3}}	4
+beceri fit	{"skills": {"fit": 3}}	4
+ev istasyon	{"home": 2}	4
+isletme drone	{"biz": {"drone": 1}}	4
+isletme dukkan	{"biz": {"shop": 1}}	4
+temel	{}	5
+reklamli	{"ads": 1}	5
+nakit8000	{"cash": 8000}	5
+uyku+10	{"fx": {"sleep": 10}}	5
+moral+3	{"fx": {"morale": 3}}	5
+gemi claw	{"ship": {"claw": 4}}	5
+gemi winch	{"ship": {"winch": 4}}	5
+gemi magnet	{"ship": {"magnet": 3}}	5
+gemi radar	{"ship": {"radar": 1}}	5
+gemi cargo	{"ship": {"cargo": 4}}	5
+gemi tank	{"ship": {"tank": 3}}	5
+beceri trade	{"skills": {"trade": 3}}	5
+beceri fit	{"skills": {"fit": 3}}	5
+ev istasyon	{"home": 2}	5
+isletme drone	{"biz": {"drone": 1}}	5
+isletme dukkan	{"biz": {"shop": 1}}	5
+temel	{}	6
+reklamli	{"ads": 1}	6
+nakit8000	{"cash": 8000}	6
+uyku+10	{"fx": {"sleep": 10}}	6
+moral+3	{"fx": {"morale": 3}}	6
+gemi claw	{"ship": {"claw": 4}}	6
+gemi winch	{"ship": {"winch": 4}}	6
+gemi magnet	{"ship": {"magnet": 3}}	6
+gemi radar	{"ship": {"radar": 1}}	6
+gemi cargo	{"ship": {"cargo": 4}}	6
+gemi tank	{"ship": {"tank": 3}}	6
+beceri trade	{"skills": {"trade": 3}}	6
+beceri fit	{"skills": {"fit": 3}}	6
+ev istasyon	{"home": 2}	6
+isletme drone	{"biz": {"drone": 1}}	6
+isletme dukkan	{"biz": {"shop": 1}}	6
+temel	{}	7
+reklamli	{"ads": 1}	7
+nakit8000	{"cash": 8000}	7
+uyku+10	{"fx": {"sleep": 10}}	7
+moral+3	{"fx": {"morale": 3}}	7
+gemi claw	{"ship": {"claw": 4}}	7
+gemi winch	{"ship": {"winch": 4}}	7
+gemi magnet	{"ship": {"magnet": 3}}	7
+gemi radar	{"ship": {"radar": 1}}	7
+gemi cargo	{"ship": {"cargo": 4}}	7
+gemi tank	{"ship": {"tank": 3}}	7
+beceri trade	{"skills": {"trade": 3}}	7
+beceri fit	{"skills": {"fit": 3}}	7
+ev istasyon	{"home": 2}	7
+isletme drone	{"biz": {"drone": 1}}	7
+isletme dukkan	{"biz": {"shop": 1}}	7

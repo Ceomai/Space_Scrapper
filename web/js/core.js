@@ -95,6 +95,9 @@ SS.lvl = k => (S.ship[k] || 0) + (SS.shipT().base[k] || 0);
 SS.GEAR = ['claw', 'winch', 'magnet', 'radar'];
 SS.gearLvl = () => SS.GEAR.reduce((a, k) => a + SS.lvl(k), 0);
 SS.gearMult = () => 1 + SS.gearLvl() * .025;
+// Dekorlardan gelen uyku enerjisi en fazla +15 (uyku en büyük enerji kaynağı; sınırsız yığılınca bütün dekorları eziyordu)
+SS.DECOR_SLEEP_CAP = 15;
+SS.sleepBonus = () => Math.min(SS.DECOR_SLEEP_CAP, (SS.decorFx ? SS.decorFx().sleep || 0 : 0)) + S.skills.fit * 3;
 SS.maxEnergy = () => 100 + S.skills.fit * 10 + (SS.decorFx ? (SS.decorFx().energyMax || 0) : 0);
 SS.cargoCap = () => SS.shipT().cargo + S.ship.cargo * SS.shipT().cargoStep;
 SS.tankCap = () => SS.shipT().tank + S.ship.tank * SS.shipT().tankStep;
@@ -500,7 +503,7 @@ SS.sleep = (sel) => {
   }
   // beden ve ruh
   const hungry = S.hunger < 25;
-  S.energy = Math.min(SS.maxEnergy(), S.energy + (SS.HOMES[S.home].sleep + (dfx.sleep || 0)) * (hungry ? .6 : 1));
+  S.energy = Math.min(SS.maxEnergy(), S.energy + (SS.HOMES[S.home].sleep + SS.sleepBonus()) * (hungry ? .6 : 1));
   if (S.hunger < 12) { S.health -= 10; notes.push(fun ? 'Midenin guruldaması komşuları uyandırdı. Sağlık -10.' : 'Açlık vücudunu kemiriyor. Sağlık -10.'); }
   S.hunger = clamp(S.hunger - m.hungerDrop + (paid('dinner') ? 20 : 0), 0, 100);
   S.health = clamp(S.health + (S.hunger > 50 ? 4 : 0), 0, 100);

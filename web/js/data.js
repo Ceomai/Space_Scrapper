@@ -70,9 +70,9 @@ SS.SHIP = [
   { id: 'claw',     group: 'scrap',  name: 'Fırlatıcı Kanca', desc: 'Hurda avı: kanca daha hızlı fırlar. Her seviye satışta hurda değerine +%2,5.',                 costs: [500, 1100, 2200, 4000] },
   { id: 'winch',    group: 'scrap',  name: 'Vinç Motoru',     desc: 'Hurda avı: ağır yükler daha hızlı sarılır. Her seviye satışta hurda değerine +%2,5.',          costs: [600, 1300, 2600, 4800] },
   { id: 'magnet',   group: 'scrap',  name: 'Manyetik Pençe',  desc: 'Hurda avı: yakalama alanı genişler. Her seviye satışta hurda değerine +%2,5.',                 costs: [800, 1800, 3400] },
-  { id: 'radar',    group: 'scrap',  name: 'Tarayıcı Radar',  desc: 'Hurda avı: kara kutuların ve taklitçilerin içi görünür. Satışta hurda değerine +%2,5.',      costs: [1100] },
-  { id: 'thruster', group: 'flight', name: 'İtici Motorlar',  desc: 'Teslimat: itki %15 güçlü, yakıt %10 az harcanır (seviye başına).', costs: [450, 1000, 2000] },
-  { id: 'gyro',     group: 'flight', name: 'Jiroskop',        desc: 'Teslimat: iniş hızı ve açı toleransı artar.',         costs: [500, 1200] },
+  { id: 'radar',    group: 'scrap',  name: 'Tarayıcı Radar',  desc: 'Hurda avı: kara kutuların ve taklitçilerin içi görünür, tarama sayesinde +6 saniye. Satışta hurda değerine +%2,5.',      costs: [1100] },
+  { id: 'thruster', group: 'flight', name: 'İtici Motorlar',  desc: 'Teslimat: itki %15 güçlü, teslimat ilanları %10 az yakıt ister (seviye başına).', costs: [450, 1000, 2000] },
+  { id: 'gyro',     group: 'flight', name: 'Jiroskop',        desc: 'Teslimat: iniş toleransı artar, temiz inişte ödeme +%8 (seviye başına).',         costs: [500, 1200] },
   { id: 'hull',     group: 'flight', name: 'Gövde Zırhı',     desc: 'Patlama ve sert inişlerde %20 daha az hasar (seviye başına).', costs: [700, 1600, 3200] },
   { id: 'tank',     group: 'flight', name: 'Yakıt Tankı',     desc: 'Uzak bölgelere ve uzun teslimatlara yeter.',          costs: [500, 1300, 2800] },
   { id: 'cargo',    group: 'cargo',  name: 'Kargo Bölmesi',   desc: 'Ambar büyür, bir dalışta daha çok taşırsın.',         costs: [350, 900, 2000, 4000] },
@@ -92,25 +92,25 @@ SS.EXTRAS = [
   { id: 'workshop', name: 'Atölye',           desc: 'Metal hurdayı işleyip motor parçasına çevirirsin (x1.8).', cost: 3000, needHome: 1 },
 ];
 SS.BIZ = [
-  { id: 'drone', name: 'Toplayıcı Drone', desc: 'Her gece senin yerine hurda toplar.',            cost: 4000,  income: [40, 90],   upkeep: 120 },
+  { id: 'drone', name: 'Toplayıcı Drone', desc: 'Her gece senin yerine hurda toplar.',            cost: 3500,  income: [70, 120],  upkeep: 120 },
   { id: 'shop',  name: 'Hurda Dükkânı',   desc: 'Günlük gelir getirir, satışlarına %10 ekler.',   cost: 12000, income: [150, 320], upkeep: 400 },
 ];
 SS.SKILLS = [
-  { id: 'pilot', name: 'Pilotluk',    desc: 'Teslimatta daha çok yakıt, daha toleranslı iniş.' },
+  { id: 'pilot', name: 'Pilotluk',    desc: 'Teslimatta daha çok yakıt, daha toleranslı iniş ve daha yüksek ödeme.' },
   { id: 'eng',   name: 'Mühendislik', desc: 'Tamir işlerinde ek süre ve ipucu hakkı.' },
   { id: 'trade', name: 'Pazarlık',    desc: 'Tüccar daha yüksek fiyata razı olur.' },
-  { id: 'fit',   name: 'Kondisyon',   desc: 'Maksimum enerjin 10 artar.' },
+  { id: 'fit',   name: 'Kondisyon',   desc: 'Maksimum enerjin artar ve uykuda daha çok dinlenirsin.' },
 ];
 SS.FOOD = [
-  { id: 'ration',  name: 'Tayın Çubuğu',        price: 10, hunger: 35,  morale: 0,  energy: 10 },
-  { id: 'meal',    name: 'Sıcak Yemek',         price: 28, hunger: 60,  morale: 6,  energy: 20 },
-  { id: 'special', name: 'Gus\'un Özel Güveci', price: 50, hunger: 100, morale: 15, energy: 35 },
+  { id: 'ration',  name: 'Tayın Çubuğu',        price: 14, hunger: 35,  morale: 0,  energy: 10 },
+  { id: 'meal',    name: 'Sıcak Yemek',         price: 36, hunger: 60,  morale: 6,  energy: 20 },
+  { id: 'special', name: 'Gus\'un Özel Güveci', price: 64, hunger: 100, morale: 15, energy: 35 },
 ];
 // Enerji odaklı seçenekler: içecekler (vardiya harcamaz) ve dinlenme
 SS.DRINKS = [
-  { id: 'coffee', name: 'Kara Delik Kahvesi', price: 6,  energy: 15, health: 0,  morale: 0,  limit: 2, desc: 'Günde en fazla 2 fincan.' },
-  { id: 'boost',  name: 'Nebula Enerji İçeceği', price: 20, energy: 30, health: -4, morale: 0, limit: 2, desc: 'Hızlı ama sağlığa zararlı. Günde 2.' },
-  { id: 'spa',    name: 'Oksijen Barı',       price: 70, energy: 40, health: 5,  morale: 10, limit: 1, desc: 'Saf oksijen ve masaj koltuğu. Günde 1.' },
+  { id: 'coffee', name: 'Kara Delik Kahvesi', price: 20, energy: 15, health: 0,  morale: 0,  limit: 2, desc: 'Günde en fazla 2 fincan.' },
+  { id: 'boost',  name: 'Nebula Enerji İçeceği', price: 30, energy: 30, health: -4, morale: 0, limit: 1, desc: 'Enerji başına en ucuzu ama sağlığa zararlı. Günde 1.' },
+  { id: 'spa',    name: 'Oksijen Barı',       price: 66, energy: 35, health: 5,  morale: 10, limit: 1, desc: 'Saf oksijen ve masaj koltuğu. Günde 1.' },
 ];
 SS.NAP = { energy: 25, morale: 2 }; // kestirme: 1 vardiya, ücretsiz
 
