@@ -203,10 +203,16 @@ G.scrap = (zoneId, onEnd, ct) => {
     const ranges = { sat: [300, 575], boulder: [290, 575], crystal: [380, 585], slime: [330, 560], tank: [260, 560], gold: [330, 580], egg: [380, 585], jelly: [220, 520], mimic: [250, 560] };
     const add = (kind, n) => {
       const T = SS.ITEMS[kind], [y0, y1] = ranges[kind] || [175, 585];
-      for (let i = 0; i < n; i++) for (let k = 0; k < 150; k++) {
-        const x = 16 + T.r + Math.random() * (W - 32 - 2 * T.r), y = y0 + Math.random() * (y1 - y0);
-        if (y + T.r > H - 6) continue;
-        if (items.every(o => Math.hypot(o.x - x, o.y - y) > o.r + T.r + 8)) { items.push(mk(kind, x, y)); break; }
+      const must = ct && !daily && ct.kinds.includes(kind);
+      for (let i = 0; i < n; i++) {
+        let placed = false;
+        for (let k = 0; k < 150; k++) {
+          const x = 16 + T.r + Math.random() * (W - 32 - 2 * T.r), y = y0 + Math.random() * (y1 - y0);
+          if (y + T.r > H - 6) continue;
+          if (items.every(o => Math.hypot(o.x - x, o.y - y) > o.r + T.r + 8)) { items.push(mk(kind, x, y)); placed = true; break; }
+        }
+        // Yedek: sözleşme hedefi boş yer bulamazsa yine de sahaya konur (üst üste binebilir; hedefsiz sözleşme kalmasın)
+        if (!placed && must) items.push(mk(kind, 16 + T.r + Math.random() * (W - 32 - 2 * T.r), Math.min(y0 + Math.random() * (y1 - y0), H - 6 - T.r)));
       }
     };
     // sözleşme hedefleri sahada mutlaka bulunsun
@@ -747,10 +753,12 @@ G.sort = (shift, onEnd) => {
   const falling = [], flying = [], fx = SS.FX.make();
   const binY = 505;
   g._dbg = () => ({ falling, binY });
+  // Banttaki en alttaki eşya (eşitlikte dizideki ilk); her karede dizi sıralamak yerine tek geçiş
+  const lowest = (ok = () => true) => { let best; for (const o of falling) if (ok(o) && (!best || o.y > best.y)) best = o; return best; };
   g.finish = () => { if (g.done) return; g.done = true; g.result = { pay: Math.max(0, score), right, wrong, missed }; };
   const send = bi => {
     if (endT >= 0) return;
-    const cur = falling.filter(f => !f.sent).sort((a, b) => b.y - a.y)[0];
+    const cur = lowest(f => !f.sent);
     if (!cur) return;
     cur.sent = true; falling.splice(falling.indexOf(cur), 1);
     flying.push({ ...cur, tx: BINS[bi].x, ty: binY + 10, sx: cur.x, sy: cur.y, k: 0 });
@@ -797,7 +805,7 @@ G.sort = (shift, onEnd) => {
     });
     // kutuların üstünde içerik örnekleri
     BINS.forEach((b, i) => SS.SORT_POOL.filter(o => o.bin === i).forEach((o, j) => { c.save(); c.translate(b.x - 30 + j * 30, binY + 74); c.scale(.5, .5); drawThing(c, { kind: o.kind, x: 0, y: 0, r: 15, rot: 0, vx: 1 }, t, P); c.restore(); }));
-    const cur = falling.slice().sort((a, b) => b.y - a.y)[0];
+    const cur = lowest();
     if (SS.assist('pit')) for (const o of falling) if (o.bin === 2) { c.strokeStyle = P.bad; c.globalAlpha = .5 + .5 * Math.sin(t * 10); c.lineWidth = 3; c.beginPath(); c.arc(o.x, o.y, 24, 0, TAU); c.stroke(); c.globalAlpha = 1; }
     for (const o of falling) drawThing(c, o, t, P);
     if (cur) { c.strokeStyle = P.accent; c.lineWidth = 2; c.strokeRect(cur.x - 22, cur.y - 22, 44, 44); }
@@ -812,7 +820,7 @@ G.sort = (shift, onEnd) => {
       c.fillStyle = P.text; c.font = SS.tfont(14); c.fillText(b.label, b.x, binY + 40);
       if (kb) { c.fillStyle = P.metal; c.font = SS.tfont(11); c.fillText(`tuş ${i + 1}`, b.x, binY + 55); }
     });
-    const cur = falling.slice().sort((a, b) => b.y - a.y)[0];
+    const cur = lowest();
     if (cur) {
       const name = SS.SORT_POOL.find(o => o.kind === cur.kind).name, w = c.measureText(name).width;
       c.font = SS.tfont(13); const tw = c.measureText(name).width + 14;

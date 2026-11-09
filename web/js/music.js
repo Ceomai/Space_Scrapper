@@ -33,7 +33,7 @@ SS.music = {
     const m = window.S && S.time >= 1200 ? 'night' : 'day';
     if (m !== mood) { mood = m; step = step - (step % 8); }
     if (want() && !on) {
-      try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { return; }
+      AC = SS.audioCtx(); if (!AC) return;
       if (!out) { out = AC.createGain(); out.connect(AC.destination); }
       out.gain.cancelScheduledValues(AC.currentTime); out.gain.setValueAtTime(0, AC.currentTime); out.gain.linearRampToValueAtTime(.5, AC.currentTime + 1.5);
       on = true; next = AC.currentTime + .1; timer = setInterval(schedule, 80); schedule();

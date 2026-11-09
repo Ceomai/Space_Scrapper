@@ -72,7 +72,11 @@ Stage.open = game => {
     }
   });
   el.querySelector('#miniQuit').onclick = () => Stage.askQuit();
-  el.querySelector('#miniQuitYes').onclick = () => { const g = cur; Stage.resume(); if (g && !g.done) g.finish('quit'); };
+  el.querySelector('#miniQuitYes').onclick = () => {
+    const g = cur; Stage.resume(); if (g && !g.done) g.finish('quit');
+    // Yedek: döngü durmuşsa (ör. bir hata) oyun ~1 sn içinde kendi kapanmazsa katman zorla kapatılır
+    if (g) setTimeout(() => { if (cur === g) endGame(g); }, 1000);
+  };
   el.querySelector('#miniQuitNo').onclick = () => Stage.resume();
   game.init && game.init();
   last = performance.now();
@@ -108,15 +112,24 @@ function endHaptic(r) {
   const ok = r.win !== undefined ? r.win : r.ok !== undefined ? r.ok : r.landed !== undefined ? r.landed : null;
   if (ok === true) SS.haptic('success'); else if (ok === false) SS.haptic('fail');
 }
-function loop(now) {
-  if (!cur) return;
-  // Çıkış sorusu açıkken oyun donar: son kare ekranda kalır, süre işlemez
-  // (ekran boyutu değişirse donmuş kare yeni boyutta bir kez yeniden çizilir)
-  if (paused && !cur._refit) { last = now; raf = requestAnimationFrame(loop); return; }
-  const dt = Math.min(.05, (now - last) / 1000) * (SS.miniSpeed ? SS.miniSpeed() : 1); last = now;
-  const g = cur; g._refit = false;
-  if (!g.done && !paused) { g.t += dt; g.update(dt, dt * 60); }
+// Oyun sonu: katman kapanır, titreşim, sonuç oyuna iletilir (döngü, çıkış yedeği ve hata yolu aynı yerden geçer)
+function endGame(g) {
+  if (!g.done) g.done = true;
+  if (!g.result) g.result = { quit: true };
+  const res = g.result; Stage.close(); try { endHaptic(res); } catch (e) {}
+  g.onEnd && g.onEnd(res);
+}
+// Beklenmedik hata: oyun donmaz; hata bir kez yazılır, oyun "çıkış" sonucuyla biter
+function crash(g, err) {
+  if (!g._crashed) { g._crashed = true; console.error('[Stage] minigame error:', err); }
   if (cur !== g) return;
+  try { if (!g.done && g.finish) g.finish('quit'); } catch (e) {}
+  try { endGame(g); } catch (e) { console.error('[Stage] minigame end error:', e); try { SS.closeModal(); SS.render(); } catch (e2) {} }
+}
+function frame(g, dt) {
+  g._refit = false;
+  if (!g.done && !paused) { g.t += dt; g.update(dt, dt * 60); }
+  if (cur !== g) return false;
   g.ctx.save();
   if (g.dx || g.dy) {
     // Kenar alanı yalnızca ilk karede boyanır; oyun kendi alanına kırpılı çizdiği için kenarlar arada korunur
@@ -131,11 +144,17 @@ function loop(now) {
   SS.Art.post(g.canvas, g.ctx, g.pixel);
   g.tctx.clearRect(0, 0, g.W, g.H);
   if (g.drawUI) { g.tctx.save(); if (g.dx || g.dy) g.tctx.translate(g.dx || 0, g.dy || 0); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }
-  if (g.done) {
-    const res = g.result; Stage.close(); try { endHaptic(res); } catch (e) {}
-    g.onEnd && g.onEnd(res);
-    return;
-  }
+  return true;
+}
+function loop(now) {
+  if (!cur) return;
+  // Çıkış sorusu açıkken oyun donar: son kare ekranda kalır, süre işlemez
+  // (ekran boyutu değişirse donmuş kare yeni boyutta bir kez yeniden çizilir)
+  if (paused && !cur._refit) { last = now; raf = requestAnimationFrame(loop); return; }
+  const dt = Math.min(.05, (now - last) / 1000) * (SS.miniSpeed ? SS.miniSpeed() : 1); last = now;
+  const g = cur;
+  try { if (!frame(g, dt)) return; } catch (err) { crash(g, err); return; }
+  if (g.done) { endGame(g); return; }
   raf = requestAnimationFrame(loop);
 }
 Stage.close = silent => {
@@ -190,7 +209,9 @@ SS.FX = {
   burst(fx, x, y, cols, n = 30, sp = 5) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.3, s = SS.rnd(.5, sp); fx.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: SS.rnd(.4, .9), max: .9, c: SS.pick(cols), sz: SS.rnd(2, 6) }); } },
   text(fx, x, y, txt, col, sub) { fx.texts.push({ x, y, txt, col, sub, life: 1.3 }); },
   step(fx, dt, f) {
-    fx.parts.forEach(p => { p.x += p.vx * f; p.y += p.vy * f; p.vx *= .94; p.vy *= .94; p.life -= dt; }); fx.parts = fx.parts.filter(p => p.life > 0);
+    // sürtünme kare hızından bağımsız: 60 fps'te kare başına ×0,94
+    const fr = Math.pow(.94, f);
+    fx.parts.forEach(p => { p.x += p.vx * f; p.y += p.vy * f; p.vx *= fr; p.vy *= fr; p.life -= dt; }); fx.parts = fx.parts.filter(p => p.life > 0);
     fx.texts.forEach(t => { t.y -= .6 * f; t.life -= dt; }); fx.texts = fx.texts.filter(t => t.life > 0);
   },
   draw(fx, c) {

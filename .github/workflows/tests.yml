@@ -20,6 +20,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Birim testleri (tarayıcısız)
+        run: node tests/unit/run.js
       - name: Playwright kur
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0

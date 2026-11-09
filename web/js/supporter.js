@@ -28,11 +28,10 @@ document.addEventListener('deviceready', () => {
       .verified(r => r.finish())
       .finished(() => { if (store.owned(PID)) grant(); })
       .receiptUpdated(() => { if (store.owned(PID)) grant(); });
-    store.error(e => { busy = false; if (e && e.code !== C.ErrorCode.PAYMENT_CANCELLED) SS.toast && SS.toast('Satın alma tamamlanamadı. Daha sonra tekrar dene.', 'bad'); });
-    store.initialize([C.Platform.GOOGLE_PLAY]).then(() => { product = store.get(PID) || product; if (store.owned(PID)) grant(); });
+    store.error(e => { busy = false; if (e && e.code !== C.ErrorCode.PAYMENT_CANCELLED) SS.toast && SS.toast('Satın alma tamamlanamadı. Daha sonra tekrar dene.', 'bad'); SS.render && window.S && SS.render(); });
+    store.initialize([C.Platform.GOOGLE_PLAY]).then(() => { product = store.get(PID) || product; if (store.owned(PID)) grant(); }).catch(() => {});
   } catch (e) {}
 }, false);
-SS.supporterAvailable = () => !!(store && product && product.canPurchase !== false);
 SS.supporterPrice = () => (product && product.pricing && product.pricing.price) || '';
 
 /* ---------- avantajlar ---------- */
@@ -76,10 +75,12 @@ ACT.buySupporter = () => {
   if (!C || !store || !p) return SS.toast('Google Play bağlantısı hazır değil. Biraz sonra tekrar dene.', 'bad');
   const offer = p.getOffer && p.getOffer(); if (!offer) return SS.toast('Ürün şu anda satın alınamıyor.', 'bad');
   busy = true; SS.render();
-  store.order(offer).then(err => { busy = false; if (err && err.code !== C.ErrorCode.PAYMENT_CANCELLED) SS.toast('Satın alma tamamlanamadı.', 'bad'); SS.render(); });
+  store.order(offer).then(err => { busy = false; if (err && err.code !== C.ErrorCode.PAYMENT_CANCELLED) SS.toast('Satın alma tamamlanamadı.', 'bad'); SS.render(); })
+    .catch(() => { busy = false; SS.toast('Satın alma tamamlanamadı.', 'bad'); SS.render(); });
 };
 ACT.restoreSupporter = () => {
   if (!store) return SS.toast('Google Play bağlantısı hazır değil.', 'bad');
-  store.restorePurchases().then(() => { if (store.owned(PID)) grant(); else SS.toast('Bu hesapta destekçi paketi bulunamadı.'); });
+  store.restorePurchases().then(() => { if (store.owned(PID)) grant(); else SS.toast('Bu hesapta destekçi paketi bulunamadı.'); })
+    .catch(() => { busy = false; SS.toast('Satın alma tamamlanamadı. Daha sonra tekrar dene.', 'bad'); SS.render(); });
 };
 })(window.SS);

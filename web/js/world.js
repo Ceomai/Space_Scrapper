@@ -217,11 +217,22 @@ SS.useInv = (gid, target) => {
 SS.decorSlots = () => SS.DECOR_SLOTS[S.home] + (SS.rankIdx() >= 2 ? 1 : 0);
 // S.decor yuva sırasına göre (boş yuva = null); satın alınan dekor önce depoya (S.decorStore) gider
 SS.decorPlaced = () => S.decor.filter(Boolean);
-SS.decorFree = () => SS.decorSlots() - SS.decorPlaced().length;
 SS.decorFx = () => SS.decorPlaced().reduce((a, id) => { const d = SS.DECOR.find(x => x.id === id); for (const k in d.fx) a[k] = (a[k] || 0) + d.fx[k]; return a; }, {});
 SS.placeDecor = (slot, si) => { S.decorStore = S.decorStore || []; const id = S.decorStore[si]; if (!id || S.decor[slot] || slot >= SS.decorSlots()) return false; S.decor[slot] = id; S.decorStore.splice(si, 1); return true; };
 SS.storeDecor = slot => { const id = S.decor[slot]; if (!id) return null; S.decor[slot] = null; (S.decorStore = S.decorStore || []).push(id); return SS.DECOR.find(x => x.id === id); };
 SS.sellDecor = si => { const id = (S.decorStore || [])[si]; if (!id) return null; S.decorStore.splice(si, 1); const d = SS.DECOR.find(x => x.id === id); SS.earn(Math.round(d.price * .4)); return d; };
+
+/* ---------- iş ödemeleri ve fiyatlar (arayüz yalnızca gösterir) ---------- */
+// Hurda sözleşmesi: sabit ücret + hedef başına ödeme, hepsi gelirse ücretin yarısı kadar tamamlama primi; günün dalış yorgunluğu uygulanır
+SS.huntContractPay = (b, got, fat) => got ? Math.round((b.fee + b.per * got + (got >= b.qty ? Math.round(b.fee * .5) : 0)) * (fat || 1)) : 0;
+// Teslimat: Tolga yanındaysa +%10
+SS.deliverPay = pay => SS.assist('tolga') ? Math.round(pay * 1.1) : pay;
+// Tamir: Tolga yanında ve atölyesi kuruluysa +%15
+SS.repairPay = pay => SS.assist('tolga') && S.rooms.tolga ? Math.round(pay * 1.15) : pay;
+// Dalış sonucu: kargodaki parçaların pazardaki tahmini değeri
+SS.cargoEstimate = items => items.reduce((a, g) => a + Math.round(g.value * (S.prices[SS.ITEMS[g.kind].cat] || 1) * SS.sellMult()), 0);
+SS.trainCost = lv => Math.round(250 * (lv + 1) * SS.dv('costs'));
+SS.healPrice = () => Math.round(70 * SS.dv('costs'));
 
 /* ---------- Rex yarışı ---------- */
 // Rex her yenilgisinden ders alır: hedefi her galibiyetinde artar, her kaybında biraz geriler

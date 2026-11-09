@@ -3,7 +3,8 @@ window.SS = window.SS || {};
 (function(SS){
 
 // Herkes için aynı başlangıç kuralları (zorluk ayarı bunları değiştirmez)
-SS.RULES = { loan: 12000, interest: .02, installment: 700, deadline: 120, strikesMax: 3 };
+// arrearsFee: ödenemeyen tutar gecikmiş borca bu çarpanla (%10 cezayla) yazılır
+SS.RULES = { loan: 12000, interest: .02, installment: 700, deadline: 120, strikesMax: 3, arrearsFee: 1.1 };
 // Oyuncunun ayarlayabildiği zorluk: her satırda 3 seçenek
 SS.DIFF = [
   { id: 'hazard', name: 'Tehlike',          desc: 'Patlayıcı tank, korsan, kaza ve hastalık sıklığı; hasar miktarı.', opts: [['Az', .6], ['Normal', 1], ['Çok', 1.4]] },
@@ -83,8 +84,6 @@ SS.SHIP = [
   { id: 'toolkit',  group: 'tools',  name: 'Takım Çantası',   desc: 'Tamir: seviye başına +1 ipucu ve +8 saniye.',         costs: [400, 900, 1800] },
 ];
 SS.SHIP_GROUPS = [['scrap', 'Hurda donanımı', 'Sadece hurda avını etkiler'], ['flight', 'Uçuş ve gövde', 'Teslimatı ve güvenliği etkiler'], ['cargo', 'Ambar', 'Taşıma kapasitesi'], ['tools', 'Atölye', 'Tamir işlerini etkiler']];
-SS.CARGO_CAP = [20, 30, 45, 65, 90];
-SS.TANK_CAP = [50, 80, 120, 180];
 
 SS.HOMES = [
   { name: 'Uyku Kapsülü',  sleep: 40,  rent: 1,   morale: -3, cost: 0 },

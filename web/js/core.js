@@ -72,18 +72,6 @@ SS.newState = (diff, tone, name, crewIds) => {
   window.S = prev;
   return s;
 };
-// Koruma ağı: geçersiz (NaN/sonsuz) ya da aralık dışı değerleri onarır; hiçbir durumda oyunu bozmaz
-SS.sanitize = () => {
-  if (!window.S) return;
-  const fix = (k, def, lo, hi) => { let v = S[k]; if (typeof v !== 'number' || !isFinite(v)) v = def; if (lo != null) v = Math.max(lo, v); if (hi != null) v = Math.min(hi, v); S[k] = v; };
-  try {
-    fix('cash', 0, 0); fix('loan', 0, 0); fix('arrears', 0, 0); fix('strikes', 0, 0, 3); fix('torps', 0, 0); fix('day', 1, 1);
-    fix('hunger', 50, 0, 100); fix('health', 50, 0, 100); fix('morale', 50, 0, 100); fix('energy', 50, 0, SS.maxEnergy()); fix('fuel', 0, 0, SS.tankCap()); fix('time', 420, 0);
-    for (const id of S.crewOrder || []) { const c = S.crew && S.crew[id]; if (c && (typeof c.bond !== 'number' || !isFinite(c.bond))) c.bond = 50; }
-    for (const k in S.aff) if (typeof S.aff[k] !== 'number' || !isFinite(S.aff[k])) S.aff[k] = 0;
-    if (Array.isArray(S.cargo)) S.cargo = S.cargo.filter(it => it && SS.ITEMS[it.kind] && isFinite(it.value));
-  } catch (e) {}
-};
 // Depolama sınaması: açılışta bir kez yazıp okur. Başarısızsa arayüz kalıcı bir uyarı şeridi gösterir (SS.storeBand).
 SS.storageOk = (() => { try { const k = 'space-scrapper-probe'; localStorage.setItem(k, '1'); const ok = localStorage.getItem(k) === '1'; localStorage.removeItem(k); return ok; } catch (e) { return false; } })();
 let saveWarned = false;
@@ -150,7 +138,7 @@ SS.daysTo = n => { const r = S.day % n; return r === 0 ? 0 : n - r; };
 
 SS.earn = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; S.cash += n; S.today.earned = (S.today.earned || 0) + n; S.stats.earned += n; S.weekEarned = (S.weekEarned || 0) + n; };
 SS.spend = n => { n = Math.round(n); if (!isFinite(n) || n < 0 || S.cash < n) return false; S.cash -= n; return true; };
-SS.charge = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; if (S.cash >= n) S.cash -= n; else { S.arrears += Math.round((n - S.cash) * 1.1); S.cash = 0; } };
+SS.charge = n => { n = Math.round(n); if (!isFinite(n) || n <= 0) return; if (S.cash >= n) S.cash -= n; else { S.arrears += Math.round((n - S.cash) * SS.RULES.arrearsFee); S.cash = 0; } };
 // Hurda yorgunluğu: günün ilk 3 dalışı tam değer, sonrakiler %15'er azalır (sözleşmeler dahil, Günün Avı hariç)
 SS.scrapFatigue = start => { if (start) S.today.dives = (S.today.dives || 0) + 1; const n = (S.today.dives || 0) + (start ? 0 : 1); return Math.pow(.85, Math.max(0, n - 3)); };
 SS.bump = (k, n = 1) => { S.today[k] = (S.today[k] || 0) + n; };
@@ -456,7 +444,7 @@ SS.sleep = (sel) => {
       if (S.cash >= it.amt) { S.cash -= it.amt; S.loan -= it.amt; R.push([it.name, -it.amt, true]); }
       else { const pen = Math.round(it.amt * .1); S.loan += pen; missed = true; R.push([`${it.name} (ödenemedi, ceza ${fmt(pen)})`, -it.amt, false]); }
     } else if (S.cash >= it.amt) { S.cash -= it.amt; R.push([it.name, -it.amt, true]); }
-    else { const rem = Math.round((it.amt - S.cash) * 1.1); S.cash = 0; S.arrears += rem; missed = true; R.push([it.name + ' (ödenemedi)', -it.amt, false]); }
+    else { const rem = Math.round((it.amt - S.cash) * SS.RULES.arrearsFee); S.cash = 0; S.arrears += rem; missed = true; R.push([it.name + ' (ödenemedi)', -it.amt, false]); }
   }
   if (S.day % 28 === 0 && S.loan > 0) { const i = Math.round(S.loan * m.interest); S.loan += i; R.push([`Borca eklenen faiz (%${Math.round(m.interest * 100)})`, i, null]); }
   SS.loanCheck();

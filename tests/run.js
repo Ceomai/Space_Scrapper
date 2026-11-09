@@ -6,6 +6,7 @@ const path = require('path');
 fs.mkdirSync(path.join(__dirname, 'out'), { recursive: true });
 const full = process.argv[2] === 'tam';
 const T = [
+  ['Birim testleri (tarayıcısız: kayıt göçü/onarımı, tohumlu ekonomi, iş ödemeleri, çeviri)', ['unit/run.js']],
   ['Kapsamlı paket (içerik, çift dokunuş, yerleşim, bellek, köprü, uzun oyun)', ['ultimate.js']],
   ['Mini oyunlar kazanılabilir mi', ['winbots.js']],
   ['İngilizce dil (bütün ekranlar, mini oyunlar, kalan Türkçe ≤ 25, Türkçe mod etkilenmez)', ['i18n.js']],

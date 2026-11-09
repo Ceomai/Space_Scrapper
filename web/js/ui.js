@@ -48,8 +48,15 @@ if (darkMQ) { const onScheme = () => { if (prefs.theme !== 'auto') return; SS.ap
   if (darkMQ.addEventListener) darkMQ.addEventListener('change', onScheme); else if (darkMQ.addListener) darkMQ.addListener(onScheme); }
 
 /* ---------- ses ---------- */
+// Tek ortak AudioContext: efektler ve müzik (music.js) aynı bağlamı kullanır
 let AC = null;
-const ac = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) {} return AC; };
+SS.audioCtx = () => { try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) {} return AC; };
+const ac = () => SS.audioCtx();
+// Sekme arka plandayken ve müzik çalmıyorken ses bağlamı askıya alınır (pil); ilk sesle ya da müzikle yeniden başlar
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden || !AC) return;
+  setTimeout(() => { try { if (document.hidden && AC.state === 'running' && !(SS.music && SS.music.playing)) AC.suspend(); } catch (e) {} }, 400);
+});
 function tone(f, d, type, vol, slide = 0, delay = 0) {
   const t = AC.currentTime + delay, o = AC.createOscillator(), g = AC.createGain();
   o.type = type; o.frequency.setValueAtTime(f, t);
@@ -258,7 +265,6 @@ const qbPopShow = on => {
   pop.hidden = !on; b.setAttribute('aria-expanded', String(on));
   if (on) { const f = pop.querySelector('button'); f && f.focus(); }
 };
-const MAPSTARS = SS.Art.makeStars(90, 360, 320);
 function mapView() {
   const rx = SS.rexWeek(), mine = S.weekEarned || 0, nx = SS.nextShip(), nr = SS.nextRank();
   const shipNeed = nx ? nx.price - SS.tradeValue() : 0, shipPct = nx ? (S.loan > 0 ? pct(S.loanStart - S.loan, S.loanStart) : pct(S.cash, shipNeed)) : 100;
@@ -302,6 +308,8 @@ function mapPanel(p) {
     <div class="row">${btn('Eve git', 'go', { to: 'home' }, 'primary')}${btn('Kapat', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
 }
 let mapTimer = 0;
+// Arka plan tuvali (harita, yaşam modülü) pencere açıkken ya da mini oyun sürerken çizilmez; kapanınca kaldığı yerden sürer
+const bgPaused = () => { const m = document.getElementById('modal'); return (m && !m.hidden) || SS.Stage.active(); };
 const MAPSKY = SS.Art.makeSky(170);
 function startMap() {
   clearTimeout(mapTimer);
@@ -311,8 +319,11 @@ function startMap() {
   const { ctx, pixel } = SS.Art.setup(cv, W, H, .55);
   const locs = SS.LOCS.map(l => ({ ...l, isOpen: l.id === 'home' || SS.isOpen(l.id) }));
   const t0 = performance.now(), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let drawn = false;
   const frame = () => {
     if (!cv.isConnected) return;
+    if (drawn && bgPaused()) { mapTimer = setTimeout(frame, 200); return; }
+    drawn = true;
     SS.Art.mapScene(ctx, W, H, (performance.now() - t0) / 2000, SS.Art.P(), locs, S.loc, MAPSKY);
     SS.Art.post(cv, ctx, pixel);
     if (!still) mapTimer = setTimeout(() => requestAnimationFrame(frame), pixel ? 120 : 60);
@@ -326,8 +337,11 @@ function startHab() {
   const L = SS.habitatLayout(360, 300), W = 360, H = room ? 320 : 300, rid = room && room.dataset.room;
   const { ctx, pixel } = SS.Art.setup(cv, W, H, .6);
   const t0 = performance.now(), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let drawn = false;
   const frame = () => {
     if (!cv.isConnected) return;
+    if (drawn && bgPaused()) { habTimer = setTimeout(frame, 200); return; }
+    drawn = true;
     if (rid) SS.Art.room(ctx, W, H, (performance.now() - t0) / 1000, SS.Art.P(), L, rid); else SS.Art.habitat(ctx, W, H, (performance.now() - t0) / 1000, SS.Art.P(), L);
     SS.Art.post(cv, ctx, pixel);
     if (!still) habTimer = setTimeout(() => requestAnimationFrame(frame), pixel ? 120 : 60);
@@ -541,7 +555,7 @@ function cantinaView() {
   let h = bar;
   if (tab === 'food') return h + panel('Gus\'un mutfağı', `<div class="list">${SS.FOOD.map(f => `<div class="row-item"><div><b>${f.name}</b><small>Enerji +${f.energy} · tokluk +${f.hunger}${f.morale ? ' · moral +' + f.morale : ''} · 15 dk</small></div>
     ${f.id === 'ration' && S.freeRation ? btn('Bedava', 'eat', { id: f.id, free: 1 }, 'sm good') : btn(fmt(SS.foodPrice(f)), 'eat', { id: f.id }, 'sm', S.cash < SS.foodPrice(f))}</div>`).join('')}
-    ${SS.DRINKS.map(d => { const used = S.drinks[d.id] || 0, price = Math.round(d.price * SS.M().foodMult);
+    ${SS.DRINKS.map(d => { const used = S.drinks[d.id] || 0, price = SS.foodPrice(d);
       return `<div class="row-item"><div><b>${d.name}</b><small>Enerji +${d.energy}${d.health ? ` · sağlık ${d.health > 0 ? '+' : ''}${d.health}` : ''}${d.morale ? ' · moral +' + d.morale : ''} · ${d.desc} (${used}/${d.limit})</small></div>${btn(fmt(price), 'drink', { id: d.id }, 'sm', used >= d.limit || S.cash < price)}</div>`; }).join('')}</div>`, { code: 'MT' });
   h += panel('Masalar', `<p class="muted">Sohbet ${dur(SS.DUR.talk)} sürer. Yakınlık 30 ve 60'ta kalıcı ayrıcalıklar açılır.</p><div class="list">${SS.NPCS.map(n => {
     const a = S.aff[n.id], next = n.perks.find(p => a < p[0]);
@@ -554,8 +568,7 @@ function cantinaView() {
 }
 
 /* ---------- KLİNİK VE AKADEMİ ---------- */
-const trainCost = SS.trainCost = lv => Math.round(250 * (lv + 1) * SS.dv('costs'));
-const healPrice = () => Math.round(70 * SS.dv('costs'));
+const trainCost = lv => SS.trainCost(lv), healPrice = () => SS.healPrice();
 const SKILL_FX = SS.SKILL_FX = { pilot: lv => `iniş toleransı +%${lv * 10}, yakıt +${lv * 15}, teslimat ödemesi +%${lv * 4}`, eng: lv => `tamirde +${lv * 6} sn, +${Math.floor(lv / 2)} ipucu`, trade: lv => `tüm satışlar +%${lv * 3}`, fit: lv => `maksimum enerji +${lv * 10}, uyku +${lv * 3} enerji` };
 function clinicView() {
   let h = panel('Klinik', `<div class="row-item"><div><b>Tedavi</b><small>Sağlık +30 · 30 dakika</small></div>${btn(fmt(healPrice()), 'heal', {}, 'sm', S.cash < healPrice() || S.health >= 100 || !SS.timeOk(30))}</div>`, { code: 'KL' });
@@ -736,7 +749,7 @@ function resultModal(title, body, ok, again) {
 function scrapDone(res) {
   afterJob();
   const items = res.got.filter(g => g.kind), other = res.got.filter(g => g.label);
-  const est = items.reduce((a, g) => a + Math.round(g.value * (S.prices[SS.ITEMS[g.kind].cat] || 1) * SS.sellMult()), 0);
+  const est = SS.cargoEstimate(items);
   const counts = {};
   items.forEach(g => { const k = g.relic ? SS.RELICS[g.relic].name : SS.ITEMS[g.kind].name; counts[k] = (counts[k] || 0) + 1; });
   const K = res.contract;
@@ -878,7 +891,7 @@ const ACT = {
         S.fuel -= b.fuel; b.done = true; SS.useJob(b.energy, b.dur); S.stats.runs++; SS.bump('scrap'); S.zoneUse[b.zone] = (S.zoneUse[b.zone] || 0) + 1; SS.save();
         const ct = { kinds: b.kinds, qty: b.qty, per: b.per, label: b.label, got: 0 };
         return SS.Games.scrap(b.zone, res => {
-          const full = ct.got >= ct.qty, pay = ct.got ? Math.round((b.fee + b.per * ct.got + (full ? Math.round(b.fee * .5) : 0)) * (ct.fat || 1)) : 0;
+          const full = ct.got >= ct.qty, pay = SS.huntContractPay(b, ct.got, ct.fat);
           SS.earn(pay); if (ct.got) { SS.bump('hunt'); S.stats.hunts = (S.stats.hunts || 0) + 1; } if (full) SS.repGain('scrap');
           res.contract = { got: ct.got, qty: ct.qty, pay, full, client: b.client };
           scrapDone(res);
@@ -889,7 +902,7 @@ const ACT = {
       b.done = true; SS.useJob(b.energy, b.dur); SS.save();
       if (b.type === 'deliver') SS.Games.deliver(b, res => {
         const tip = res.tip || 0;
-        if (res.ok && SS.assist('tolga')) res.pay = Math.round(res.pay * 1.1);
+        if (res.ok) res.pay = SS.deliverPay(res.pay);
         if (res.ok) { SS.earn(res.pay + tip); S.stats.deliver++; SS.bump('deliver'); SS.mood(3); SS.repGain('deliver'); }
         afterJob();
         resultModal(res.ok ? `${fmt(res.pay + tip)} kazandın` : res.quit ? 'Teslimattan vazgeçtin' : 'Kargo dağıldı',
@@ -897,8 +910,7 @@ const ACT = {
             : `<p>${res.quit ? 'Müşteri sinirli ama yaşıyorsun.' : SS.fun() ? 'Kargo pistin her yerine saçıldı. Müşteri yine de teşekkür kartı gönderdi. Para yok ama.' : 'Gövde sarsıldı, kargo mahvoldu. Ücret yok.'}</p>`) + helpLine(['tolga']), res.ok, 'deliver');
       });
       else SS.Games.repair(b, res => {
-        let pay = res.pay;
-        if (res.ok && SS.assist('tolga') && S.rooms.tolga) pay = Math.round(pay * 1.15);
+        const pay = res.ok ? SS.repairPay(res.pay) : res.pay;
         if (res.ok) { SS.earn(pay); S.stats.repair++; SS.bump('repair'); SS.repGain('repair'); if ((b.mods || []).includes('loyal')) S.aff.vida = Math.min(100, S.aff.vida + 5); }
         afterJob();
         resultModal(res.ok ? `${fmt(pay)} kazandın` : 'Tamir yarım kaldı', (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what} yeniden çalışıyor. Tamir itibarı +1.</p>` : '<p>Süre doldu. Müşteri başka bir tamirci çağırdı.</p>') + helpLine(['ela', 'tolga']), res.ok, 'repair');
@@ -963,7 +975,7 @@ const ACT = {
     const e0 = S.energy; SS.eat(f); SS.passTime(15); SS.checkGoals(); SS.sfx('coin'); SS.toast(`${f.name}: enerji +${S.energy - e0}${S.energy - e0 < f.energy ? ' (günlük yiyecek sınırı)' : ''}, tokluk +${f.hunger}`, 'good'); render();
   },
   drink: d => {
-    const x = SS.DRINKS.find(y => y.id === d.id), used = S.drinks[x.id] || 0, price = Math.round(x.price * SS.M().foodMult);
+    const x = SS.DRINKS.find(y => y.id === d.id), used = S.drinks[x.id] || 0, price = SS.foodPrice(x);
     if (used >= x.limit || !SS.spend(price)) return;
     const e0 = S.energy; S.drinks[x.id] = used + 1; SS.eat(x); SS.passTime(x.id === 'spa' ? 45 : 10); SS.sfx('coin'); SS.toast(`${x.name}: enerji +${S.energy - e0}${S.energy - e0 < x.energy ? ' (günlük yiyecek sınırı)' : ''}`, 'good'); render();
   },

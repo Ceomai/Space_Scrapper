@@ -10,6 +10,7 @@ node tests/run.js tam    # tam (~60 dk)
 
 | Dosya | Ne yapar |
 | --- | --- |
+| `unit/run.js` | Tarayıcısız birim testleri (`node tests/unit/run.js`, Playwright gerekmez): oyunun `web/js` dosyaları bir `vm` bağlamına yüklenir; eski/bozuk kayıt göçü ve onarımı, kaydet-yükle, koruma ağı, tohumlu çok günlük uyku ekonomisi (değişmezler ve belirlenimcilik), iş ödeme hesapları, İngilizce çeviri (yer tutucular) |
 | `ultimate.js` | İçerik denetimi (her karar, yay, sınama ve olay sonucunun iki tonda metni), çift dokunuş, 4 ekran boyutu × 2 stilde yerleşim (taşma, ekran dışı düğme, dokunma alanı, harita çakışması), bellek ve kare süresi, Günün Avı determinizmi, PWA (yerel sunucuda manifest, ikon boyutları, service worker, çevrimdışı yeniden açılış, paylaşım menüsü), 4×125 günlük Yeni Oyun+ zinciri, saat sınırları |
 | `winbots.js` | Her mini oyunu kusursuz oynayan botlarla kazanılabilirliği doğrular (iniş, tamir, ayrıştırma, laboratuvar, kalkan, savunma, güvenlik duvarı, evrak) |
 | `lander.js` | İniş oyununun bütün zorluk ve değiştirici birleşimlerini ölçer |
