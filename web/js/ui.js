@@ -360,7 +360,7 @@ function hangarView() {
   h += panel('Boya atölyesi', `<label class="field" for="shipName"><span>Geminin adı</span><input id="shipName" maxlength="20" value="${esc(SS.shipName())}" autocomplete="off"></label>
     <div class="row">${btn('Adı kaydet', 'renameShip', {}, 'ghost sm')}</div>
     <div class="paints">${SS.PAINTS.map(p => { const own = SS.paintOwned ? SS.paintOwned(p) : (S.paints || {})[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]); const on = S.paint === p.id;
-      return `<button class="paint ${on ? 'on' : ''}" data-act="paint" data-p="${p.id}" ${!own && (p.unlock || S.cash < p.price) ? 'disabled' : ''}><i style="background:${p.hull ? p.hull[0] : '#ff8a3d'}"></i><span>${p.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : p.unlock === 'supporter' ? 'Destekçi paketi' : p.unlock ? 'Korsan seti ödülü' : fmt(p.price)}</small></button>`; }).join('')}</div>${SS.decalHtml ? SS.decalHtml() : ''}`, { code: 'BY' });
+      return `<button class="paint ${on ? 'on' : ''}" data-act="paint" data-p="${p.id}" ${!own && (p.unlock || S.cash < p.price) ? 'disabled' : ''}><i style="background:${p.hull ? p.hull[0] : SS.PAL.bright.hull}"></i><span>${p.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : p.unlock === 'supporter' ? 'Destekçi paketi' : p.unlock ? 'Korsan seti ödülü' : fmt(p.price)}</small></button>`; }).join('')}</div>${SS.decalHtml ? SS.decalHtml() : ''}`, { code: 'BY' });
   const nx = SS.nextShip();
   if (!nx) h += panel('Tersane', '<p>Demir Balina\'dan büyüğü yok. Rıhtımın en gösterişli gemisi senin.</p>', { code: 'TR' });
   else {
@@ -487,7 +487,7 @@ function logView() {
   return h;
 }
 function lookControls(withPreview) {
-  return `<p class="label">Renk teması</p><div class="choice three">${SS.THEMES.map(t => `<button class="opt ${prefs.theme === t.id ? 'on' : ''}" data-act="theme" data-t="${t.id}"><span class="sw">${t.sw.map(c => `<i style="background:${c}"></i>`).join('')}</span><b>${t.name}</b></button>`).join('')}</div>
+  return `<p class="label">Renk teması</p><div class="choice three">${SS.THEMES.map(t => `<button class="opt ${prefs.theme === t.id ? 'on' : ''}" data-act="theme" data-t="${t.id}"><span class="sw" data-theme="${t.id}">${t.sw.map(c => `<i style="background:var(${c})"></i>`).join('')}</span><b>${t.name}</b></button>`).join('')}</div>
     <p class="label">Görsel stil</p><div class="choice">${[['pixel', 'Piksel', 'Düşük çözünürlük, sınırlı renk paleti, köşeli yazı'], ['vector', 'Vektör', 'Yumuşak kenarlar, akıcı çizgiler, keskin yazı']].map(([k, n, d]) =>
       `<button class="opt ${prefs.style === k ? 'on' : ''}" data-act="style" data-s="${k}">${withPreview ? `<canvas class="prev" data-prev="${k}" width="260" height="150" aria-hidden="true"></canvas>` : ''}<b>${n}</b><small>${d}</small></button>`).join('')}</div>`;
 }

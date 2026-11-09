@@ -2,7 +2,7 @@
 // Strateji: kendi dosyalarımız için önce ağ (her açılışta en yeni sürüm), ağ yoksa önbellek;
 // yazı tipleri için önbellek önce, arkada yenileme. Sürüm adı yayın sırasında commit kimliğiyle değişir.
 const VERSION = 'ss-__BUILD__';
-const PRECACHE = /*FILES*/['./', './index.html', './manifest.webmanifest']/*FILES*/;
+const PRECACHE = /*FILES*/['./', './index.html', './theme.css', './manifest.webmanifest']/*FILES*/;
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => Promise.all(PRECACHE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));

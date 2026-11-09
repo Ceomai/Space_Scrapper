@@ -72,7 +72,7 @@ SS.makeCard = async ({ title, sub, lines = [], big, crew = [], code, highlight }
   const W = 360, H = 450, k = 3, cv = document.createElement('canvas');
   cv.width = W * k; cv.height = H * k;
   const c = cv.getContext('2d'); c.scale(k, k);
-  const P = SS.Art.P(), font = (s, w = 700) => `${w} ${s}px "Chakra Petch", "Segoe UI", sans-serif`;
+  const P = SS.Art.P(), font = (s, w = 700) => `${w} ${s}px ${SS.font('--font-sans')}`;
   // arka plan
   const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, P.space0); g.addColorStop(1, P.space1); c.fillStyle = g; c.fillRect(0, 0, W, H);
   const neb = c.createRadialGradient(W * .8, H * .2, 0, W * .8, H * .2, W * .7); neb.addColorStop(0, P.neb1); neb.addColorStop(1, 'rgba(0,0,0,0)'); c.fillStyle = neb; c.fillRect(0, 0, W, H);

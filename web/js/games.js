@@ -227,7 +227,7 @@ G.scrap = (zoneId, onEnd, ct) => {
   const torps = () => daily ? dTorp : S.torps;
   function updCtl() { SS.Stage.setCtl('torp', `Torpido (${torps()})`, torps() <= 0); }
   function blowTank(m) {
-    SS.FX.burst(fx, m.x, m.y, ['#ffcf5a', '#ff8a3d', '#ff4b3a', '#fff3c4'], 70, 6);
+    SS.FX.burst(fx, m.x, m.y, [SS.FX_BOOM.core, SS.FX_BOOM.flame, SS.FX_BOOM.ember, SS.FX_BOOM.flash], 70, 6);
     shake = 14; SS.sfx('boom');
     // Patlama bir araçtır: kaya, dev kaya ve yanık hurdayı temizler; değerli eşyalar yalnızca savrulur
     const JUNK = ['rock', 'boulder', 'debris', 'tank', 'bug'];
@@ -372,7 +372,7 @@ G.scrap = (zoneId, onEnd, ct) => {
   const torp = () => {
     if (hook.st !== 'retract' || !hook.held || torps() <= 0) return;
     if (daily) dTorp--; else S.torps--; updCtl();
-    SS.FX.burst(fx, hook.held.x, hook.held.y, ['#ffcf5a', '#ff8a3d', '#fff3c4'], 40, 5);
+    SS.FX.burst(fx, hook.held.x, hook.held.y, [SS.FX_BOOM.core, SS.FX_BOOM.flame, SS.FX_BOOM.flash], 40, 5);
     hook.held = null; shake = 6; SS.sfx('boom');
   };
   g.action = id => id === 'fire' ? fire() : torp();
@@ -569,7 +569,7 @@ G.deliver = (ct, onEnd) => {
       const P = SS.Art.P();
       if (ok || rough) { state = 'landed'; sh.y = padY - 13; sh.a = 0; sh.vx = sh.vy = 0; SS.FX.burst(fx, sh.x, padY, rough ? [P.warn, P.accent] : [P.good, P.accent, P.star], 30, 3); SS.FX.text(fx, sh.x, padY - 50, rough ? 'Sert ama teslim!' : 'Teslim edildi!', rough ? P.warn : P.good, rough ? 'Kargo sarsıldı: ödeme -%30' : ''); SS.sfx(rough ? 'coin' : 'big'); }
       else {
-        state = 'crashed'; SS.FX.burst(fx, sh.x, sh.y, ['#ffcf5a', '#ff8a3d', '#ff4b3a'], 80, 6); SS.sfx('boom');
+        state = 'crashed'; SS.FX.burst(fx, sh.x, sh.y, [SS.FX_BOOM.core, SS.FX_BOOM.flame, SS.FX_BOOM.ember], 80, 6); SS.sfx('boom');
         const d = SS.hurt(shield ? 8 : 16, 'Sert iniş'); S.morale = clamp(S.morale - 6, 0, 100);
         SS.FX.text(fx, sh.x, sh.y - 40, onPad ? 'Çok sert!' : 'Pist dışı!', P.bad, d ? `-${d} sağlık` : '');
       }

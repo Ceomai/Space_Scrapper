@@ -80,7 +80,7 @@ SS.DECALS = [
   { id: 'gem',   name: 'Koleksiyoncu',    how: 'Bir albüm setini tamamla', test: () => Object.keys(S.setsDone || {}).length >= 1 },
 ];
 const DEC_SYM = { star: '★', rex: '▼', combo: '⚡', rush: '➤', week: '◷', heart: '♥', free: '⟨⟩', gem: '◆' };
-const DEC_COL = { star: '#ffec27', rex: '#ff004d', combo: '#00e436', rush: '#ffa300', week: '#5ef0ff', heart: '#ff77a8', free: '#fff1e8', gem: '#c17bff' };
+const DEC_COL = SS.DECAL_COL;
 SS.drawDecal = (c, id, x, y, s) => {
   c.save(); c.translate(x, y); c.scale(s, s); c.fillStyle = DEC_COL[id] || '#fff'; c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1;
   c.beginPath();

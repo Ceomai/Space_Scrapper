@@ -289,7 +289,7 @@ function drawWheel(cv) {
     c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, R, s0, s0 + a); c.closePath(); c.fill();
     c.strokeStyle = P.space0; c.lineWidth = 2; c.stroke();
     c.save(); c.rotate(s0 + a / 2); c.translate(R * .68, 0); c.rotate(Math.PI / 2);
-    c.fillStyle = m ? P.space0 : P.metalL; c.font = 'bold 15px "Chakra Petch", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = m ? P.space0 : P.metalL; c.font = `bold 15px ${SS.font('--font-sans')}`; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillText(m ? '×' + String(m).replace('.', ',') : '0', 0, 0); c.restore();
   }
   c.fillStyle = P.metalD; c.beginPath(); c.arc(0, 0, 18, 0, TAU); c.fill(); c.fillStyle = P.accent; c.beginPath(); c.arc(0, 0, 7, 0, TAU); c.fill();

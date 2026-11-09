@@ -47,15 +47,15 @@ SS.PAINTS.push(
 SS.paintOwned = p => !!((S.paints || {})[p.id] || (p.unlock === 'supporter' ? owned : p.unlock && (S.setsDone || {})[p.unlock]));
 // 3) özel çıkartmalar
 if (SS.DECALS) SS.DECALS.push(
-  { id: 'crown', name: 'Destekçi tacı', how: 'Destekçi paketi', sym: '♛', col: '#f5c542', test: () => owned },
-  { id: 'paw', name: 'Pıtırcık patisi', how: 'Destekçi paketi', sym: '🐾', col: '#ff77a8', test: () => owned },
+  { id: 'crown', name: 'Destekçi tacı', how: 'Destekçi paketi', sym: '♛', col: SS.DECAL_COL.crown, test: () => owned },
+  { id: 'paw', name: 'Pıtırcık patisi', how: 'Destekçi paketi', sym: '🐾', col: SS.DECAL_COL.paw, test: () => owned },
 );
 const _decal = SS.drawDecal;
 if (_decal) SS.drawDecal = (c, id, x, y, s) => {
   if (id !== 'crown' && id !== 'paw') return _decal(c, id, x, y, s);
   c.save(); c.translate(x, y); c.scale(s, s); c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1; c.beginPath();
-  if (id === 'crown') { c.fillStyle = '#f5c542'; c.moveTo(-7, 5); c.lineTo(-7, -3); c.lineTo(-3.5, 1); c.lineTo(0, -6); c.lineTo(3.5, 1); c.lineTo(7, -3); c.lineTo(7, 5); c.closePath(); c.fill(); c.stroke(); }
-  else { c.fillStyle = '#ff77a8'; c.ellipse(0, 2.5, 4.2, 3.4, 0, 0, Math.PI * 2); c.fill(); [[-5, -2.5], [-1.8, -5.5], [1.8, -5.5], [5, -2.5]].forEach(([a, b]) => { c.beginPath(); c.arc(a, b, 1.7, 0, Math.PI * 2); c.fill(); }); }
+  if (id === 'crown') { c.fillStyle = SS.DECAL_COL.crown; c.moveTo(-7, 5); c.lineTo(-7, -3); c.lineTo(-3.5, 1); c.lineTo(0, -6); c.lineTo(3.5, 1); c.lineTo(7, -3); c.lineTo(7, 5); c.closePath(); c.fill(); c.stroke(); }
+  else { c.fillStyle = SS.DECAL_COL.paw; c.ellipse(0, 2.5, 4.2, 3.4, 0, 0, Math.PI * 2); c.fill(); [[-5, -2.5], [-1.8, -5.5], [1.8, -5.5], [5, -2.5]].forEach(([a, b]) => { c.beginPath(); c.arc(a, b, 1.7, 0, Math.PI * 2); c.fill(); }); }
   c.restore();
 };
 

@@ -141,8 +141,9 @@ SS.FX = {
     c.globalAlpha = 1;
   },
 };
-SS.font = () => getComputedStyle(document.documentElement).getPropertyValue('--display').trim() || 'sans-serif';
+// Tuval yazı tipleri theme.css'teki belirteçlerden okunur: SS.font() → --display, SS.font('--font-sans') → her stilde Chakra Petch
+SS.font = (v = '--display') => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || 'sans-serif';
 // Oyun içi yazılar: piksel stilde okunaklı terminal fontu biraz daha büyük kullanılır
-SS.tfont = (px, w = 'bold') => SS.Art.style() === 'pixel' ? `${Math.round(px * 1.3)}px "VT323", monospace` : `${w} ${px}px ${SS.font()}`;
+SS.tfont = (px, w = 'bold') => SS.Art.style() === 'pixel' ? `${Math.round(px * 1.3)}px ${SS.font('--font-term')}` : `${w} ${px}px ${SS.font()}`;
 
 })(window.SS);

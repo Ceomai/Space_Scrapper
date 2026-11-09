@@ -1,0 +1,84 @@
+/* Space Scrapper — tasarım belirteçleri (design tokens): renk, yazı, boşluk, köşe.
+   Tek kaynak burasıdır; index.html'deki stiller yalnızca bu değişkenleri kullanır.
+   Renk teması (Lavanta / Gece / Pas) × stil (vektör / piksel).
+   Tema seçicileri [data-theme] ile de çalışır: bir öğeye data-theme="gece" verilirse
+   o öğe içinde Gece renkleri geçerli olur (ayarlardaki tema önizleme kareleri böyle çizilir). */
+
+/* ---------- temaya bağlı olmayan belirteçler ---------- */
+:root{
+  /* yazı aileleri */
+  --font-sans:"Chakra Petch","Segoe UI",sans-serif;
+  --font-sans-ui:"Chakra Petch","Segoe UI",system-ui,sans-serif;
+  --font-pixel:"Pixelify Sans","Courier New",monospace;
+  --font-term:"VT323","Courier New",monospace;
+  --display:var(--font-sans); --body:var(--font-sans-ui); --mono:var(--font-sans);
+
+  /* yazı ölçeği (sabit; stile göre değişmez). En küçük boyut 11px. */
+  --fs-2xs:11px; --fs-xs:12px; --fs-sm:13px; --fs-md:14px; --fs-base:15px;
+  --fs-lg:17px; --fs-xl:20px; --fs-2xl:24px; --fs-3xl:28px;
+  --fs-hero:46px;                                   /* başlık ekranı logosu */
+  --fs-glyph:22px; --fs-glyph-lg:44px; --fs-glyph-xl:64px;  /* emoji / simge kareleri */
+  /* ölçek dışı ara boyutlar: mevcut görünümü birebir korumak için (yeni tasarımda ölçek adımlarını tercih et) */
+  --fs-11-5:11.5px; --fs-12-5:12.5px; --fs-13-5:13.5px; --fs-14-5:14.5px;
+  --fs-16:16px; --fs-18:18px; --fs-19:19px; --fs-22:22px; --fs-23:23px;
+
+  /* stile duyarlı yazı ölçeği: vektörde --fs-* ile aynı, piksel stilde aşağıda büyür */
+  --tx-2xs:var(--fs-2xs); --tx-xs:var(--fs-xs); --tx-sm:var(--fs-sm); --tx-md:var(--fs-md); --tx-base:var(--fs-base);
+  --tx-lg:var(--fs-lg); --tx-xl:var(--fs-xl); --tx-2xl:var(--fs-2xl); --tx-3xl:var(--fs-3xl); --tx-hero:var(--fs-hero);
+  /* stile duyarlı rol belirteçleri (vektör / piksel) */
+  --tx-caps:var(--fs-11-5);   /* etiket kutuları: pill, tag, hızlı düğme, yardım ... (11.5 / 15) */
+  --tx-label:var(--fs-11-5);  /* alan etiketi, gösterge, sekme, çip (11.5 / 16) */
+  --tx-note:var(--fs-13-5);   /* koç, balon, ipucu, artı/eksi listesi (13.5 / 17) */
+  --tx-pay:var(--fs-18);      /* iş kartı ücreti (18 / 22) */
+  --tx-h3:var(--fs-base);     /* h3 (15 / 19) */
+
+  /* boşluk ölçeği: 4px taban, yarım adımlar 2px */
+  --sp-0-5:2px; --sp-1:4px; --sp-1-5:6px; --sp-2:8px; --sp-2-5:10px; --sp-3:12px; --sp-3-5:14px;
+  --sp-4:16px; --sp-5:20px; --sp-6:24px;
+
+  /* köşe yarıçapı ve pah (chamfer) */
+  --r-sm:4px; --r-md:6px; --r-lg:8px; --r-pill:999px;
+  --cut:9px;                      /* düğme pahı (piksel stilde 6px) */
+  --cut-md:7px; --cut-sm:6px; --cut-xs:5px;   /* hızlı düğme, yardım/bildirim, harita etiketi */
+
+  /* oyun sahnesi üstündeki katmanlar (her temada aynı: sahne her zaman koyu) */
+  --space:#000;                                  /* harita tuvali arkası */
+  --scene-ink:#f2eee2;                           /* sahne etiketi yazısı */
+  --scene-tag-bg:rgba(0,0,0,.45); --scene-away-bg:rgba(0,0,0,.4);
+  --scene-slot-bg:rgba(0,0,0,.35); --scene-slot-ink:#fff;
+  --scene-slot-line:rgba(255,255,255,.7); --scene-slot-focus:rgba(255,255,255,.8);
+  --glyph-shadow:#0006; --pin-shadow:rgba(0,0,0,.4);
+
+  /* "kâğıt" yüzeyler: oyun kartları ve denetim belgeleri */
+  --card-paper:#fbf8f0; --card-ink:#1d1a14; --card-edge:#c9c2a8; --card-red:#c0392b;
+  --paper:#f3ead2; --paper-ink:#3a2c1a; --paper-shadow:rgba(0,0,0,.2);
+}
+
+/* ---------- renk temaları ---------- */
+:root,[data-theme="lavanta"]{
+  --bg:#ecebf5; --surface:#fbfaff; --surface2:#f1effa; --ink:#1c1838; --muted:#5d5784; --line:#d3cfe8; --line2:#a9a2d1;
+  --accent:#d92e6a; --accent2:#1594b3; --good:#14834f; --bad:#cc2a43; --warn:#c96f00; --btn-ink:#ffffff; --grid:rgba(28,24,56,.05);
+  --en:#e6a100; --hu:#e5642a; --he:#d92e4f; --mo:#1d8fe0; --scrim:rgba(12,8,30,.55);
+  --shadow:0 1px 0 var(--line), 0 8px 22px rgba(40,30,90,.08);
+  color-scheme:light;
+}
+[data-theme="gece"]{
+  --bg:#0c0a1d; --surface:#15122d; --surface2:#1d1a3e; --ink:#ece8ff; --muted:#a39cd2; --line:#2a2556; --line2:#433c80;
+  --accent:#ff5c97; --accent2:#45d1ee; --good:#3fd68c; --bad:#ff5b70; --warn:#ffb347; --btn-ink:#0c0a1d; --grid:rgba(255,255,255,.035);
+  --en:#ffcf3f; --hu:#ff9a55; --he:#ff5a73; --mo:#4fb8ff; --scrim:rgba(3,2,12,.72); --shadow:0 10px 24px rgba(0,0,0,.4);
+  color-scheme:dark;
+}
+[data-theme="pas"]{
+  --bg:#100f0c; --surface:#19170f; --surface2:#221f17; --ink:#e8dec2; --muted:#a09676; --line:#35312a; --line2:#51493a;
+  --accent:#e0a43a; --accent2:#7fc9b8; --good:#9cc15a; --bad:#d8503e; --warn:#e08a2b; --btn-ink:#120f08; --grid:rgba(224,164,58,.045);
+  --en:#d8ae45; --hu:#c47a3f; --he:#c2412f; --mo:#6f9c8f; --scrim:rgba(0,0,0,.75); --shadow:0 10px 24px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+
+/* ---------- piksel stil: yazı aileleri, pah ve stile duyarlı yazı ölçeği ---------- */
+:root[data-style="pixel"]{
+  --display:var(--font-pixel); --body:var(--font-term); --mono:var(--font-term); --cut:6px;
+  --tx-2xs:15px; --tx-xs:16px; --tx-sm:17px; --tx-md:18px; --tx-base:20px;
+  --tx-lg:21px; --tx-xl:26px; --tx-2xl:30px; --tx-3xl:30px; --tx-hero:42px;
+  --tx-caps:15px; --tx-label:16px; --tx-note:17px; --tx-pay:22px; --tx-h3:19px;
+}

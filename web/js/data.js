@@ -18,11 +18,13 @@ SS.TONES = [
 ];
 SS.TONE_NOTE = 'Ton sadece yazıları değiştirir: karakter konuşmaları, olay ve hikâye anlatımı, kararların sonuç metinleri. Kurallar, fiyatlar ve zorluk aynı kalır. Oyun sırasında da değiştirebilirsin.';
 
-// Renk temaları: arayüz renkleri + oyun sahnelerinin paleti
+// Renk temaları: arayüz renkleri (theme.css) + oyun sahnelerinin paleti.
+// sw: ayarlardaki önizleme karelerinin gösterdiği belirteçler; değerler doğrudan theme.css'ten okunur.
+SS.THEME_SW = ['--bg', '--accent', '--accent2'];
 SS.THEMES = [
-  { id: 'lavanta', name: 'Lavanta', pal: 'bright', sw: ['#efeafc', '#ff4f9a', '#18b4d1'] },
-  { id: 'gece',    name: 'Gece',    pal: 'bright', sw: ['#120d2b', '#ff5fa8', '#3fd0ea'] },
-  { id: 'pas',     name: 'Pas',     pal: 'rust',   sw: ['#11100d', '#d9a441', '#7fc9b8'] },
+  { id: 'lavanta', name: 'Lavanta', pal: 'bright', sw: SS.THEME_SW },
+  { id: 'gece',    name: 'Gece',    pal: 'bright', sw: SS.THEME_SW },
+  { id: 'pas',     name: 'Pas',     pal: 'rust',   sw: SS.THEME_SW },
 ];
 
 // size: kargo birimi, r: çarpışma yarıçapı, wt: ağırlık (çekme hızını böler)
@@ -216,6 +218,11 @@ SS.PAL = {
     ui: '#1d1a14',
   },
 };
+// Patlama parçacıkları (tüm temalarda aynı)
+SS.FX_BOOM = { core: '#ffcf5a', flame: '#ff8a3d', ember: '#ff4b3a', flash: '#fff3c4' };
+// Gemi çıkartmalarının renkleri (fun.js ve destekçi paketi)
+SS.DECAL_COL = { star: '#ffec27', rex: '#ff004d', combo: '#00e436', rush: '#ffa300', week: '#5ef0ff', heart: '#ff77a8', free: '#fff1e8', gem: '#c17bff',
+  crown: '#f5c542', paw: '#ff77a8' };
 // Piksel stilin sınırlı renk paleti (her mod için ayrı)
 SS.PIXPAL = {
   bright: ['#000000', '#140c35', '#1d2b53', '#3a1f6e', '#7e2553', '#008751', '#ab5236', '#5f574f', '#5f6b8a', '#83769c', '#c2c3c7', '#fff1e8',
