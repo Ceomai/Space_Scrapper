@@ -53,7 +53,8 @@ for (const k of ['mute', 'muteMenu']) { const f = ACT[k]; if (f) ACT[k] = (...a)
 ACT.musicToggle = () => { prefs.music = prefs.music === false; SS.savePrefs ? SS.savePrefs() : null; try { localStorage.setItem('space-scrapper-prefs', JSON.stringify(prefs)); } catch (e) {} SS.music.update(); SS.render(); };
 // reklam sırasında müzik susar (reklam bitince, yarıda kalınca ya da 60 sn sonra geri gelir)
 const _show = SS.showRewardedAd;
-if (_show) SS.showRewardedAd = done => { SS.inAd = true; SS.music.update(); const fin = () => { SS.inAd = false; SS.music.update(); }; const tm = setTimeout(fin, 60000); return _show(() => { clearTimeout(tm); fin(); done(); }); };
+// reklam iptal edilir ya da hiç gelmezse (cancel) SS.inAd hemen temizlenir
+if (_show) SS.showRewardedAd = (done, cancel) => { SS.inAd = true; SS.music.update(); const fin = () => { SS.inAd = false; SS.music.update(); }; const tm = setTimeout(fin, 60000); return _show(() => { clearTimeout(tm); fin(); done(); }, () => { clearTimeout(tm); fin(); cancel && cancel(); }); };
 const _adDone = window.SS_AD_DONE;
 if (_adDone) window.SS_AD_DONE = ok => { SS.inAd = false; SS.music.update(); return _adDone(ok); };
 // gündüz/gece geçişi ve reklam molası

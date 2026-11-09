@@ -39,4 +39,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Titreşim: oyun içi dokunsal geri bildirim (navigator.vibrate) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

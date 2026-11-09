@@ -84,8 +84,27 @@ SS.sanitize = () => {
     if (Array.isArray(S.cargo)) S.cargo = S.cargo.filter(it => it && SS.ITEMS[it.kind] && isFinite(it.value));
   } catch (e) {}
 };
-SS.save = () => { try { if (S) { SS.sanitize(); localStorage.setItem(KEY, JSON.stringify(S)); } } catch (e) {} };
-SS.load = () => { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.v === 3) return SS.migrate ? SS.migrate(s) : s; } catch (e) {} return null; };
+// Depolama sınaması: açılışta bir kez yazıp okur. Başarısızsa arayüz kalıcı bir uyarı şeridi gösterir (SS.storeBand).
+SS.storageOk = (() => { try { const k = 'space-scrapper-probe'; localStorage.setItem(k, '1'); const ok = localStorage.getItem(k) === '1'; localStorage.removeItem(k); return ok; } catch (e) { return false; } })();
+let saveWarned = false;
+SS.save = () => { try { if (S) { SS.sanitize(); localStorage.setItem(KEY, JSON.stringify(S)); } } catch (e) {
+  // kayıt yazılamadı (depolama dolu ya da kapalı): oyuncuya bir kez söyle (açılışta kapalı bulunduysa şerit zaten söylüyor)
+  if (!saveWarned) { saveWarned = true; if (SS.storageOk !== false) try { SS.toast && SS.toast('Kayıt yapılamadı: tarayıcı depolaması dolu ya da kapalı. İlerlemen bu oturumla sınırlı kalabilir.', 'bad'); } catch (e2) {} }
+} };
+// Okunamayan kayıt silinmez: ham metin bir kez '.bak' anahtarına kopyalanır ve başlık ekranı oyuncuya söyler (SS.loadError)
+SS.BAK_KEY = KEY + '.bak';
+SS.loadError = null;
+SS.load = () => {
+  let raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { return null; }
+  if (!raw) { SS.loadError = null; return null; }
+  try { const s = JSON.parse(raw); if (s && s.v === 3) { const m = SS.migrate ? SS.migrate(s) : s; if (m) { SS.loadError = null; return m; } } throw new Error('bad save'); }
+  catch (e) {
+    SS.loadError = 'corrupt';
+    try { if (!localStorage.getItem(SS.BAK_KEY)) localStorage.setItem(SS.BAK_KEY, raw); SS.loadError = localStorage.getItem(SS.BAK_KEY) ? 'backup' : 'corrupt'; } catch (e2) {}
+  }
+  return null;
+};
 SS.wipe = () => { try { localStorage.removeItem(KEY); } catch (e) {} };
 
 /* ---------- gemi ve türetilmiş değerler ---------- */

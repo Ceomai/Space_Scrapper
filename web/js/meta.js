@@ -9,23 +9,26 @@ SS.haptic = strong => { const n = SS.native(); if (n) n.post({ type: 'haptic', s
 
 /* ---------- rehberli ilk gün ---------- */
 // Her adımın anlatıcı metni, tamamlanma koşulu ve haritada vurgulanacak yer
+// Öğretici menüden yeniden başlatılırsa (S.tutBase) iş ve gün adımları o andan itibaren sayılır
+SS.tutWork = () => S.stats.repair + S.stats.deliver + S.stats.sort + (S.stats.hunts || 0) + S.stats.runs;
+const tutB = () => S.tutBase || { day: 1, work: 0 };
 SS.TUTORIAL = [
   { to: 'jobs', text: { easy: 'Kaptan! Para lazım, hem de dün. Haritada İş Merkezi\'ne dokun, bakalım bugün kim bize iş verecek.', hard: 'Önce iş. Haritada İş Merkezi\'ne git.' },
     done: () => S.loc === 'jobs' },
   { text: { easy: 'İlanlardan birini kabul et. Tamir İşi riskisizdir, Hurda sözleşmesi daha çok öder. Ben ikisini de sevdim, karar senin.', hard: 'Bir işi kabul et ve bitir. Tamir risksiz, hurda sözleşmesi daha kazançlı.' },
-    done: () => (S.stats.repair + S.stats.deliver + S.stats.sort + (S.stats.hunts || 0) + S.stats.runs) > 0 },
+    done: () => SS.tutWork() > tutB().work },
   { to: 'cantina', text: { easy: 'İş yorar. Gus\'un Kantini\'ne uğra, bir şeyler ye ya da kahve iç. Enerji olmadan kanca kalkmaz.', hard: 'Enerjin düşüyor. Kantin\'e git, bir şey ye.' },
     done: () => (S.today.meal || 0) > 0 || Object.values(S.drinks || {}).some(Boolean) || S.hunger >= 90 },
   { to: 'home', text: { easy: 'Eve dönelim. Yaşam Modülü\'nde odalarımızı gör; pazardan alacağın dekorları oraya yerleştireceğiz.', hard: 'Eve dön. Odalar sekmesine bir göz at.' },
     done: () => S.loc === 'home' },
   { text: { easy: 'Gün bitiyor. "Akşam defteri ve uyku"ya bas. Haneyi doyurmayı ve ısıtmayı unutma, ben üşürüm. Robotum ama yine de.', hard: 'Akşam defterini aç. Kimin doyacağına sen karar vereceksin. Sonra uyu.' },
-    done: () => S.day >= 2 },
+    done: () => S.day >= tutB().day + 1 },
 ];
 SS.tutStep = () => (S.tut != null && S.tut < SS.TUTORIAL.length) ? SS.TUTORIAL[S.tut] : null;
 SS.tutCheck = () => {
   const st = SS.tutStep(); if (!st || !st.done()) return false;
   S.tut++;
-  if (S.tut >= SS.TUTORIAL.length) { S.tut = null; SS.earn(100); SS.toast('İlk gün tamam: ₡100 başlangıç primi', 'ach'); }
+  if (S.tut >= SS.TUTORIAL.length) { S.tut = null; if (S.tutAgain) { S.tutAgain = false; S.tutBase = null; SS.toast('Öğretici tamamlandı.', 'good'); } else { SS.earn(100); SS.toast('İlk gün tamam: ₡100 başlangıç primi', 'ach'); } }
   else SS.toast(`Görev ${S.tut + 1}/${SS.TUTORIAL.length}`, 'good');
   return true;
 };

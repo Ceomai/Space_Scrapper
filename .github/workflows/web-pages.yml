@@ -24,14 +24,15 @@ jobs:
       - name: Sayfayı hazırla
         run: |
           mkdir -p _site
-          cp -r web/js web/icons web/index.html web/theme.css web/manifest.webmanifest web/privacy.html _site/
+          cp -r web/js web/icons web/fonts web/index.html web/theme.css web/manifest.webmanifest web/privacy.html _site/
           touch _site/.nojekyll
           # Service worker: sürüm adı commit kimliği, önbelleğe alınacak dosyalar yayınlanan dosyaların listesi
           node -e "
             const fs = require('fs');
             const files = ['./', './index.html', './theme.css', './manifest.webmanifest']
               .concat(fs.readdirSync('_site/js').map(f => './js/' + f))
-              .concat(fs.readdirSync('_site/icons').filter(f => !f.includes('1024')).map(f => './icons/' + f));
+              .concat(fs.readdirSync('_site/icons').filter(f => !f.includes('1024')).map(f => './icons/' + f))
+              .concat(fs.readdirSync('_site/fonts').filter(f => f.endsWith('.woff2')).map(f => './fonts/' + f));
             let sw = fs.readFileSync('web/sw.js', 'utf8')
               .replace('__BUILD__', process.env.GITHUB_SHA.slice(0, 12))
               .replace(/\/\*FILES\*\/[\s\S]*?\/\*FILES\*\//, JSON.stringify(files));

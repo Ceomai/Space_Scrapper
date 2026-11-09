@@ -2,7 +2,8 @@
 <html lang="tr">
 <meta charset="utf-8">
 <title>Space Scrapper</title>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- Yakınlaştırma serbest (maximum-scale / user-scalable yok); çift dokunuş yakınlaştırmasını html ve .btn üstündeki touch-action:manipulation önler. Android WebView sistem yazı boyutunu (textZoom) izler: bkz. MainActivity.java -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Borçlu bir hurdacının uzay istasyonundaki hayatı. Kancayla hurda avla, iş kovala, haneni doyur, gemini büyüt.">
 <meta name="theme-color" content="#0c0a1d">
 <link rel="manifest" href="manifest.webmanifest">
@@ -10,11 +11,8 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Space Scrapper">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Pixelify+Sans:wght@400;500;700&family=VT323&display=swap">
 <link rel="stylesheet" href="theme.css">
 <style>
 /* PELIKAN-OS: gemi bilgisayarı konsolu. Üstte durum konsolu, ortada kaydırılan ekran, altta 3'lü dok. Paneller köşe braketli, düğmeler pahlı.
@@ -22,7 +20,7 @@
 [hidden]{display:none!important}
 /* renk, yazı, boşluk ve köşe belirteçleri: theme.css */
 
-html{box-sizing:border-box;height:100%;overflow:hidden}
+html{box-sizing:border-box;height:100%;overflow:hidden;touch-action:manipulation} /* kıstırma yakınlaştırması açık, çift dokunuş yakınlaştırması yok */
 body{height:100%;overflow:hidden}
 *{scrollbar-width:none}
 *::-webkit-scrollbar{display:none}
@@ -61,12 +59,13 @@ canvas.ico{display:block;flex:none}
 .hud-cash b{font-family:var(--mono);font-size:var(--tx-xl);color:var(--good);font-variant-numeric:tabular-nums;white-space:nowrap}
 .hud-cash span{font-size:var(--tx-2xs);color:var(--muted);font-family:var(--mono);text-transform:uppercase;letter-spacing:.06em}
 :root[data-style="pixel"] .hud-loc b{font-size:var(--tx-md)}
-.help{width:32px;height:32px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink);font-family:var(--display);font-weight:700;font-size:var(--fs-16);cursor:pointer;clip-path:polygon(var(--cut-sm) 0,100% 0,100% calc(100% - var(--cut-sm)),calc(100% - var(--cut-sm)) 100%,0 100%,0 var(--cut-sm))}
+.help{width:44px;height:44px;border:1px solid var(--line2);background:var(--surface2);color:var(--ink);font-family:var(--display);font-weight:700;font-size:var(--fs-16);cursor:pointer;clip-path:polygon(var(--cut-sm) 0,100% 0,100% calc(100% - var(--cut-sm)),calc(100% - var(--cut-sm)) 100%,0 100%,0 var(--cut-sm))}
 .menu-list{display:flex;flex-direction:column;gap:7px}
 .coach{display:flex;gap:var(--sp-2);align-items:center;padding:7px max(var(--sp-3),env(safe-area-inset-right,0px)) 7px max(var(--sp-3),env(safe-area-inset-left,0px));background:var(--surface2);border-bottom:1px solid var(--accent);font-size:var(--tx-note);flex-shrink:0}
 .coach p{flex:1;min-width:0;line-height:1.35}
 .coach b{color:var(--accent);margin-right:4px}
-.coach-x{flex:none;background:none;border:1px solid var(--line2);color:var(--muted);font:inherit;font-size:var(--fs-xs);padding:var(--sp-1) var(--sp-2);cursor:pointer}
+.coach-x{flex:none;position:relative;min-width:44px;min-height:32px;background:none;border:1px solid var(--ctl-border);color:var(--muted);font:inherit;font-size:var(--fs-xs);padding:var(--sp-1) var(--sp-2);cursor:pointer}
+.coach-x::before{content:"";position:absolute;inset:-7px -2px}
 .node::before{content:'';position:absolute;left:50%;bottom:100%;width:76px;height:58px;transform:translateX(-50%)}
 .map-area.compact .node::before{width:64px;height:46px}
 .node.aim{border-color:var(--accent);animation:pulse 1.8s infinite;box-shadow:0 0 0 2px var(--accent)}
@@ -138,15 +137,15 @@ main>*{flex-shrink:0}
 .track u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.5}
 
 /* ---------- düğmeler ---------- */
-.btn{font-family:var(--display);font-weight:700;font-size:var(--fs-13-5);letter-spacing:.06em;text-transform:uppercase;line-height:1.1;border:0;padding:var(--sp-2-5) var(--sp-3-5);cursor:pointer;background:var(--accent2);color:var(--btn-ink);min-height:40px;white-space:nowrap;touch-action:manipulation;
+.btn{font-family:var(--display);font-weight:700;font-size:var(--fs-13-5);letter-spacing:.06em;text-transform:uppercase;line-height:1.1;border:0;padding:var(--sp-2-5) var(--sp-3-5);cursor:pointer;background:var(--accent2);color:var(--btn-ink);min-height:44px;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation;
   clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));transition:filter .15s,transform .06s}
 .btn:hover{filter:brightness(1.08)} .btn:active{transform:translateY(1px)}
 .btn:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .btn.primary{background:var(--accent)} .btn.good{background:var(--good)} .btn.danger{background:var(--bad)}
-.btn.ghost{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line2)}
+.btn.ghost{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--ctl-border)}
 .btn.danger-t{color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
-.btn.sm{font-size:var(--fs-12-5);padding:7px 11px;min-height:34px}
-.btn.q{min-height:28px;padding:3px var(--sp-2-5)}
+.btn.sm{font-size:var(--fs-12-5);padding:7px 11px;min-height:44px}
+.btn.q{min-height:44px;padding:3px var(--sp-2-5)}
 .btn.block{width:100%;padding:var(--sp-3-5);font-size:var(--fs-base)}
 .btn:disabled{background:var(--surface2)!important;color:var(--muted)!important;box-shadow:inset 0 0 0 1px var(--line)!important;cursor:not-allowed;filter:none}
 :root[data-style="pixel"] .btn{font-family:var(--body);font-size:var(--tx-base);font-weight:400;letter-spacing:.02em;text-transform:none}
@@ -154,7 +153,7 @@ main>*{flex-shrink:0}
 
 /* ---------- dok ---------- */
 .dock{display:grid;grid-template-columns:1fr 1.35fr 1fr .95fr;gap:var(--sp-1-5);background:var(--surface);border-top:1px solid var(--line2);padding:var(--sp-1-5) max(var(--sp-2-5),env(safe-area-inset-right,0px)) var(--sp-1-5) max(var(--sp-2-5),env(safe-area-inset-left,0px))}
-.dock button{display:flex;flex-direction:column;align-items:center;gap:1px;background:transparent;border:1px solid transparent;color:var(--muted);font-family:var(--mono);font-size:var(--tx-2xs);text-transform:uppercase;letter-spacing:.06em;padding:var(--sp-1-5) var(--sp-1);cursor:pointer;min-width:0}
+.dock button{display:flex;flex-direction:column;align-items:center;gap:1px;background:transparent;border:1px solid transparent;color:var(--muted);font-family:var(--mono);font-size:var(--tx-2xs);text-transform:uppercase;letter-spacing:.06em;padding:var(--sp-1-5) var(--sp-1);cursor:pointer;min-width:0;min-height:48px;justify-content:center}
 .dock button span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .dock .dk-ico{font-size:var(--fs-lg);line-height:1}
 .dock button.on{color:var(--ink);border-color:var(--line2);background:var(--surface2)}
@@ -187,7 +186,7 @@ main.v-map>.map-wrap{border:0}
 .qb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 @keyframes pulse{50%{filter:brightness(1.25)}}
-.node{position:absolute;z-index:1;transform:translate(-50%,26px);display:flex;flex-direction:column;align-items:center;background:color-mix(in srgb,var(--surface) 80%,transparent);border:1px solid var(--line2);padding:var(--sp-0-5) 7px 3px;cursor:pointer;color:var(--ink);font-family:var(--body);backdrop-filter:blur(2px);
+.node{position:absolute;z-index:1;transform:translate(-50%,26px);display:flex;flex-direction:column;align-items:center;background:color-mix(in srgb,var(--surface) 80%,transparent);border:1px solid var(--ctl-border);padding:var(--sp-0-5) 7px 3px;cursor:pointer;color:var(--ink);font-family:var(--body);backdrop-filter:blur(2px);
   clip-path:polygon(var(--cut-xs) 0,100% 0,100% calc(100% - var(--cut-xs)),calc(100% - var(--cut-xs)) 100%,0 100%,0 var(--cut-xs))}
 .node .n-name{font-family:var(--display);font-weight:700;font-size:var(--fs-2xs);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
 .node .n-cost{font-family:var(--mono);font-size:var(--fs-2xs);color:var(--accent2);white-space:nowrap}
@@ -200,8 +199,9 @@ main.v-map>.map-wrap{border:0}
 :root[data-style="pixel"] .node .n-name{font-size:var(--fs-xs);letter-spacing:0} :root[data-style="pixel"] .node .n-cost{font-size:var(--fs-xs)}
 @media (max-width:400px){.node{padding:var(--sp-0-5) 5px}.node .n-name{font-size:var(--fs-2xs)}}
 /* alt sekmeler */
-.subtabs{display:flex;gap:var(--sp-1);overflow-x:auto;flex-shrink:0}
-.subtabs button{flex:1 0 auto;font-family:var(--mono);font-size:var(--tx-label);text-transform:uppercase;letter-spacing:.05em;padding:var(--sp-2) var(--sp-2-5);background:var(--surface);color:var(--muted);border:1px solid var(--line2);cursor:pointer;white-space:nowrap}
+/* dar ekranda sekmeler alt satıra kayar (gizli yatay kaydırma yok: "Ayarlar" her zaman görünür) */
+.subtabs{display:flex;flex-wrap:wrap;gap:var(--sp-1);flex-shrink:0}
+.subtabs button{flex:1 0 auto;min-height:44px;font-family:var(--mono);font-size:var(--tx-label);text-transform:uppercase;letter-spacing:.05em;padding:var(--sp-2) var(--sp-2-5);background:var(--surface);color:var(--muted);border:1px solid var(--ctl-border);cursor:pointer;white-space:nowrap}
 .subtabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .subtabs button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 /* yaşam modülü kesiti */
@@ -212,6 +212,8 @@ main.v-map>.map-wrap{border:0}
 :root[data-style="pixel"] .room-tag{font-size:var(--fs-sm)} :root[data-style="pixel"] .room-away{font-size:var(--fs-md)}
 .slot-btn{position:absolute;transform:translate(-50%,-50%);width:28px;height:28px;border-radius:50%;border:1.5px dashed var(--scene-slot-line);background:var(--scene-slot-bg);color:var(--scene-slot-ink);font-size:var(--fs-16);font-weight:700;cursor:pointer;display:grid;place-items:center;padding:0}
 .slot-btn.full{border:0;background:transparent;width:36px;height:36px}
+.slot-btn::before{content:"";position:absolute;inset:-8px;border-radius:50%} /* görsel 28px, dokunma alanı 44px */
+.slot-btn.full::before{inset:-4px}
 .slot-btn.full:hover,.slot-btn.full:focus-visible{outline:1.5px dashed var(--scene-slot-focus)}
 .slot-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .roomchips{display:flex;gap:var(--sp-1);overflow-x:auto;flex-shrink:0}
@@ -224,6 +226,7 @@ main.v-map>.map-wrap{border:0}
 .room-away.big{font-size:var(--fs-xs);padding:3px 9px}
 .slot-btn.big{width:34px;height:34px;font-size:var(--fs-19)}
 .slot-btn.big.full{width:54px;height:54px}
+.slot-btn.big::before{inset:-5px} .slot-btn.big.full::before{inset:0}
 button.room-tag{pointer-events:auto;border:0;cursor:pointer}
 .hint{font-size:var(--tx-note);color:var(--muted)}
 .boards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:var(--sp-2)}
@@ -278,8 +281,6 @@ button.room-tag{pointer-events:auto;border:0;cursor:pointer}
 .crew-act{display:flex;gap:var(--sp-2-5);align-items:center;background:var(--surface2);padding:var(--sp-2) var(--sp-2-5);border:1px solid var(--line)}
 .crew-act>div{flex:1;min-width:0}
 .decor{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:var(--sp-1-5)}
-.slot{border:1px dashed var(--line2);padding:var(--sp-2);display:flex;flex-direction:column;gap:var(--sp-1);min-height:58px;justify-content:center}
-.slot.full{border-style:solid;background:var(--surface2)}
 .dopt{font:inherit;font-family:var(--display);font-weight:600;font-size:var(--fs-12-5);text-transform:uppercase;letter-spacing:.04em;line-height:1.2;padding:7px var(--sp-1);background:var(--surface2);color:var(--ink);border:1px solid var(--line2);cursor:pointer;min-height:34px}
 .dopt.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .dopt:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
@@ -334,7 +335,7 @@ button.room-tag{pointer-events:auto;border:0;cursor:pointer}
 .title{gap:var(--sp-3-5)}
 .decal-ic{display:block;font-style:normal;font-size:var(--fs-glyph);line-height:28px;text-shadow:0 1px 0 var(--glyph-shadow)}.weekly-box{margin-top:14px;padding-top:var(--sp-3);border-top:1px dashed var(--line)}
 .setup-more{border:1px dashed var(--line2);padding:var(--sp-2-5) var(--sp-3);display:flex;flex-direction:column;gap:var(--sp-3-5)}.setup-more>summary{cursor:pointer;font-weight:700;list-style:none;min-height:40px;display:flex;align-items:center;gap:var(--sp-2);flex-wrap:wrap}.setup-more>summary::before{content:'▸';transition:transform .15s}.setup-more[open]>summary::before{transform:rotate(90deg)}.setup-more>summary small{font-weight:400;color:var(--muted)}.start-row .btn{font-size:1.15em;min-height:56px}
-.perks{margin:0 0 10px;padding-left:18px}.perks li{margin:3px 0}
+.sup-perks{margin:0 0 10px;padding-left:18px}.sup-perks li{margin:3px 0}
 .lang-pick{justify-content:center;align-items:center;gap:var(--sp-2);flex-wrap:wrap}.lang-pick .muted{font-size:var(--fs-sm)}
 .logo{display:flex;flex-direction:column;align-items:center;text-align:center;gap:var(--sp-2);padding:var(--sp-1-5) 0}
 .logo h1{font-size:var(--tx-hero);display:flex;flex-direction:column;line-height:.9;text-transform:uppercase;letter-spacing:.02em}
@@ -388,8 +389,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .lg.opt li.off b{color:var(--muted);text-decoration:line-through}
 .lg.total li{border-top:2px solid var(--ink);border-bottom:3px double var(--ink);font-size:var(--fs-16)}
 :root[data-style="pixel"] .lg.total li{font-size:var(--tx-md)} /* piksel stilde toplam satırı .lg li ile aynı boyda kalır */
-.chk{width:26px;height:26px;border:1px solid var(--ink);background:var(--surface);color:var(--btn-ink);font-weight:700;cursor:pointer;flex:none;display:grid;place-items:center}
+.chk{position:relative;width:26px;height:26px;border:1px solid var(--ink);background:var(--surface);color:var(--btn-ink);font-weight:700;cursor:pointer;flex:none;display:grid;place-items:center}
 .chk.on{background:var(--good);border-color:var(--good)}
+.chk::before{content:"";position:absolute;inset:-10px} /* dokunma alanı 44px */
 .chk:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* sabah bülteni: gazete */
 .share-img{display:block;max-width:100%;max-height:42vh;margin:0 auto;border:1px solid var(--accent);border-radius:var(--r-md)}
@@ -439,9 +441,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .race .ln{font-size:var(--fs-sm);font-weight:600}
 .race .trk{position:relative;height:10px;background:var(--bg);border-radius:5px}
 .race .trk i{position:absolute;top:-2px;width:8%;height:14px;border-radius:7px 3px 3px 7px}
-.slot{display:flex;justify-content:center;gap:var(--sp-2-5)}
-.slot span{width:72px;height:80px;display:grid;place-items:center;font-size:var(--fs-glyph-lg);background:var(--surface2);border:2px solid var(--line2);border-radius:var(--r-lg)}
-.slot span.stop{border-color:var(--accent)}
+.slot-reels{display:flex;justify-content:center;gap:var(--sp-2-5)}
+.slot-reels span{width:72px;height:80px;display:grid;place-items:center;font-size:var(--fs-glyph-lg);background:var(--surface2);border:2px solid var(--line2);border-radius:var(--r-lg)}
+.slot-reels span.stop{border-color:var(--accent)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-1-5)}
 .quiz{display:flex;flex-direction:column;gap:var(--sp-1-5)}
 .lessons{display:flex;gap:5px;margin:4px 0}
@@ -473,10 +475,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .sb-item small{font-size:var(--fs-11-5);color:var(--ink)}
 
 /* ---------- bildirimler ---------- */
-#toast{position:fixed;left:0;right:0;top:calc(10px + env(safe-area-inset-top,0px));z-index:80;display:flex;flex-direction:column;align-items:center;gap:var(--sp-1-5);pointer-events:none;padding:0 var(--sp-4)}
+/* bildirimler alt çubuğun üstünde çıkar (saat ve göstergeleri örtmez) */
+#toast{position:fixed;left:0;right:0;bottom:calc(var(--toast-lift) + env(safe-area-inset-bottom,0px));z-index:80;display:flex;flex-direction:column;align-items:center;gap:var(--sp-1-5);pointer-events:none;padding:0 var(--sp-4)}
+body.in-mini #toast{--toast-lift:var(--toast-lift-mini)}
+body:has(main.v-map) #toast{--toast-lift:var(--toast-lift-map)} /* haritada alttaki hızlı düğmelerin de üstünde */
 .toast{background:var(--ink);color:var(--bg);padding:var(--sp-2) var(--sp-3-5);font-family:var(--mono);font-size:var(--tx-sm);max-width:440px;box-shadow:var(--shadow);transition:opacity .4s,transform .4s;clip-path:polygon(var(--cut-sm) 0,100% 0,100% calc(100% - var(--cut-sm)),calc(100% - var(--cut-sm)) 100%,0 100%,0 var(--cut-sm))}
 .toast.good{background:var(--good);color:var(--btn-ink)} .toast.bad{background:var(--bad);color:var(--btn-ink)} .toast.ach{background:var(--accent);color:var(--btn-ink)}
-.toast.out{opacity:0;transform:translateY(-8px)}
+.toast.out{opacity:0;transform:translateY(8px)}
+.toast.bad{pointer-events:auto;cursor:pointer}
 
 /* ---------- mini oyun katmanı ---------- */
 .mini{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding:calc(var(--sp-2) + env(safe-area-inset-top,0px)) max(var(--sp-3),env(safe-area-inset-right,0px)) calc(var(--sp-2-5) + env(safe-area-inset-bottom,0px)) max(var(--sp-3),env(safe-area-inset-left,0px));gap:7px;box-sizing:border-box}
@@ -511,11 +517,13 @@ body.in-mini{overflow:hidden}
 /* ---------- kolaylık paketi ---------- */
 button.hud-loc{background:none;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer}
 button.hud-loc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.chip-btn{border:1px solid var(--line);padding:1px 7px;min-height:28px;background:var(--surface2);color:var(--muted);font:inherit;cursor:pointer}
+.chip-btn{position:relative;border:1px solid var(--ctl-border);padding:1px 7px;min-height:28px;background:var(--surface2);color:var(--muted);font:inherit;cursor:pointer}
+.chip-btn::before{content:"";position:absolute;inset:-8px 0} /* görsel 28px, dokunma alanı 44px */
 .chip-btn b{color:var(--ink);font-weight:400} .chip-btn.neg,.chip-btn.neg b{color:var(--bad)}
 .plan{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-1) var(--sp-2-5);font-family:var(--mono);font-size:var(--tx-xs);color:var(--muted)}
 .plan b{color:var(--ink);font-weight:400} .plan .neg{color:var(--bad)}
-.plan-go{margin-left:auto;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--ink);font:inherit;padding:3px var(--sp-2);cursor:pointer}
+.plan-go{position:relative;min-height:32px;margin-left:auto;border:1px solid var(--accent);background:color-mix(in srgb,var(--accent) 16%,var(--surface));color:var(--ink);font:inherit;padding:3px var(--sp-2);cursor:pointer}
+.plan-go::before{content:"";position:absolute;inset:-6px 0} /* dokunma alanı 44px */
 .plan-go small{display:inline;font-size:var(--fs-2xs)}
 :root[data-style="pixel"] .plan,:root[data-style="pixel"] .chip-btn{font-size:var(--tx-xs)}
 .dock button.late{color:var(--warn);border-color:var(--warn)}
@@ -524,15 +532,19 @@ button.hud-loc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .ad-inline{border-color:var(--warn)!important}
 .node .rk{display:inline-grid;place-items:center;width:16px;height:16px;margin-right:4px;background:var(--accent);color:var(--btn-ink);font-style:normal;font-size:var(--fs-2xs);border-radius:50%}
 .kv.cal li{align-items:flex-start} .kv.cal small{font-size:var(--fs-xs)}
-:root[data-big="1"] .hud,:root[data-big="1"] main>*:not(.map-wrap),:root[data-big="1"] .dock,:root[data-big="1"] #modal .sheet{zoom:1.12}
-:root[data-big="1"] .map-top,:root[data-big="1"] .map-bottom{zoom:1.1}
+/* büyük yazı: theme.css'teki --fs-k çarpanı bütün yazı belirteçlerini büyütür (zoom yok) */
+/* harita etiketleri büyümez (eskiden de haritaya zoom uygulanmıyordu): düğümler çakışmaz, ekran dışına taşmaz */
+:root[data-big="1"] .node .n-name,:root[data-big="1"] .node .n-cost{font-size:calc(var(--fs-2xs) / var(--fs-k))}
+:root[data-big="1"][data-style="pixel"] .node .n-name,:root[data-big="1"][data-style="pixel"] .node .n-cost{font-size:calc(var(--fs-xs) / var(--fs-k))}
 :root[data-left="1"] .dock{direction:rtl} :root[data-left="1"] .dock button{direction:ltr}
 :root[data-left="1"] .mini-ctl{flex-direction:row-reverse}
 :root[data-left="1"] #modal .row{flex-direction:row-reverse;justify-content:flex-end}
 :root[data-left="1"] .map-bottom{direction:rtl} :root[data-left="1"] .map-bottom .qb{direction:ltr}
+.store-warn{flex-shrink:0;background:var(--bad);color:var(--btn-ink);font-family:var(--mono);font-size:var(--tx-xs);padding:var(--sp-1-5) max(var(--sp-3),env(safe-area-inset-right,0px)) var(--sp-1-5) max(var(--sp-3),env(safe-area-inset-left,0px));text-align:center}
 .weeksum{border:1px solid var(--line2);padding:var(--sp-2) var(--sp-2-5);margin:8px 0;background:var(--surface2)}
 .tips{padding-left:18px;display:grid;gap:var(--sp-1-5)}
 .row-item>.chk{width:34px;height:34px;flex:none}
+.row-item>.chk::before{inset:-6px}
 </style>
 
 <div id="app"></div>

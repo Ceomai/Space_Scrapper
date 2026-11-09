@@ -122,8 +122,8 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
   { const path = require('path'), http = require('http'), web = path.resolve(__dirname, '../web');
     const site = path.join(__dirname, 'out', 'site'); fs.rmSync(site, { recursive: true, force: true }); fs.mkdirSync(site, { recursive: true });
     for (const f of ['index.html', 'theme.css', 'manifest.webmanifest']) fs.copyFileSync(path.join(web, f), path.join(site, f));
-    for (const d of ['js', 'icons']) fs.cpSync(path.join(web, d), path.join(site, d), { recursive: true });
-    const files = ['./', './index.html', './theme.css', './manifest.webmanifest'].concat(fs.readdirSync(path.join(site, 'js')).map(f => './js/' + f)).concat(fs.readdirSync(path.join(site, 'icons')).filter(f => !f.includes('1024')).map(f => './icons/' + f));
+    for (const d of ['js', 'icons', 'fonts']) fs.cpSync(path.join(web, d), path.join(site, d), { recursive: true });
+    const files = ['./', './index.html', './theme.css', './manifest.webmanifest'].concat(fs.readdirSync(path.join(site, 'js')).map(f => './js/' + f)).concat(fs.readdirSync(path.join(site, 'icons')).filter(f => !f.includes('1024')).map(f => './icons/' + f)).concat(fs.readdirSync(path.join(site, 'fonts')).filter(f => f.endsWith('.woff2')).map(f => './fonts/' + f));
     fs.writeFileSync(path.join(site, 'sw.js'), fs.readFileSync(path.join(web, 'sw.js'), 'utf8').replace('__BUILD__', 'test').replace(/\/\*FILES\*\/[\s\S]*?\/\*FILES\*\//, JSON.stringify(files)));
     const TYPES = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.webmanifest': 'application/manifest+json', '.png': 'image/png' };
     const srv = http.createServer((req, res) => { let u = decodeURIComponent(req.url.split('?')[0]); if (u.endsWith('/')) u += 'index.html'; const fp = path.join(site, u); if (!fp.startsWith(site) || !fs.existsSync(fp)) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'Content-Type': TYPES[path.extname(fp)] || 'application/octet-stream' }); fs.createReadStream(fp).pipe(res); });

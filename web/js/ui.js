@@ -5,10 +5,24 @@ const root = document.documentElement;
 const app = () => document.getElementById('app');
 
 /* ---------- tercihler ---------- */
-const prefs = SS.prefs = { style: 'vector', muted: false, theme: (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'gece' : 'lavanta' };
+// Yeni oyuncu: tema 'auto' (telefonun açık/koyu ayarını izler). Kayıtlı tercihi olan oyuncu kendi temasını korur.
+const prefs = SS.prefs = { style: 'vector', muted: false, theme: 'auto' };
 try { Object.assign(prefs, JSON.parse(localStorage.getItem('space-scrapper-prefs')) || {}); } catch (e) {}
 const savePrefs = () => { try { localStorage.setItem('space-scrapper-prefs', JSON.stringify(prefs)); } catch (e) {} };
-SS.applyLook = () => { root.dataset.style = prefs.style; root.dataset.theme = prefs.theme; };
+const darkMQ = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+// 'auto': açık → Lavanta, koyu → Gece. Bilinmeyen değer de Lavanta'ya düşer.
+SS.themeId = () => prefs.theme === 'auto' ? (darkMQ && darkMQ.matches ? 'gece' : 'lavanta') : (['lavanta', 'gece', 'pas'].includes(prefs.theme) ? prefs.theme : 'lavanta');
+// Durum çubuğu: <meta name="theme-color"> temanın --bg rengini alır; Android uygulamasında Capacitor'ın yerleşik SystemBars'ı simge rengini ayarlar
+let barsFor = null;
+function syncBars(t) {
+  if (barsFor === t) return; barsFor = t;
+  try { const bg = getComputedStyle(root).getPropertyValue('--bg').trim(), m = document.querySelector('meta[name="theme-color"]'); if (m && bg) m.setAttribute('content', bg); } catch (e) {}
+  try { const sb = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.SystemBars; if (sb && sb.setStyle) { const r = sb.setStyle({ style: t === 'lavanta' ? 'LIGHT' : 'DARK' }); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
+}
+SS.applyLook = () => { root.dataset.style = prefs.style; const t = SS.themeId(); root.dataset.theme = t; syncBars(t); };
+// Sistem teması oyun açıkken değişirse 'auto' anında izler
+if (darkMQ) { const onScheme = () => { if (prefs.theme !== 'auto') return; SS.applyLook(); if (document.getElementById('mini')) return; if (window.S) SS.render(); else if (SS.titleScreen) SS.titleScreen(); };
+  if (darkMQ.addEventListener) darkMQ.addEventListener('change', onScheme); else if (darkMQ.addListener) darkMQ.addListener(onScheme); }
 
 /* ---------- ses ---------- */
 let AC = null;
@@ -58,33 +72,55 @@ const dots = (n, max = 3) => `<span class="dots" aria-label="${n}/${max}">${'■
 const dur = m => m >= 60 ? `${Math.floor(m / 60)} sa${m % 60 ? ' ' + (m % 60) + ' dk' : ''}` : `${m} dk`;
 const panel = (title, body, opts = {}) => `<section class="panel ${opts.cls || ''}">${title ? `<div class="ph"><span class="pcode">${opts.code || '//'}</span><h3>${title}</h3>${opts.aside ? `<span class="paside">${opts.aside}</span>` : ''}</div>` : ''}${body}</section>`;
 
+// Bildirimler: alt çubuğun üstünde, en fazla 3 tane. Kötü haber (bad) ekran okuyucuya hemen okunur, en az 4,5 sn kalır, dokununca kapanır.
 SS.toast = (msg, kind = '') => {
   const t = document.getElementById('toast'); if (!t) return;
-  const d = document.createElement('div'); d.className = 'toast ' + kind; d.textContent = msg; t.appendChild(d);
-  setTimeout(() => d.classList.add('out'), 2600); setTimeout(() => d.remove(), 3100);
+  const d = document.createElement('div'); d.className = 'toast ' + kind; d.textContent = msg;
+  const bad = kind === 'bad', life = bad ? 4500 : 2600;
+  if (bad) { d.setAttribute('role', 'alert'); d.addEventListener('click', () => d.remove()); }
+  t.appendChild(d);
+  while (t.children.length > 3) t.firstElementChild.remove();
+  setTimeout(() => d.classList.add('out'), life); setTimeout(() => d.remove(), life + 500);
 };
-SS.modal = (html, cls = '') => {
+// Pencereler: başlık aria-labelledby ile bağlanır, odak pencerede kalır, arka plan (inert) erişilemez, kapanınca odak geri döner.
+// opts.dismiss: boşluğa (karartmaya) dokunmak pencereyi kapatır. Yalnızca bilgi ve onay pencerelerinde açılır;
+// karar, akşam defteri, sonuç, oyun sonu ve reklam pencereleri kapanmaz.
+let modalReturn = null;
+const setInert = on => ['app', 'mini'].forEach(id => { const e = document.getElementById(id); if (e) { if (on) e.setAttribute('inert', ''); else e.removeAttribute('inert'); } });
+SS.modal = (html, cls = '', opts = {}) => {
   const m = document.getElementById('modal');
+  if (m.hidden) { const a = document.activeElement; modalReturn = a && a !== document.body && !m.contains(a) ? { el: a, id: a.id, key: a.dataset && a.dataset.act ? JSON.stringify(a.dataset) : null } : null; }
   m.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
-  m.hidden = false; SS.Art.paintAll(m);
+  const sh = m.firstElementChild, hd = sh.querySelector('h1, h2, h3') || sh.querySelector('.eyebrow');
+  if (hd) { if (!hd.id) hd.id = 'modalTitle'; sh.setAttribute('aria-labelledby', hd.id); }
+  m.dataset.dismiss = opts.dismiss ? '1' : '';
+  m.hidden = false; setInert(true); SS.Art.paintAll(m);
   const f = m.querySelector('[data-autofocus]') || m.querySelector('.sheet button:not([disabled])'); f && f.focus({ preventScroll: true });
 };
-SS.closeModal = () => { const m = document.getElementById('modal'); m.hidden = true; m.innerHTML = ''; };
+SS.closeModal = () => {
+  const m = document.getElementById('modal'), was = !m.hidden; m.hidden = true; m.innerHTML = ''; m.dataset.dismiss = ''; setInert(false);
+  const r = modalReturn; modalReturn = null;
+  // odak, ekran yeniden çizildikten sonra aynı düğmeye (ya da eşine) döner
+  if (was && r) setTimeout(() => { if (!m.hidden) return; let el = r.el && r.el.isConnected ? r.el : null;
+    if (!el && r.id) el = document.getElementById(r.id);
+    if (!el && r.key) el = [...document.querySelectorAll('#app [data-act]')].find(e => JSON.stringify(e.dataset) === r.key);
+    if (el && el.focus) try { el.focus({ preventScroll: true }); } catch (e) {} }, 0);
+};
 
 // Sıralı modal akışı
 const Q = [];
 SS.flow = () => {
   if (SS.notes.length) { const n = SS.notes.splice(0); Q.unshift(() => noteModal(n)); }
   if (SS.pendingStory) {
+    // Giriş hikâyesinden sonra kılavuz artık kendiliğinden açılmaz: koç adımları yol gösterir, kılavuz ☰ menüsünde
     const id = SS.pendingStory; SS.pendingStory = null; Q.push(() => storyModal(id));
-    if (id === 'intro' && !S.guideSeen) { S.guideSeen = true; Q.push(() => guideModal('start', true)); }
   }
   const f = Q.shift();
   if (f) { render(); f(); return; }
   if (S && S.over) { render(); overModal(); return; }
   SS.closeModal(); render();
 };
-function noteModal(notes) { SS.modal(`<p class="eyebrow">Haber</p>${notes.map(n => `<p>${esc(n)}</p>`).join('')}<div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`); }
+function noteModal(notes) { SS.modal(`<p class="eyebrow">Haber</p>${notes.map(n => `<p>${esc(n)}</p>`).join('')}<div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`, '', { dismiss: true }); }
 function storyModal(id) {
   const ch = SS.STORY[id];
   const reacts = SS.crewList().map(c => SS.COMP_STORY[c] && SS.COMP_STORY[c][id] ? `<div class="react">${face(c, 40)}<p><b>${SS.comp(c).name}:</b> ${esc(SS.tx(SS.COMP_STORY[c][id]))}</p></div>` : '').join('');
@@ -111,7 +147,7 @@ function guideModal(sec, first) {
   SS.modal(`<p class="eyebrow">Kılavuz ${first ? '· ilk adımlar' : ''}</p>
     <div class="gnav">${G.map(g => `<button class="chip ${g.id === cur.id ? 'on' : ''}" data-act="guide" data-s="${g.id}">${g.title}</button>`).join('')}</div>
     <h2>${cur.title}</h2><div class="guide">${cur.body}</div>
-    <div class="row">${btn('Rehber', 'rehber', {}, 'ghost')}${i > 0 ? btn('◀ Önceki', 'guide', { s: G[i - 1].id }, 'ghost') : ''}${i < G.length - 1 ? btn('Sonraki ▶', 'guide', { s: G[i + 1].id }, 'ghost') : ''}${btn('Kapat', 'close', {}, 'primary')}</div>`, 'guide-sheet');
+    <div class="row">${btn('Rehber', 'rehber', {}, 'ghost')}${i > 0 ? btn('◀ Önceki', 'guide', { s: G[i - 1].id }, 'ghost') : ''}${i < G.length - 1 ? btn('Sonraki ▶', 'guide', { s: G[i + 1].id }, 'ghost') : ''}${btn('Kapat', 'close', {}, 'primary')}</div>`, 'guide-sheet', { dismiss: true });
 }
 
 /* ---------- üst konsol ---------- */
@@ -139,11 +175,12 @@ function hud() {
 }
 function dock() {
   const atLoc = S.view !== 'map' && S.view !== 'log';
+  const cur = on => on ? ' aria-current="page"' : '', ico = g => `<span class="dk-ico" aria-hidden="true">${g}</span>`;
   return `<nav class="dock">
-    <button class="${S.view === 'map' ? 'on' : ''}" data-act="view" data-v="map"><span class="dk-ico">◎</span><span>Harita</span></button>
-    ${atLoc ? `<button class="on here" data-act="view" data-v="${S.view}"><span class="dk-ico">▣</span><span>${SS.loc(S.view).name}</span></button>` : `<button data-act="view" data-v="${S.loc}"><span class="dk-ico">▣</span><span>${SS.loc(S.loc).name}</span></button>`}
-    <button class="${S.view === 'log' ? 'on' : ''}" data-act="view" data-v="log"><span class="dk-ico">≡</span><span>Defter</span></button>
-    <button class="${S.time >= 1260 ? 'late' : ''}" data-act="goSleep" aria-label="Eve git ve uyu"><span class="dk-ico">☾</span><span>Uyu${S.loc !== 'home' ? ` · ${SS.travelCost('home').min} dk` : ''}</span></button>
+    <button class="${S.view === 'map' ? 'on' : ''}" data-act="view" data-v="map"${cur(S.view === 'map')}>${ico('◎')}<span>Harita</span></button>
+    ${atLoc ? `<button class="on here" data-act="view" data-v="${S.view}" aria-current="page">${ico('▣')}<span>${SS.loc(S.view).name}</span></button>` : `<button data-act="view" data-v="${S.loc}">${ico('▣')}<span>${SS.loc(S.loc).name}</span></button>`}
+    <button class="${S.view === 'log' ? 'on' : ''}" data-act="view" data-v="log"${cur(S.view === 'log')}>${ico('≡')}<span>Defter</span></button>
+    <button class="${S.time >= 1260 ? 'late' : ''}" data-act="goSleep" aria-label="Eve git ve uyu">${ico('☾')}<span>Uyu${S.loc !== 'home' ? ` · ${SS.travelCost('home').min} dk` : ''}</span></button>
   </nav>`;
 }
 
@@ -186,10 +223,10 @@ function mapPanel(p) {
     const cur = Math.min(S.today[g.key] || 0, g.target), show = g.key === 'earned' ? `${fmt(cur)} / ${fmt(g.target)}` : `${cur}/${g.target}`;
     return `<li class="${g.done ? 'done' : ''}"><i></i><span>${g.txt}<small>${show}</small></span><b>+${fmt(g.reward)}</b></li>`; }).join('')}</ul>
     ${S.mile ? (() => { const [c, t] = SS.mileProgress(), dl = S.mile.due - S.day + 1; return `<p class="label">Kilometre taşı · ${S.mile.done ? 'tamamlandı' : `${dl} gün kaldı`}</p><ul class="goals"><li class="${S.mile.done ? 'done' : ''}"><i></i><span>${S.mile.txt}<small>${S.mile.id === 'earn' || S.mile.id === 'debt' ? `${fmt(c)} / ${fmt(t)}` : `${c}/${t}`}</small></span><b>+${fmt(S.mile.reward)}</b></li></ul>`; })() : ''}
-    ${S.event ? `<p class="label">Bugünün olayı · ${S.event.title}</p><p>${esc(S.event.text)}</p>` : ''}<div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`);
+    ${S.event ? `<p class="label">Bugünün olayı · ${S.event.title}</p><p>${esc(S.event.text)}</p>` : ''}<div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`, '', { dismiss: true });
   if (p === 'crew') return SS.modal(`<p class="eyebrow">Hane</p>${SS.crewList().map(id => { const st = SS.crewStatus(id), c = S.crew[id];
     return `<div class="row-item">${face(id, 44)}<div><b>${SS.comp(id).name}</b><em class="st ${st.cls}">${st.label}</em><small>Görev: ${SS.TASKS.find(t => t.id === c.task).name} · bağ ${c.bond}</small></div></div>`; }).join('')}
-    <div class="row">${btn('Eve git', 'go', { to: 'home' }, 'primary')}${btn('Kapat', 'close', {}, 'ghost')}</div>`);
+    <div class="row">${btn('Eve git', 'go', { to: 'home' }, 'primary')}${btn('Kapat', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
 }
 let mapTimer = 0;
 const MAPSKY = SS.Art.makeSky(170);
@@ -306,7 +343,16 @@ function jobsView() {
   for (const b of S.board) { if (b.done || b.type === 'order' || blkOf(b)) continue; const v = SS.jobEst(b).perHour; if (v > bestV) { bestV = v; best = b.id; } }
   const fat = SS.scrapFatigue ? SS.scrapFatigue(false) : 1;
   if (fat < 1) h += `<p class="hint">Bugün ${S.today.dives} dalış yaptın: sıradaki hurda işinin değeri −%${Math.round((1 - fat) * 100)}. Başka işlere geçmenin tam zamanı.</p>`;
-  h += S.board.filter(b => tab === 'all' || b.type === tab || (tab === 'other' && (b.type === 'sort' || b.type === 'order'))).map(b => {
+  const shown = S.board.filter(b => tab === 'all' || b.type === tab || (tab === 'other' && (b.type === 'sort' || b.type === 'order')));
+  // Boş sekme: neden boş olduğunu söyle (lisans yok → Akademi; yoksa sıradaki yenileme saati)
+  if (!shown.length) {
+    const need = ({ deliver: ['deliver'], repair: ['repair'], other: ['sort', 'order'], all: [], hunt: [] })[tab] || [];
+    const miss = need.filter(k => SS.hasLic && !SS.hasLic(k));
+    h += miss.length === need.length && miss.length
+      ? panel('Bu sekmede ilan yok', `<p class="empty">Bu işler lisans ister: ${miss.map(k => SS.LICENSES[k].short).join(', ')}. Akademi'de derslere yazıl; lisansı alınca ilanlar bu panoya düşer.</p><div class="row">${btn('Akademi\'ye git', 'go', { to: 'academy' }, 'ghost sm')}</div>`, { code: 'BOŞ' })
+      : panel('Bu sekmede ilan yok', `<p class="empty">Şu an bu türde ilan kalmadı. Pano ${SS.clock(nextAt)}'de yenilenir; diğer sekmelere de bak.</p>`, { code: 'BOŞ' });
+  }
+  h += shown.map(b => {
     const [code, title, cls] = TT[b.type];
     const blk = blkOf(b), est = SS.jobEst(b);
     const effTxt = b.type === 'order' ? '' : ` · ≈${fmt(est.perHour)}/sa`;
@@ -452,7 +498,7 @@ function krellView() {
     <ul class="kv"><li><span>Alacaklı</span><b>${who}</b></li><li><span>Aylık taksit (28. günlerde)</span><b>${fmt(Math.min(S.loan, m.installment))}</b></li><li><span>Aylık faiz</span><b>%${Math.round(m.interest * 100)}</b></li>
     ${m.deadline ? `<li class="${m.deadline - S.day < 28 ? 'neg' : ''}"><span>Son gün</span><b>${m.deadline}. gün (${Math.max(0, m.deadline - S.day + 1)} gün kaldı)</b></li>` : ''}</ul>` : '<p>Kimseye borcun yok. Hangar\'daki tersaneden yeni gemine geçebilirsin.</p>'}
     ${S.arrears ? `<ul class="kv"><li class="neg"><span>Gecikmiş borç · ${S.strikes}/${m.strikesMax} gecikme</span><b>${fmt(S.arrears)}</b></li></ul>` : ''}
-    <div class="row">${S.arrears ? btn('Gecikmişi öde', 'arrears', {}, 'danger', !S.cash) : ''}${S.loan > 0 ? [100, 500, 1000].map(n => btn('+' + fmt(n), 'pay', { n }, 'ghost sm', S.cash < n)).join('') + btn('Hepsini öde', 'pay', { n: 'all' }, 'sm', !S.cash) : ''}</div>`, { code: 'FN' });
+    <div class="row">${S.arrears ? btn('Gecikmişi öde', 'arrears', {}, 'danger', !S.cash) : ''}${S.loan > 0 ? [100, 500, 1000].map(n => btn('+' + fmt(n), 'pay', { n }, 'ghost sm', S.cash < n)).join('') + btn('Hepsini öde', 'pay', { n: 'all' }, 'ghost danger-t sm', !S.cash) : ''}</div>`, { code: 'FN' });
 }
 
 /* ---------- SEYİR DEFTERİ ---------- */
@@ -487,7 +533,9 @@ function logView() {
   return h;
 }
 function lookControls(withPreview) {
-  return `<p class="label">Renk teması</p><div class="choice three">${SS.THEMES.map(t => `<button class="opt ${prefs.theme === t.id ? 'on' : ''}" data-act="theme" data-t="${t.id}"><span class="sw" data-theme="${t.id}">${t.sw.map(c => `<i style="background:var(${c})"></i>`).join('')}</span><b>${t.name}</b></button>`).join('')}</div>
+  // 'auto' önizlemesi: Lavanta ve Gece'nin renkleri yan yana
+  const sw = t => t.id === 'auto' ? `<span class="sw">${['lavanta', 'gece'].map(id => t.sw.slice(0, 2).map(c => `<i data-theme="${id}" style="background:var(${c})"></i>`).join('')).join('')}</span>` : `<span class="sw" data-theme="${t.id}">${t.sw.map(c => `<i style="background:var(${c})"></i>`).join('')}</span>`;
+  return `<p class="label">Renk teması</p><div class="choice">${SS.THEMES.map(t => `<button class="opt ${prefs.theme === t.id ? 'on' : ''}" data-act="theme" data-t="${t.id}" aria-pressed="${prefs.theme === t.id}">${sw(t)}<b>${t.name}</b></button>`).join('')}</div>
     <p class="label">Görsel stil</p><div class="choice">${[['pixel', 'Piksel', 'Düşük çözünürlük, sınırlı renk paleti, köşeli yazı'], ['vector', 'Vektör', 'Yumuşak kenarlar, akıcı çizgiler, keskin yazı']].map(([k, n, d]) =>
       `<button class="opt ${prefs.style === k ? 'on' : ''}" data-act="style" data-s="${k}">${withPreview ? `<canvas class="prev" data-prev="${k}" width="260" height="150" aria-hidden="true"></canvas>` : ''}<b>${n}</b><small>${d}</small></button>`).join('')}</div>`;
 }
@@ -497,6 +545,8 @@ function toneControls(cur, act) {
     <div class="sample"><small>Örnek · ${t.name.toLowerCase()} anlatım</small><p>“${t.sample}”</p></div><small>${SS.TONE_NOTE}</small>`;
 }
 
+// Depolama çalışmıyorsa her ekranın tepesinde kalıcı uyarı şeridi
+SS.storeBand = () => SS.storageOk === false ? `<div class="store-warn" role="alert">Kayıt yapılamıyor: tarayıcı depolaması kapalı ya da dolu. Sayfayı kapatınca bu oturumdaki ilerleme kaybolur.</div>` : '';
 const VIEWS = { map: mapView, home: homeView, jobs: jobsView, hangar: hangarView, market: marketView, cantina: cantinaView, clinic: clinicView, krell: krellView, log: logView };
 function render() {
   if (!S) return titleScreen();
@@ -504,7 +554,7 @@ function render() {
   if (S.view !== 'map' && S.view !== 'log' && S.view !== S.loc) S.view = 'map';
   const old = document.getElementById('main'), st = old && old.dataset.v === S.view ? old.scrollTop : 0;
   if (SS.tutCheck()) SS.save();
-  app().innerHTML = hud() + coach() + `<main id="main" data-v="${S.view}" class="v-${S.view}">${VIEWS[S.view]()}</main>` + dock();
+  app().innerHTML = SS.storeBand() + hud() + coach() + `<main id="main" data-v="${S.view}" class="v-${S.view}">${VIEWS[S.view]()}</main>` + dock();
   document.getElementById('main').scrollTop = st;
   SS.Art.paintAll(app());
   if (S.view === 'map') startMap(); else clearTimeout(mapTimer);
@@ -668,12 +718,18 @@ const ACT = {
   room: d => { if (SS.buyRoom(d.id)) { SS.sfx('big'); SS.toast(`${SS.ROOMS[d.id].name} kuruldu.`, 'good'); render(); } },
   useInv: d => { const msg = SS.useInv(d.g, d.t); if (msg) { SS.toast(msg, /yok|değil/.test(msg) ? 'bad' : 'good'); render(); } },
   menu: () => SS.modal(`<p class="eyebrow">Menü · ${esc(S.name)} · Gün ${S.day}</p><h2>PELIKAN-OS</h2>
-    <div class="menu-list">${btn('Oyuna dön', 'close', {}, 'primary block')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost block')}${btn('Nasıl oynanır', 'guide', { s: S.view === 'map' ? 'map' : S.view }, 'ghost block')}${btn('Seyir Defteri ve ayarlar', 'view', { v: 'log' }, 'ghost block')}${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'muteMenu', {}, 'ghost block')}${btn('Kaydet ve ana menüye dön', 'toMenu', {}, 'ghost block')}${btn('Yeni oyun başlat', 'askWipe', {}, 'ghost block danger-t')}</div>
-    <small>Oyun her işlemde otomatik kaydedilir. Ana menüden kaldığın yerden devam edebilirsin.</small>`),
+    <div class="menu-list">${btn('Oyuna dön', 'close', {}, 'primary block')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost block')}${btn('Nasıl oynanır', 'guide', { s: S.view === 'map' ? 'map' : S.view }, 'ghost block')}${btn('Seyir Defteri ve ayarlar', 'view', { v: 'log' }, 'ghost block')}${S.tut == null ? btn('Öğreticiyi yeniden başlat', 'restartTut', {}, 'ghost block') : ''}${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'muteMenu', {}, 'ghost block')}${btn('Kaydet ve ana menüye dön', 'toMenu', {}, 'ghost block')}${btn('Yeni oyun başlat', 'askWipe', {}, 'ghost block danger-t')}</div>
+    <small>Oyun her işlemde otomatik kaydedilir. Ana menüden kaldığın yerden devam edebilirsin.</small>`, '', { dismiss: true }),
   muteMenu: () => { prefs.muted = !prefs.muted; savePrefs(); ACT.menu(); },
   toMenu: () => { SS.save(); window.S = null; SS.resetTransient && SS.resetTransient(); Q.length = 0; SS.closeModal(); titleScreen(); },
   roomSel: d => { S.roomSel = d.r; SS.sfx('click'); render(); },
-  skipTut: () => { S.tut = null; SS.toast('Rehber kapatıldı. Kılavuz her zaman ☰ menüsünde.'); render(); },
+  skipTut: d => {
+    if (!d || !d.ok) return SS.modal(`<p class="eyebrow">Öğretici</p><h2>Öğreticiyi geç?</h2><p>İlk günün görev adımları kapanır. İstediğin zaman ☰ menüsünden yeniden başlatabilirsin; kılavuz da orada.</p>
+      <div class="row">${btn('Evet, geç', 'skipTut', { ok: 1 }, 'primary')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
+    S.tut = null; SS.closeModal(); SS.toast('Rehber kapatıldı. Kılavuz her zaman ☰ menüsünde.'); render();
+  },
+  // Öğretici baştan: adımlar bugünden itibaren sayılır, bitiş primi ikinci kez verilmez
+  restartTut: () => { S.tut = 0; S.tutBase = { day: S.day, work: SS.tutWork ? SS.tutWork() : 0 }; S.tutAgain = true; SS.closeModal(); S.view = 'map'; SS.toast('Öğretici yeniden başladı.', 'good'); render(); },
   renameShip: () => { const v = (document.getElementById('shipName').value || '').trim().slice(0, 20); if (!v) return; S.shipNames = S.shipNames || {}; S.shipNames[S.tier] = v; SS.toast(`Geminin adı artık ${v}.`, 'good'); render(); },
   paint: d => { const p = SS.PAINTS.find(x => x.id === d.p); if (!p) return; S.paints = S.paints || {}; const own = SS.paintOwned ? SS.paintOwned(p) : S.paints[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]);
     if (!own) { if (p.unlock) return SS.toast(p.unlock === 'supporter' ? 'Bu boya destekçi paketiyle açılır (Seyir Defteri › Ayarlar).' : 'Bu boya Korsan seti ödülüdür.'); if (!SS.spend(p.price)) return; S.paints[p.id] = true; } S.paint = p.id; SS.sfx('big'); render(); },
@@ -809,14 +865,24 @@ const ACT = {
   train: d => job(SS.COST.train, SS.DUR.train, () => { const lv = S.skills[d.id]; if (lv >= 5 || !SS.spend(trainCost(lv))) return; SS.useJob(SS.COST.train, SS.DUR.train); S.skills[d.id]++; SS.toast(`${SS.SKILLS.find(s => s.id === d.id).name} seviye ${S.skills[d.id]}`, 'good'); SS.sfx('big'); render(); }),
   home: () => { const nh = SS.HOMES[S.home + 1]; if (nh && SS.spend(nh.cost)) { S.home++; SS.mood(15); SS.toast(`${nh.name} artık senin.`, 'good'); SS.sfx('big'); SS.checkAch(); render(); } },
   extra: d => { const x = SS.EXTRAS.find(e => e.id === d.id); if (S.home >= x.needHome && SS.spend(x.cost)) { S.extras[x.id] = true; SS.sfx('big'); render(); } },
-  pay: d => { const n = SS.payLoan(d.n === 'all' ? S.cash : +d.n); if (n) { SS.toast(`${fmt(n)} borç ödendi.`, 'good'); SS.sfx('coin'); } SS.flow(); },
+  pay: d => {
+    // "Hepsini öde" bütün nakdi borca yatırır: önce bu geceki zorunlu ödemeleri gösterip onay ister
+    if (d.n === 'all' && !d.ok) {
+      const req = SS.ledger().filter(i => i.req).reduce((a, i) => a + i.amt, 0), payN = Math.min(S.cash, S.loan), left = S.cash - payN;
+      return SS.modal(`<p class="eyebrow">Borç ödemesi</p><h2>Bütün nakdi öde?</h2>
+        <ul class="kv"><li><span>Ödenecek</span><b>${fmt(payN)}</b></li><li class="${left < req ? 'neg' : ''}"><span>Elinde kalacak</span><b>${fmt(left)}</b></li><li><span>Bu geceki zorunlu ödemeler (tahmini)</span><b>${fmt(req)}</b></li></ul>
+        ${left < req ? '<div class="alert">Bu gece oksijen, kira ve bakım gibi zorunlu ödemelere paran yetmeyebilir; eksik kalan gecikmiş borca yazılır.</div>' : ''}
+        <div class="row">${btn('Evet, hepsini öde', 'pay', { n: 'all', ok: 1 }, 'danger')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
+    }
+    const n = SS.payLoan(d.n === 'all' ? S.cash : +d.n); if (n) { SS.toast(`${fmt(n)} borç ödendi.`, 'good'); SS.sfx('coin'); } SS.flow();
+  },
   arrears: () => { const n = SS.payArrears(); if (n) SS.toast(`Gecikmiş borçtan ${fmt(n)} ödendi.`, 'good'); render(); },
   story: d => storyModal(d.id),
   style: d => { prefs.style = d.s; savePrefs(); SS.sfx('click'); render(); },
   theme: d => { prefs.theme = d.t; savePrefs(); SS.sfx('click'); render(); },
   tone: d => { S.tone = d.t; SS.sfx('click'); render(); },
   mute: () => { prefs.muted = !prefs.muted; savePrefs(); render(); },
-  askWipe: () => SS.modal(`<h2>Yeni oyun?</h2><p>Mevcut kayıt silinir: gün ${S.day}, ${fmt(S.cash)} nakit, ${fmt(S.loan)} borç.</p><div class="row">${btn('Sil ve baştan başla', 'wipe', {}, 'danger')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`),
+  askWipe: () => SS.modal(`<h2>Yeni oyun?</h2><p>Mevcut kayıt silinir: gün ${S.day}, ${fmt(S.cash)} nakit, ${fmt(S.loan)} borç.</p><div class="row">${btn('Sil ve baştan başla', 'wipe', {}, 'danger')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`, '', { dismiss: true }),
   wipe: () => { SS.wipe(); window.S = null; SS.resetTransient && SS.resetTransient(); Q.length = 0; SS.closeModal(); titleScreen(); },
   pickCrew: d => { if (!SS.COMPANIONS.some(c => c.id === d.id)) return; const i = T.crew.indexOf(d.id); if (i >= 0) T.crew.splice(i, 1); else T.crew.push(d.id); titleScreen(); },
   pickDiff: d => { T.diff[+d.i] = +d.j; titleScreen(); },
@@ -849,8 +915,9 @@ function titleScreen() {
   const nameEl = document.getElementById('capName'); if (nameEl) T.name = nameEl.value;
   const sc = document.getElementById('main'), st = sc && sc.classList.contains('title') ? sc.scrollTop : 0;
   const cost = T.crew.reduce((a, id) => a + SS.comp(id).daily, 0);
-  app().innerHTML = `<main class="title" id="main">
-    <div class="row lang-pick" role="group" aria-label="Dil · Language"><span class="muted">Dil · Language</span>${btn('Türkçe', 'lang', { l: 'tr' }, SS.lang() === 'tr' ? 'primary sm' : 'ghost sm')}${btn('English', 'lang', { l: 'en' }, SS.lang() === 'en' ? 'primary sm' : 'ghost sm')}</div>
+  const loadErr = SS.loadError ? `<div class="alert" role="alert"><b>Kayıt okunamadı.</b> ${SS.loadError === 'backup' ? 'Bozuk kayıt silinmedi, yedeği saklandı (space-scrapper-save-v3.bak).' : 'Yedeği de alınamadı.'} Yeni bir oyuna başlayabilirsin.</div>` : '';
+  app().innerHTML = SS.storeBand() + `<main class="title" id="main">${loadErr}
+    <div class="row lang-pick" role="group" aria-label="Dil · Language"><span class="muted">Dil · Language</span>${btn('Türkçe', 'lang', { l: 'tr' }, SS.lang() === 'tr' ? 'primary sm' : 'ghost sm')}${btn('English', 'lang', { l: 'en' }, SS.lang() === 'en' ? 'primary sm' : 'ghost sm').replace('<button ', '<button lang="en" ')}</div>
     <div class="logo"><span class="pcode">PELIKAN-OS · v3</span><canvas id="logoShip" width="180" height="90" aria-hidden="true"></canvas>
       <h1>Space<span>Scrapper</span></h1><p class="muted">Borçlu bir hurdacının istasyondaki hayatı. Kanca at, iş kovala, haneni doyur, gemini büyüt.</p>
       <div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost sm')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost sm')}</div></div>
@@ -906,6 +973,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !document.getElementById('modal').hidden) ACT.close();
 });
 document.addEventListener('keyup', e => { if (SS.Stage.active()) SS.Stage.key(e, false); });
+// Karartmaya dokunmak: yalnızca dismiss işaretli pencereleri kapatır
+document.addEventListener('click', e => { const m = document.getElementById('modal'); if (m && e.target === m && !m.hidden && m.dataset.dismiss === '1') ACT.close(); });
+// Odak tuzağı: pencere açıkken Tab / Shift+Tab pencerenin içinde döner
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Tab') return; const m = document.getElementById('modal'); if (!m || m.hidden) return;
+  const f = [...m.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])')].filter(x => x.getClientRects().length);
+  if (!f.length) { e.preventDefault(); return; }
+  const first = f[0], last = f[f.length - 1], a = document.activeElement;
+  if (!m.contains(a)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  else if (e.shiftKey && a === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && a === last) { e.preventDefault(); first.focus(); }
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden && window.S) { SS.save(); SS.scheduleNotes(); } });
 
 })(window.SS);

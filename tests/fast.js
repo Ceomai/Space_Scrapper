@@ -37,7 +37,7 @@ const GAMES = +process.argv[2] || 100, DAYS = +process.argv[3] || 150;
             () => { SS.refreshStock(); const it = pk(S.stock); it && SS.buyStock(it.key); },
             () => A.sellAll(), () => S.cargo.length && A.sell({ g: 0, n: 'all' }),
             () => A.upgrade({ id: pk(SS.SHIP).id }), () => A.fuel({ n: Math.floor(R() * 80) }),
-            () => A.buyShip({ b: R() < .5 ? '1' : '0' }), () => A.pay({ n: pk([100, 500, 'all']) }), () => S.arrears && A.arrears({}),
+            () => A.buyShip({ b: R() < .5 ? '1' : '0' }), () => A.pay({ n: pk([100, 500, 'all']), ok: 1 }), () => S.arrears && A.arrears({}),
             () => A.home(), () => A.extra({ id: pk(SS.EXTRAS).id }), () => crew.length && A.room({ id: pk(crew) }),
             () => (S.decorStore || []).length && A.place && A.place({ i: Math.floor(R() * 6), s: 0 }),
             () => crew.length && A.task({ id: pk(crew), t: pk(['with', 'work', 'rest']) }), () => crew.length && A.ability({ id: pk(crew) }),

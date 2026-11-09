@@ -4,23 +4,39 @@
    Tema seçicileri [data-theme] ile de çalışır: bir öğeye data-theme="gece" verilirse
    o öğe içinde Gece renkleri geçerli olur (ayarlardaki tema önizleme kareleri böyle çizilir). */
 
+/* ---------- yazı tipleri: yerel woff2 (çevrimdışı çalışır; latin + latin-ext: Türkçe harfler). Lisanslar: fonts/OFL.txt ---------- */
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/chakra-petch-400-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/chakra-petch-400-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/chakra-petch-500-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/chakra-petch-500-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/chakra-petch-600-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/chakra-petch-600-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/chakra-petch-700-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/chakra-petch-700-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'Pixelify Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/pixelify-sans-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'Pixelify Sans';font-style:normal;font-weight:400 700;font-display:swap;src:url(fonts/pixelify-sans-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+@font-face{font-family:'VT323';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/vt323-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF}
+@font-face{font-family:'VT323';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/vt323-latin.woff2) format('woff2');unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD}
+
 /* ---------- temaya bağlı olmayan belirteçler ---------- */
 :root{
   /* yazı aileleri */
-  --font-sans:"Chakra Petch","Segoe UI",sans-serif;
-  --font-sans-ui:"Chakra Petch","Segoe UI",system-ui,sans-serif;
-  --font-pixel:"Pixelify Sans","Courier New",monospace;
+  --font-sans:"Chakra Petch",system-ui,Roboto,"Segoe UI",sans-serif;
+  --font-sans-ui:"Chakra Petch",system-ui,Roboto,"Segoe UI",sans-serif;
+  --font-pixel:"Pixelify Sans",system-ui,Roboto,sans-serif;
   --font-term:"VT323","Courier New",monospace;
   --display:var(--font-sans); --body:var(--font-sans-ui); --mono:var(--font-sans);
 
+  /* yazı ölçeği çarpanı: "Büyük yazı" ayarı (data-big="1") bunu büyütür; bütün --fs-* ve --tx-* boyutları onunla çarpılır */
+  --fs-k:1;
   /* yazı ölçeği (sabit; stile göre değişmez). En küçük boyut 11px. */
-  --fs-2xs:11px; --fs-xs:12px; --fs-sm:13px; --fs-md:14px; --fs-base:15px;
-  --fs-lg:17px; --fs-xl:20px; --fs-2xl:24px; --fs-3xl:28px;
-  --fs-hero:46px;                                   /* başlık ekranı logosu */
-  --fs-glyph:22px; --fs-glyph-lg:44px; --fs-glyph-xl:64px;  /* emoji / simge kareleri */
+  --fs-2xs:calc(11px * var(--fs-k)); --fs-xs:calc(12px * var(--fs-k)); --fs-sm:calc(13px * var(--fs-k)); --fs-md:calc(14px * var(--fs-k)); --fs-base:calc(15px * var(--fs-k));
+  --fs-lg:calc(17px * var(--fs-k)); --fs-xl:calc(20px * var(--fs-k)); --fs-2xl:calc(24px * var(--fs-k)); --fs-3xl:calc(28px * var(--fs-k));
+  --fs-hero:calc(46px * var(--fs-k));                                   /* başlık ekranı logosu */
+  --fs-glyph:calc(22px * var(--fs-k)); --fs-glyph-lg:calc(44px * var(--fs-k)); --fs-glyph-xl:calc(64px * var(--fs-k));  /* emoji / simge kareleri */
   /* ölçek dışı ara boyutlar: mevcut görünümü birebir korumak için (yeni tasarımda ölçek adımlarını tercih et) */
-  --fs-11-5:11.5px; --fs-12-5:12.5px; --fs-13-5:13.5px; --fs-14-5:14.5px;
-  --fs-16:16px; --fs-18:18px; --fs-19:19px; --fs-22:22px; --fs-23:23px;
+  --fs-11-5:calc(11.5px * var(--fs-k)); --fs-12-5:calc(12.5px * var(--fs-k)); --fs-13-5:calc(13.5px * var(--fs-k)); --fs-14-5:calc(14.5px * var(--fs-k));
+  --fs-16:calc(16px * var(--fs-k)); --fs-18:calc(18px * var(--fs-k)); --fs-19:calc(19px * var(--fs-k)); --fs-22:calc(22px * var(--fs-k)); --fs-23:calc(23px * var(--fs-k));
 
   /* stile duyarlı yazı ölçeği: vektörde --fs-* ile aynı, piksel stilde aşağıda büyür */
   --tx-2xs:var(--fs-2xs); --tx-xs:var(--fs-xs); --tx-sm:var(--fs-sm); --tx-md:var(--fs-md); --tx-base:var(--fs-base);
@@ -35,6 +51,9 @@
   /* boşluk ölçeği: 4px taban, yarım adımlar 2px */
   --sp-0-5:2px; --sp-1:4px; --sp-1-5:6px; --sp-2:8px; --sp-2-5:10px; --sp-3:12px; --sp-3-5:14px;
   --sp-4:16px; --sp-5:20px; --sp-6:24px;
+  --toast-lift:68px;              /* bildirimlerin alttan uzaklığı: alt çubuğun (48px + boşluk) üstü */
+  --toast-lift-mini:84px;         /* mini oyunda: alt kontrol düğmelerinin (54px) üstü */
+  --toast-lift-map:132px;         /* haritada: alt çubuk + hızlı düğme şeridinin üstü */
 
   /* köşe yarıçapı ve pah (chamfer) */
   --r-sm:4px; --r-md:6px; --r-lg:8px; --r-pill:999px;
@@ -55,30 +74,35 @@
 }
 
 /* ---------- renk temaları ---------- */
+/* --ctl-border: etkileşimli denetimlerin (hayalet düğme, alt sekme, harita düğümü) çerçevesi; yüzeye karşı en az 3:1.
+   Lavanta: --accent2 ve --warn beyaz yazı / küçük yazı için WCAG AA 4.5:1'e göre koyulaştırıldı. */
 :root,[data-theme="lavanta"]{
-  --bg:#ecebf5; --surface:#fbfaff; --surface2:#f1effa; --ink:#1c1838; --muted:#5d5784; --line:#d3cfe8; --line2:#a9a2d1;
-  --accent:#d92e6a; --accent2:#1594b3; --good:#14834f; --bad:#cc2a43; --warn:#c96f00; --btn-ink:#ffffff; --grid:rgba(28,24,56,.05);
+  --bg:#ecebf5; --surface:#fbfaff; --surface2:#f1effa; --ink:#1c1838; --muted:#5d5784; --line:#d3cfe8; --line2:#a9a2d1; --ctl-border:#8a83b8;
+  --accent:#d92e6a; --accent2:#0e738d; --good:#14834f; --bad:#cc2a43; --warn:#9f5800; --btn-ink:#ffffff; --grid:rgba(28,24,56,.05);
   --en:#e6a100; --hu:#e5642a; --he:#d92e4f; --mo:#1d8fe0; --scrim:rgba(12,8,30,.55);
   --shadow:0 1px 0 var(--line), 0 8px 22px rgba(40,30,90,.08);
   color-scheme:light;
 }
 [data-theme="gece"]{
-  --bg:#0c0a1d; --surface:#15122d; --surface2:#1d1a3e; --ink:#ece8ff; --muted:#a39cd2; --line:#2a2556; --line2:#433c80;
+  --bg:#0c0a1d; --surface:#15122d; --surface2:#1d1a3e; --ink:#ece8ff; --muted:#a39cd2; --line:#2a2556; --line2:#433c80; --ctl-border:#6a62b5;
   --accent:#ff5c97; --accent2:#45d1ee; --good:#3fd68c; --bad:#ff5b70; --warn:#ffb347; --btn-ink:#0c0a1d; --grid:rgba(255,255,255,.035);
   --en:#ffcf3f; --hu:#ff9a55; --he:#ff5a73; --mo:#4fb8ff; --scrim:rgba(3,2,12,.72); --shadow:0 10px 24px rgba(0,0,0,.4);
   color-scheme:dark;
 }
 [data-theme="pas"]{
-  --bg:#100f0c; --surface:#19170f; --surface2:#221f17; --ink:#e8dec2; --muted:#a09676; --line:#35312a; --line2:#51493a;
+  --bg:#100f0c; --surface:#19170f; --surface2:#221f17; --ink:#e8dec2; --muted:#a09676; --line:#35312a; --line2:#51493a; --ctl-border:#7a6f58;
   --accent:#e0a43a; --accent2:#7fc9b8; --good:#9cc15a; --bad:#d8503e; --warn:#e08a2b; --btn-ink:#120f08; --grid:rgba(224,164,58,.045);
   --en:#d8ae45; --hu:#c47a3f; --he:#c2412f; --mo:#6f9c8f; --scrim:rgba(0,0,0,.75); --shadow:0 10px 24px rgba(0,0,0,.45);
   color-scheme:dark;
 }
 
+/* büyük yazı: yazı belirteçleri %15 büyür (zoom yerine; düzen ve dokunma alanları aynı kalır) */
+:root[data-big="1"]{--fs-k:1.15}
+
 /* ---------- piksel stil: yazı aileleri, pah ve stile duyarlı yazı ölçeği ---------- */
 :root[data-style="pixel"]{
   --display:var(--font-pixel); --body:var(--font-term); --mono:var(--font-term); --cut:6px;
-  --tx-2xs:15px; --tx-xs:16px; --tx-sm:17px; --tx-md:18px; --tx-base:20px;
-  --tx-lg:21px; --tx-xl:26px; --tx-2xl:30px; --tx-3xl:30px; --tx-hero:42px;
-  --tx-caps:15px; --tx-label:16px; --tx-note:17px; --tx-pay:22px; --tx-h3:19px;
+  --tx-2xs:calc(15px * var(--fs-k)); --tx-xs:calc(16px * var(--fs-k)); --tx-sm:calc(17px * var(--fs-k)); --tx-md:calc(18px * var(--fs-k)); --tx-base:calc(20px * var(--fs-k));
+  --tx-lg:calc(21px * var(--fs-k)); --tx-xl:calc(26px * var(--fs-k)); --tx-2xl:calc(30px * var(--fs-k)); --tx-3xl:calc(30px * var(--fs-k)); --tx-hero:calc(42px * var(--fs-k));
+  --tx-caps:calc(15px * var(--fs-k)); --tx-label:calc(16px * var(--fs-k)); --tx-note:calc(17px * var(--fs-k)); --tx-pay:calc(22px * var(--fs-k)); --tx-h3:calc(19px * var(--fs-k));
 }

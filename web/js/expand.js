@@ -379,7 +379,7 @@ let SR = [4, 2, 3];
 function slotView(msg) {
   CUR = slotView;
   SS.modal(`${casHead('Nebula Slotu', `Üç aynı: ${SYM.map((s, i) => `${s}×${TRIPLE[i]}`).join(' ')}. İki aynı: bahsin ×${String(PAIR).replace('.', ',')}'u geri gelir.`)}<h2>Nebula Slotu</h2>
-    <div class="slot">${SR.map((s, i) => `<span id="sr${i}">${SYM[s]}</span>`).join('')}</div>
+    <div class="slot-reels">${SR.map((s, i) => `<span id="sr${i}">${SYM[s]}</span>`).join('')}</div>
     <p class="cas-msg">${msg || '&nbsp;'}</p>${betRow()}
     <div class="row">${btn(`Kolu çek · ${fmt(bet())}`, 'slotPull', {}, 'primary', BUSY || S.cash < bet() || !!casBlock())}</div>${endRow()}`);
 }
@@ -451,20 +451,35 @@ Object.assign(ACT, {
    Yerel uygulama reklam sağlarsa (SS_NATIVE.ads) gerçek reklam gösterilir; yoksa kısa bir sponsor arası yer tutucusu.
    ========================================================= */
 SS.adsLeft = () => window.S ? Math.max(0, SS.AD.perDay - ((S.today && S.today.ads) || 0)) : 0;
-SS.showRewardedAd = done => {
+// done: reklam bitti (ödül verilir) · cancel: reklam gösterilmedi ya da yarıda bırakıldı (ödül yok; müzik vb. geri gelir)
+// Yerel uygulama: 10 sn içinde reklam başlamazsa (SS_AD_STARTED gelmezse) "Reklam şu an yok" denir.
+SS.AD_WAIT = 10000;
+let adCancel = null;
+SS.showRewardedAd = (done, cancel) => {
   const n = SS.native && SS.native();
-  if (n && n.ads) { SS._adDone = done; n.post({ type: 'ad' }); return; }
-  const T = 5; let t = 0;
+  if (n && n.ads) {
+    SS._adDone = done; SS._adCancel = cancel || null; n.post({ type: 'ad' });
+    clearTimeout(SS._adWait);
+    SS._adWait = setTimeout(() => { if (SS._adDone !== done) return; SS._adDone = null; const c = SS._adCancel; SS._adCancel = null; SS.toast('Reklam şu an yok. Biraz sonra yeniden dene.', 'bad'); c && c(); }, SS.AD_WAIT);
+    return;
+  }
+  const T = 5; let t = 0, iv = 0;
+  adCancel = () => { clearInterval(iv); adCancel = null; SS.closeModal(); SS.render(); cancel && cancel(); };
   SS.modal(`<p class="eyebrow">Sponsor arası</p><h2>Enerji yükleniyor…</h2><div class="ad-box"><b>Space Scrapper</b><small>Reklam alanı</small></div>
-    <div class="track"><i id="adBar" style="width:0%"></i></div><p class="muted" id="adTxt">${T} saniye</p>`);
-  const iv = setInterval(() => {
+    <div class="track"><i id="adBar" style="width:0%"></i></div><p class="muted" id="adTxt">${T} saniye</p>
+    <div class="row">${btn('Vazgeç', 'adCancel', {}, 'ghost sm')}</div>`);
+  iv = setInterval(() => {
     t++; const bar = document.getElementById('adBar'), tx = document.getElementById('adTxt');
-    if (!bar) { clearInterval(iv); return; }
+    // pencere başka yoldan kapandıysa (geri tuşu, Esc) reklam iptal sayılır
+    if (!bar) { clearInterval(iv); adCancel = null; cancel && cancel(); return; }
     bar.style.width = (t / T * 100) + '%'; tx.textContent = t >= T ? 'Tamam' : `${T - t} saniye`;
-    if (t >= T) { clearInterval(iv); SS.closeModal(); done(); }
+    if (t >= T) { clearInterval(iv); adCancel = null; SS.closeModal(); done(); }
   }, 1000);
 };
-window.SS_AD_DONE = ok => { const d = SS._adDone; SS._adDone = null; if (ok && d) d(); else if (!ok) SS.toast('Reklam tamamlanmadı; enerji verilmedi.', 'bad'); };
+ACT.adCancel = () => { if (adCancel) adCancel(); else SS.closeModal(); };
+// yerel uygulama reklamı göstermeye başlayınca bunu çağırır: 10 sn bekleme süresi durur
+window.SS_AD_STARTED = () => { clearTimeout(SS._adWait); };
+window.SS_AD_DONE = ok => { clearTimeout(SS._adWait); const d = SS._adDone, c = SS._adCancel; SS._adDone = null; SS._adCancel = null; if (ok && d) d(); else { if (!ok && d) SS.toast('Reklam tamamlanmadı; enerji verilmedi.', 'bad'); if (d) c && c(); } };
 ACT.adEnergy = () => {
   if (SS.adsLeft() <= 0) return SS.toast('Bugünkü reklam hakların bitti. Yarın yenilenir.', 'bad');
   if (S.energy >= SS.maxEnergy()) return SS.toast('Enerjin zaten dolu.');
@@ -937,7 +952,7 @@ if (MOD) {
    ========================================================= */
 if (SS.TUTORIAL && SS.TUTORIAL.length === 5) {
   SS.TUTORIAL[1] = { text: { easy: 'Şimdilik elimizde tek lisans var: hurda avı. Hurda Sözleşmesi\'ni kabul et; kancayı at, hedefleri topla.', hard: 'Lisansın yalnızca hurdaya yetiyor. Bir hurda sözleşmesi al ve bitir.' },
-    done: () => (S.stats.repair + S.stats.deliver + S.stats.sort + (S.stats.hunts || 0) + S.stats.runs) > 0 };
+    done: () => SS.tutWork() > ((S.tutBase && S.tutBase.work) || 0) };
   SS.TUTORIAL.splice(3, 0, { to: 'academy', text: { easy: 'Akademi\'ye uğrayalım. Teslimat, tamir ve diğer işler için lisans lazım. Derslere orada yazılırız.', hard: 'Akademi\'ye git. Diğer işler için lisans gerekiyor.' },
     done: () => S.loc === 'academy' });
 }
@@ -945,7 +960,7 @@ if (SS.GUIDE) SS.GUIDE.push(
   { id: 'academy', title: 'Akademi ve lisanslar', body: `<p>Kariyerine yalnızca <b>hurda sözleşmeleriyle</b> başlarsın; ilk lisansın sadece Asteroit Kuşağı ve Gemi Mezarlığı'nı, basit hurdaları kapsar.</p>
 <p><b>Lisanslar:</b> Kargo Pilotu (teslimat), Ayrıştırma, Devre Teknisyeni (tamir), Ticaret Ruhsatı (siparişler), Derin Tarama (kristal, uydu, kayıp eserler, Gaz Devi) ve Tehlikeli Bölge (Korsan Sektörü, Kayıp Yıldız).</p>
 <p>Her lisans birkaç dersten oluşur. Günde bir ders alınır; son ders 3 soruluk bir sınavdır, 2'sini bilmen gerekir. Beceri eğitimleri de artık Akademi'de.</p>` },
-  { id: 'casino', title: 'Nebula Kumarhanesi', body: `<p>14:00'te açılır. Yüksek mi alçak mı, Yıldız Çarkı, Kara Delik Zarı, Meteor Yarışı ve Nebula Slotu. Her el ${CAS.mins} dakika ve ${CAS.en} enerji; günde en fazla ${CAS.limit} el.</p>
+  { id: 'casino', title: 'Nebula Kumarhanesi', body: `<p>${SS.openLabel ? SS.openLabel('casino') : '16:00–02:00'} arası açık. Yüksek mi alçak mı, Yıldız Çarkı, Kara Delik Zarı, Meteor Yarışı ve Nebula Slotu. Her el ${CAS.mins} dakika ve ${CAS.en} enerji; günde en fazla ${CAS.limit} el.</p>
 <p>Kasa uzun vadede kazanır. Kazanç moral verir, kayıp moral alır. 25 elde Gümüş üyelik daha yüksek bahis açar. Kumar kazancı Rex yarışına sayılmaz.</p>` },
   { id: 'trials', title: 'Sınamalar', body: `<p>Her 4–10 günde bir (tehlike ayarına ve şansa bağlı) istasyonda bir sınama çıkar: korsan haracı, meteor yağmuru, virüs, salgın ya da denetim.</p>
 <p>Ya istenen parayı ödersin ya da kısa bir mini oyunla mücadele edersin. Kazanırsan hiçbir şey kaybetmezsin, küçük bir ödül alırsın; kaybedersen daha fazla para, bir dekor, kargo, sağlık ya da moral gider. Gün biterken karar vermediysen kaybetmiş sayılırsın.</p>

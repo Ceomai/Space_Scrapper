@@ -183,7 +183,7 @@ SS.rehberHtml = () => `<div class="rehber">
   ${CATS.map(([id]) => BUILD[id]()).join('')}</div>`;
 SS.rehberModal = cat => {
   SS.modal(`<p class="eyebrow">Rehber · her yerden açılır</p><h2>Ne, nerede, ne işe yarar?</h2>${SS.rehberHtml()}
-    <div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost')}${btn('Kapat', 'close', {}, 'primary')}</div>`, 'guide-sheet rehber-sheet');
+    <div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost')}${btn('Kapat', 'close', {}, 'primary')}</div>`, 'guide-sheet rehber-sheet', { dismiss: true });
   if (cat) ACT.rhGo({ s: cat });
 };
 ACT.rehber = d => SS.rehberModal(d && d.s);

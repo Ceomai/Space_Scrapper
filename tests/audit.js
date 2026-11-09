@@ -53,8 +53,12 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
   });
   await run('Kurcalanmış kayıtta uzun HTML ad (200 karakter)', async p => {
     await boot(p, 'x');
-    await p.evaluate(() => { S.name = '<img id=xss src=x onerror="window.__x=1">'.repeat(5); S.shipNames = { 0: '<i id=xss>gemi</i>' }; SS.save(); });
-    await p.reload(); await p.waitForTimeout(200); await p.click('[data-act=cont]'); await p.evaluate(() => SS.closeModal());
+    await p.evaluate(() => { S.name = '<img id=xss src=x onerror="window.__x=1">'.repeat(5); S.shipNames = { 0: '<i id=xss>gemi</i>' }; SS.save(); return localStorage.getItem('space-scrapper-save-v3'); }).then(async raw => {
+      // headless Chromium file:// kökeninde localStorage yenilemede ara sıra boş gelir (oyun hatası değil): kayıt yoksa yeniden yaz
+      await p.reload(); await p.waitForTimeout(200);
+      if (!(await p.$('[data-act=cont]'))) { await p.evaluate(r => localStorage.setItem('space-scrapper-save-v3', r), raw); await p.reload(); await p.waitForTimeout(200); }
+    });
+    await p.click('[data-act=cont]'); await p.evaluate(() => SS.closeModal());
     await sweep(p); await sleepDays(p, 1); await p.waitForTimeout(100);
     const r = await p.evaluate(() => ({ inj: !!document.querySelector('#xss'), ran: !!window.__x }));
     if (r.inj || r.ran) throw new Error(`HTML enjeksiyonu: eleman=${r.inj} betik=${r.ran}`);

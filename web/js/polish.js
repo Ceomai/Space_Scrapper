@@ -232,8 +232,14 @@ SS.luckyNight = () => !!window.S && S.day % 7 === 5;
 /* =========================================================
    ARAYÜZ · 1 uyku kısayolu
    ========================================================= */
-ACT.goSleep = () => {
+// 18:00'den önce basılırsa önce sorar (yanlışlıkla erken uyumayı önler)
+SS.EARLY_SLEEP = 18 * 60;
+ACT.goSleep = d => {
   if (S.over) return SS.flow();
+  if (S.time < SS.EARLY_SLEEP && !(d && d.ok)) return SS.modal(`<p class="eyebrow">Erken uyku · ${SS.clock()}</p><h2>Şimdiden uyumak mı?</h2>
+    <p>Daha ${dur(SS.EARLY_SLEEP - S.time)} var, erken uyumak istediğine emin misin?</p>
+    <div class="row">${btn('Devam et', 'goSleep', { ok: 1 }, 'primary')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
+  SS.closeModal();
   if (S.loc !== 'home') { ACT.go({ to: 'home' }); if (S.loc !== 'home') return; }
   S.view = 'home'; render(); ACT.ledger();
 };
@@ -251,7 +257,7 @@ function routeModal() {
     <p class="muted">Sırayla dokun; durak eklenir, tekrar dokununca çıkar. Plan ekranın üstündeki şeritte "Sıradaki" olarak görünür.</p>
     <div class="gnav">${SS.LOCS.filter(l => l.id !== S.loc).map(l => { const k = RT.indexOf(l.id); return `<button class="chip ${k >= 0 ? 'on' : ''}" data-act="routeTog" data-id="${l.id}">${k >= 0 ? `${k + 1}. ` : ''}${l.name}</button>`; }).join('')}</div>
     ${RT.length ? `<ul class="kv">${rc.legs.map((g, i) => `<li class="${g.open ? '' : 'neg'}"><span>${i + 1}. ${SS.loc(g.id).name}${g.open ? '' : ' · varışta kapalı'}</span><b>${g.min} dk · ${g.en} en</b></li>`).join('')}<li><span>Toplam yol</span><b>${dur(rc.min)} · ${rc.en} enerji</b></li></ul>` : ''}
-    <div class="row">${btn(RT.length ? 'Rotayı başlat' : 'Durak seç', 'routeGo', {}, 'primary', !RT.length)}${S.route && S.route.length ? btn('Rotayı sil', 'routeClear', {}, 'ghost') : ''}${btn('Kapat', 'close', {}, 'ghost')}</div>`);
+    <div class="row">${btn(RT.length ? 'Rotayı başlat' : 'Durak seç', 'routeGo', {}, 'primary', !RT.length)}${S.route && S.route.length ? btn('Rotayı sil', 'routeClear', {}, 'ghost') : ''}${btn('Kapat', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
 }
 ACT.route = () => { RT = (S.route || []).slice(); routeModal(); };
 ACT.routeTog = d => { if (!RT) RT = []; const k = RT.indexOf(d.id); if (k >= 0) RT.splice(k, 1); else if (RT.length < 5) RT.push(d.id); routeModal(); };
@@ -362,7 +368,7 @@ ACT.debtCal = () => {
     <li><span>Her gece: oksijen ve su</span><b>${fmt(oxy)}</b></li></ul>
     <p class="label">Önümüzdeki 28 gün · zorunlu ödemeler</p>
     ${up.length ? `<ul class="kv cal">${up.map(x => `<li><span><b>${x.day === S.day ? 'Bu gece' : x.day === S.day + 1 ? 'Yarın gece' : `${x.day}. gün`}</b><small>${x.items.map(i => esc(i.name)).join(' · ')}</small></span><b>${fmt(x.items.reduce((a, i) => a + i.amt, 0))}</b></li>`).join('')}</ul>` : '<p class="empty">Yakında zorunlu ödeme yok.</p>'}
-    <div class="row">${S.arrears ? btn('Gecikmiş borcu öde', 'arrears', {}, 'ghost') : ''}${btn('Tamam', 'close', {}, 'primary')}</div>`);
+    <div class="row">${S.arrears ? btn('Gecikmiş borcu öde', 'arrears', {}, 'ghost') : ''}${btn('Tamam', 'close', {}, 'primary')}</div>`, '', { dismiss: true });
 };
 
 /* =========================================================
@@ -392,7 +398,7 @@ SS.a11yPanel = () => {
     ${tog('autoSell', 'Otomatik satış', 'Dalıştan önce ambar %60\'tan doluysa eser ve sipariş eşyaları dışındakileri %5 aracı payıyla satar.')}
     ${tog('slow', 'Yavaş mini oyunlar', 'Mini oyunlar %80 hızda akar (süreler de aynı oranda uzar).')}
     ${tog('big', 'Büyük yazı', 'Menü ve panellerde yazılar büyür.')}
-    ${tog('haptic', 'Titreşim', 'Önemli anlarda telefon titrer.')}
+    ${'vibrate' in navigator || SS.native() ? tog('haptic', 'Titreşim', 'Önemli anlarda telefon titrer.') : ''}
     ${tog('left', 'Solak düzeni', 'Alt çubuk, düğme sıraları ve mini oyun kontrolleri ters sıralanır.')}
   </div>`, { code: 'KL' });
 };

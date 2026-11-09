@@ -1,8 +1,8 @@
 // Space Scrapper service worker: oyunu çevrimdışı açılabilir yapar.
 // Strateji: kendi dosyalarımız için önce ağ (her açılışta en yeni sürüm), ağ yoksa önbellek;
-// yazı tipleri için önbellek önce, arkada yenileme. Sürüm adı yayın sırasında commit kimliğiyle değişir.
+// yazı tipleri artık yerel (fonts/, önbelleğe baştan alınır); eski Google Fonts adresleri için önbellek önce, arkada yenileme. Sürüm adı yayın sırasında commit kimliğiyle değişir.
 const VERSION = 'ss-__BUILD__';
-const PRECACHE = /*FILES*/['./', './index.html', './theme.css', './manifest.webmanifest']/*FILES*/;
+const PRECACHE = /*FILES*/['./', './index.html', './theme.css', './manifest.webmanifest', './fonts/chakra-petch-400-latin-ext.woff2', './fonts/chakra-petch-400-latin.woff2', './fonts/chakra-petch-500-latin-ext.woff2', './fonts/chakra-petch-500-latin.woff2', './fonts/chakra-petch-600-latin-ext.woff2', './fonts/chakra-petch-600-latin.woff2', './fonts/chakra-petch-700-latin-ext.woff2', './fonts/chakra-petch-700-latin.woff2', './fonts/pixelify-sans-latin-ext.woff2', './fonts/pixelify-sans-latin.woff2', './fonts/vt323-latin-ext.woff2', './fonts/vt323-latin.woff2']/*FILES*/;
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(VERSION).then(c => Promise.all(PRECACHE.map(u => c.add(u).catch(() => {})))).then(() => self.skipWaiting()));

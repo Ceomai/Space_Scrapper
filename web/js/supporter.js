@@ -38,7 +38,7 @@ SS.supporterPrice = () => (product && product.pricing && product.pricing.price) 
 /* ---------- avantajlar ---------- */
 // 1) reklamsız enerji: reklam ekranı atlanır, günlük hak sınırı aynı kalır
 const _show = SS.showRewardedAd;
-if (_show) SS.showRewardedAd = done => owned ? done() : _show(done);
+if (_show) SS.showRewardedAd = (done, cancel) => owned ? done() : _show(done, cancel);
 // 2) özel boyalar
 SS.PAINTS.push(
   { id: 'destekci', name: 'Destekçi altını', price: 0, hull: ['#f5c542', '#8a5a12', '#fff4cf'], unlock: 'supporter' },
@@ -62,7 +62,7 @@ if (_decal) SS.drawDecal = (c, id, x, y, s) => {
 /* ---------- arayüz: Seyir Defteri › Ayarlar ---------- */
 SS.supporterPanel = () => {
   const app = SS.isApp && SS.isApp(), price = SS.supporterPrice();
-  const perks = '<ul class="perks"><li>Enerji hakkı reklam izlemeden anında gelir (günde 3 hak aynen geçerli)</li><li>2 özel gemi boyası: Destekçi altını, Nebula hologramı</li><li>2 özel çıkartma: Destekçi tacı, Pıtırcık patisi</li><li>Oyunun geliştirilmesine destek olursun</li></ul>';
+  const perks = '<ul class="sup-perks"><li>Enerji hakkı reklam izlemeden anında gelir (günde 3 hak aynen geçerli)</li><li>2 özel gemi boyası: Destekçi altını, Nebula hologramı</li><li>2 özel çıkartma: Destekçi tacı, Pıtırcık patisi</li><li>Oyunun geliştirilmesine destek olursun</li></ul>';
   const body = owned ? `<p><b>Destekçisin, teşekkürler!</b> Bütün avantajlar açık.</p>${perks}`
     : app ? `${perks}<div class="row">${btn(price ? `Satın al · ${price}` : 'Satın al', 'buySupporter', {}, 'primary', busy)}${btn('Satın alımı geri yükle', 'restoreSupporter', {}, 'ghost sm')}</div><small class="muted">Tek seferlik ödeme; abonelik değildir. Oyunun tamamı paket olmadan da oynanabilir.</small>`
     : `${perks}<p class="muted">Destekçi paketi Space Scrapper'ın Android uygulamasında satın alınabilir.</p>`;

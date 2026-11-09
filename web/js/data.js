@@ -21,7 +21,9 @@ SS.TONE_NOTE = 'Ton sadece yazıları değiştirir: karakter konuşmaları, olay
 // Renk temaları: arayüz renkleri (theme.css) + oyun sahnelerinin paleti.
 // sw: ayarlardaki önizleme karelerinin gösterdiği belirteçler; değerler doğrudan theme.css'ten okunur.
 SS.THEME_SW = ['--bg', '--accent', '--accent2'];
+// 'auto': telefonun açık/koyu ayarını izler (açık → Lavanta, koyu → Gece); yeni oyuncuların varsayılanı
 SS.THEMES = [
+  { id: 'auto',    name: 'Otomatik (sistem)', pal: 'bright', sw: SS.THEME_SW },
   { id: 'lavanta', name: 'Lavanta', pal: 'bright', sw: SS.THEME_SW },
   { id: 'gece',    name: 'Gece',    pal: 'bright', sw: SS.THEME_SW },
   { id: 'pas',     name: 'Pas',     pal: 'rust',   sw: SS.THEME_SW },
