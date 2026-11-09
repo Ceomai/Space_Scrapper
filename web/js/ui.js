@@ -359,8 +359,8 @@ function hangarView() {
   h += hero;
   h += panel('Boya atölyesi', `<label class="field" for="shipName"><span>Geminin adı</span><input id="shipName" maxlength="20" value="${esc(SS.shipName())}" autocomplete="off"></label>
     <div class="row">${btn('Adı kaydet', 'renameShip', {}, 'ghost sm')}</div>
-    <div class="paints">${SS.PAINTS.map(p => { const own = (S.paints || {})[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]); const on = S.paint === p.id;
-      return `<button class="paint ${on ? 'on' : ''}" data-act="paint" data-p="${p.id}" ${!own && S.cash < p.price ? 'disabled' : ''}><i style="background:${p.hull ? p.hull[0] : '#ff8a3d'}"></i><span>${p.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : p.unlock ? 'Korsan seti ödülü' : fmt(p.price)}</small></button>`; }).join('')}</div>${SS.decalHtml ? SS.decalHtml() : ''}`, { code: 'BY' });
+    <div class="paints">${SS.PAINTS.map(p => { const own = SS.paintOwned ? SS.paintOwned(p) : (S.paints || {})[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]); const on = S.paint === p.id;
+      return `<button class="paint ${on ? 'on' : ''}" data-act="paint" data-p="${p.id}" ${!own && (p.unlock || S.cash < p.price) ? 'disabled' : ''}><i style="background:${p.hull ? p.hull[0] : '#ff8a3d'}"></i><span>${p.name}</span><small>${on ? 'Kullanılıyor' : own ? 'Seç' : p.unlock === 'supporter' ? 'Destekçi paketi' : p.unlock ? 'Korsan seti ödülü' : fmt(p.price)}</small></button>`; }).join('')}</div>${SS.decalHtml ? SS.decalHtml() : ''}`, { code: 'BY' });
   const nx = SS.nextShip();
   if (!nx) h += panel('Tersane', '<p>Demir Balina\'dan büyüğü yok. Rıhtımın en gösterişli gemisi senin.</p>', { code: 'TR' });
   else {
@@ -675,8 +675,8 @@ const ACT = {
   roomSel: d => { S.roomSel = d.r; SS.sfx('click'); render(); },
   skipTut: () => { S.tut = null; SS.toast('Rehber kapatıldı. Kılavuz her zaman ☰ menüsünde.'); render(); },
   renameShip: () => { const v = (document.getElementById('shipName').value || '').trim().slice(0, 20); if (!v) return; S.shipNames = S.shipNames || {}; S.shipNames[S.tier] = v; SS.toast(`Geminin adı artık ${v}.`, 'good'); render(); },
-  paint: d => { const p = SS.PAINTS.find(x => x.id === d.p); if (!p) return; S.paints = S.paints || {}; const own = S.paints[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]);
-    if (!own) { if (!SS.spend(p.price)) return; S.paints[p.id] = true; } S.paint = p.id; SS.sfx('big'); render(); },
+  paint: d => { const p = SS.PAINTS.find(x => x.id === d.p); if (!p) return; S.paints = S.paints || {}; const own = SS.paintOwned ? SS.paintOwned(p) : S.paints[p.id] || (p.unlock && (S.setsDone || {})[p.unlock]);
+    if (!own) { if (p.unlock) return SS.toast(p.unlock === 'supporter' ? 'Bu boya destekçi paketiyle açılır (Seyir Defteri › Ayarlar).' : 'Bu boya Korsan seti ödülüdür.'); if (!SS.spend(p.price)) return; S.paints[p.id] = true; } S.paint = p.id; SS.sfx('big'); render(); },
   tint: d => { const t = SS.HOME_TINTS.find(x => x.id === d.t); if (!t) return; S.tintsOwned = S.tintsOwned || {}; if (t.price && !S.tintsOwned[t.id]) { if (!SS.spend(t.price)) return; S.tintsOwned[t.id] = true; } S.homeTint = t.id; SS.sfx('click'); render(); },
   askNG: () => SS.modal(`<h2>Yeni Oyun+ başlasın mı?</h2><p>Mevcut hayatın burada kapanır. Albüm, unvanlar, boyalar ve başarımlar korunur; para, gemi ve ev sıfırlanır.</p><div class="row">${btn('Başlat', 'doNG', {}, 'primary')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`),
   doNG: () => { SS.newGamePlus(); SS.save(); SS.closeModal(); SS.flow(); },
@@ -856,6 +856,8 @@ function titleScreen() {
       <div class="row">${btn('Nasıl oynanır', 'guide', { s: 'start' }, 'ghost sm')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost sm')}</div></div>
     ${save ? panel(`${esc(save.name)} · Gün ${save.day}`, `<p class="muted">${SS.SHIPS[save.tier].name} · nakit ${fmt(save.cash)} · borç ${fmt(save.loan)}</p>${btn('Devam et', 'cont', {}, 'primary block')}`, { code: 'KYT' }) : ''}
     ${panel('Kaptan', `<label class="field" for="capName"><span>Adın</span><input id="capName" maxlength="18" placeholder="Kaptan" autocomplete="off" value="${esc(T.name)}"></label>`, { code: '01' })}
+    <div class="row start-row">${btn(save ? 'Yeni oyuna başla (kaydın silinir)' : 'Hayata başla', 'start', {}, 'primary block', !T.crew.length)}</div>
+    <details class="setup-more" ${T.more ? 'open' : ''}><summary>Ayarları değiştir <small>(isteğe bağlı · yol arkadaşları, zorluk, anlatım, görünüm)</small></summary>
     ${panel('Yol arkadaşları', `<p class="muted">Birini, ikisini ya da üçünü seç. Daha çok arkadaş daha çok iş gücü ve yardım, ama daha çok masraf ve sorumluluk demek. İlk seçtiğin anlatıcı olur.</p>
       <div class="crew-pick">${SS.COMPANIONS.map(cp => { const on = T.crew.includes(cp.id), ord = T.crew.indexOf(cp.id);
         return `<button class="opt crew-opt ${on ? 'on' : ''}" data-act="pickCrew" data-id="${cp.id}" aria-pressed="${on}">
@@ -866,7 +868,7 @@ function titleScreen() {
         `<button class="dopt ${T.diff[i] === j ? 'on' : ''}" data-act="pickDiff" data-i="${i}" data-j="${j}" aria-pressed="${T.diff[i] === j}">${l}</button>`).join('')}</div></div>`).join('')}</div>${rulesHtml()}`, { code: '03' })}
     ${panel('Anlatım', toneControls(T.tone, 'pickTone'), { code: '04' })}
     ${panel('Görünüm', `<p class="muted">Oyun sırasında Seyir Defteri'nden de değiştirebilirsin.</p>${lookControls(true)}`, { code: '05' })}
-    <div class="row">${btn(save ? 'Yeni oyuna başla (kaydın silinir)' : 'Hayata başla', 'start', {}, 'primary block', !T.crew.length)}</div>
+    </details>
   </main>`;
   document.getElementById('main').scrollTop = st;
   SS.Art.paintAll(app());
@@ -877,6 +879,7 @@ function titleScreen() {
   SS.Art.paint(ls, 180, 90, (c, P) => { SS.Art.ship(c, 90, 52, 1.3, 0, P, { flame: true }); }, .5);
 }
 SS.titleScreen = titleScreen;
+document.addEventListener('toggle', e => { if (e.target && e.target.classList && e.target.classList.contains('setup-more')) T.more = e.target.open; }, true);
 ACT.lang = d => { if (d.l === 'tr' || d.l === 'en') { SS.save && window.S && SS.save(); SS.setLang(d.l); } };
 
 /* ---------- dinleyiciler ---------- */

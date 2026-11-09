@@ -5,6 +5,11 @@ window.SS = window.SS || {};
   const KEY = 'space-scrapper-lang';
   let lang = null;
   try { lang = localStorage.getItem(KEY); } catch (e) {}
+  // Play Store uygulamasında ilk açılış: telefon dili Türkçe değilse İngilizce başla (oyuncu başlıktan değiştirebilir)
+  try {
+    const native = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+    if (!lang && native) lang = /^tr\b/i.test(navigator.language || '') ? 'tr' : 'en';
+  } catch (e) {}
   SS.lang = () => lang === 'en' ? 'en' : 'tr';
   SS.langChosen = () => lang === 'en' || lang === 'tr';
   SS.setLang = l => { try { localStorage.setItem(KEY, l); } catch (e) {} if (l !== lang) { lang = l; location.reload(); } };

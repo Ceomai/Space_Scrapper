@@ -18,6 +18,31 @@ Bu klasör Play Console'da istenen her şeyi içerir. Uygulama paketi (`.aab`) G
 - Uygulama ikonu (512×512): `web/icons/icon-512.png`
 - Yeniden üretmek için: `node tools/store.js tr` ve `node tools/store.js en`
 
+## Kısa tanıtım videoları (TikTok / Reels / Shorts)
+
+`video/` klasöründe 1080×1920, 30 fps, 12–14 saniyelik dikey klipler (Türkçe `tr-*`, İngilizce `en-*`):
+
+| Klip | Ne gösteriyor |
+|---|---|
+| `*-rex.mp4` | Rakip Rex aynı alanda kanca atıyor: "Kim daha çok kapacak?" |
+| `*-fatura.mp4` | Akşam defteri: kira mı, yemek mi, ısıtma mı? |
+| `*-kombo.mp4` | Art arda değerli yakalama, büyüyen kombo |
+
+Yeniden üretmek için: `node tools/clips.js tr` ve `node tools/clips.js en`.
+Paylaşım önerisi: haftada 2–3 klip, ilk 1 saniyede soru (altyazıdaki gibi), açıklamada web bağlantısı ve Play Store bağlantısı.
+Play Console mağaza girişine YouTube'a yüklenmiş bir tanıtım videosu bağlantısı da eklenebilir.
+
+## Destekçi paketi (uygulama içi satın alma)
+
+- Play Console › Para kazanma › Ürünler › **Uygulama içi ürünler** › Ürün oluştur
+  - Ürün kimliği: **`supporter_pack`** (koddaki kimlikle birebir aynı olmalı)
+  - Ad: *Destekçi paketi* / *Supporter Pack*
+  - Açıklama: *Reklamsız enerji, 2 özel gemi boyası ve 2 özel çıkartma. Tek seferlik.*
+  - Önerilen fiyat: 49,99 TL / 2,99 USD (Play, diğer ülkeler için dönüştürür)
+- Bu menü, uygulamaya `BILLING` izni olan bir `.aab` yüklendikten sonra açılır (paket bu izni içerir).
+- Satın alma, Google Play hesabına bağlıdır: oyuncu uygulamayı silip yeniden kursa "Satın alımı geri yükle" düğmesiyle geri alır.
+- Test: Play Console › Ayarlar › Lisans testi'ne kendi Gmail adresini ekle; test satın alımları ücretlendirilmez.
+
 ## Mağaza metinleri
 
 ### Türkçe
@@ -65,13 +90,14 @@ Plays offline, no account needed, no personal data collected. English and Turkis
 **Veri güvenliği (Data safety):**
 - Uygulama kullanıcı verisi topluyor ya da paylaşıyor mu? **Hayır.**
 - (Oyun kaydı yalnızca cihazda kalır; sunucu, analitik, reklam kimliği yok.)
+- Uygulama içi satın alma Google Play Faturalandırma ile yapılır; ödeme bilgisi Google'da kalır, uygulama görmez. Formda "Uygulama içi satın almalar" sorusuna **Evet** denmeli.
 - Gerçek reklam eklendiğinde bu form güncellenmelidir.
 
 **İçerik derecelendirmesi (IARC anketi):**
 - Şiddet: çizgi film tarzı patlamalar (insan yok) → hafif
 - Kumar: **Simüle kumar var** (kumarhane bölümü; gerçek para yok, kazançlar oyun içi para). Bu soruya "evet" denmeli; derecelendirme genellikle PEGI 12 / 12+ çıkar.
 - Kullanıcı etkileşimi/paylaşım: paylaşım cihazın kendi menüsüyle; sohbet yok
-- Satın alma: yok
+- Satın alma: dijital ürün satın alımı var (tek seferlik destekçi paketi; ganimet kutusu yok)
 
 **Hedef kitle:** 13 yaş ve üzeri (simüle kumar nedeniyle çocuklara yönelik değil).
 

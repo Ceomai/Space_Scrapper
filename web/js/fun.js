@@ -110,7 +110,7 @@ SS.checkDecals = () => {
 };
 SS.decalHtml = () => `<p class="label">Çıkartmalar · başarılarla açılır</p><div class="paints decals">${SS.DECALS.map(d => {
   const own = d.test(), on = S.decal === d.id;
-  return `<button class="paint ${on ? 'on' : ''}" data-act="decal" data-d="${d.id}" ${own ? '' : 'disabled'}><i class="decal-ic" style="color:${DEC_COL[d.id]}" aria-hidden="true">${DEC_SYM[d.id]}</i><span>${d.name}</span><small>${on ? 'Takılı' : own ? 'Tak' : esc(d.how)}</small></button>`; }).join('')}
+  return `<button class="paint ${on ? 'on' : ''}" data-act="decal" data-d="${d.id}" ${own ? '' : 'disabled'}><i class="decal-ic" style="color:${d.col || DEC_COL[d.id]}" aria-hidden="true">${d.sym || DEC_SYM[d.id]}</i><span>${d.name}</span><small>${on ? 'Takılı' : own ? 'Tak' : esc(d.how)}</small></button>`; }).join('')}
 </div><div class="row">${btn('Çıkartmayı kaldır', 'decal', { d: 'none' }, 'ghost sm', !S.decal)}</div>`;
 ACT.decal = d => { const id = d && d.d; if (id === 'none') S.decal = null; else { const x = SS.DECALS.find(k => k.id === id); if (!x || !x.test()) return; S.decal = id; } SS.sfx('click'); render(); };
 /* =========================================================
