@@ -61,6 +61,11 @@
   --cut:9px;                      /* düğme pahı (piksel stilde 6px) */
   --cut-md:7px; --cut-sm:6px; --cut-xs:5px;   /* hızlı düğme, yardım/bildirim, harita etiketi */
 
+  /* hareket: süreler ve eğriler. Giriş yaylı (hafif taşar), çıkış yumuşak yavaşlar. Yalnızca transform / opacity canlandırılır.
+     "Hareketi azalt" (data-motion="reduce") açıkken süreler kısalır, kaydırma/ölçek yerine en fazla kısa bir solma kalır. */
+  --dur-fast:150ms; --dur:220ms; --dur-slow:320ms;
+  --ease-spring:cubic-bezier(.2,.9,.3,1.2); --ease-out:cubic-bezier(.2,.7,.3,1);
+
   /* oyun sahnesi üstündeki katmanlar (her temada aynı: sahne her zaman koyu) */
   --space:#000;                                  /* harita tuvali arkası */
   --scene-ink:#f2eee2;                           /* sahne etiketi yazısı */
@@ -107,3 +112,6 @@
   --tx-lg:calc(21px * var(--fs-k)); --tx-xl:calc(26px * var(--fs-k)); --tx-2xl:calc(30px * var(--fs-k)); --tx-3xl:calc(30px * var(--fs-k)); --tx-hero:calc(42px * var(--fs-k));
   --tx-caps:calc(15px * var(--fs-k)); --tx-label:calc(16px * var(--fs-k)); --tx-note:calc(17px * var(--fs-k)); --tx-pay:calc(22px * var(--fs-k)); --tx-h3:calc(19px * var(--fs-k));
 }
+
+/* hareketi azalt: süre belirteçleri kısalır (CSS'te geri kalan her canlandırma index.html'de ayrıca kapatılır) */
+:root[data-motion="reduce"]{--dur-fast:0ms; --dur:90ms; --dur-slow:90ms; --ease-spring:linear; --ease-out:linear}

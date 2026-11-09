@@ -31,12 +31,7 @@ SS.share = async ({ image, text }) => {
   return fallbackShare({ image, text });
 };
 
-/* ---------- titreşim ---------- */
-SS.haptic = strong => {
-  if (SS.prefs && SS.prefs.haptic === false) return;
-  const n = SS.native(); if (n) return n.post({ type: 'haptic', strong: !!strong });
-  try { navigator.vibrate && navigator.vibrate(strong ? 35 : 12); } catch (e) {}
-};
+/* ---------- titreşim: SS.haptic ui.js'te (tek tanım; ayar, köprü ve navigator.vibrate orada) ---------- */
 
 /* ---------- ana ekrandan açıldığında geri tuşu: mini oyun → pencere → harita → çıkış ---------- */
 // Android uygulaması: donanım geri tuşu oyunun geri mantığını kullanır (mini oyun → pencere → harita → çıkış)

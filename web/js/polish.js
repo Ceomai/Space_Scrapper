@@ -398,16 +398,17 @@ SS.a11yPanel = () => {
     ${tog('autoSell', 'Otomatik satış', 'Dalıştan önce ambar %60\'tan doluysa eser ve sipariş eşyaları dışındakileri %5 aracı payıyla satar.')}
     ${tog('slow', 'Yavaş mini oyunlar', 'Mini oyunlar %80 hızda akar (süreler de aynı oranda uzar).')}
     ${tog('big', 'Büyük yazı', 'Menü ve panellerde yazılar büyür.')}
+    <div class="row-item"><div><b>Hareketi azalt</b><small>Geçiş, sarsıntı ve parlama efektleri kapanır. İlk açılışta telefonun ayarını izler.</small></div><button class="chk ${SS.reduceMotion() ? 'on' : ''}" data-act="motionPref" aria-pressed="${SS.reduceMotion()}" aria-label="Hareketi azalt">${SS.reduceMotion() ? '✓' : ''}</button></div>
     ${'vibrate' in navigator || SS.native() ? tog('haptic', 'Titreşim', 'Önemli anlarda telefon titrer.') : ''}
     ${tog('left', 'Solak düzeni', 'Alt çubuk, düğme sıraları ve mini oyun kontrolleri ters sıralanır.')}
   </div>`, { code: 'KL' });
 };
+// Hareketi azalt: ayar hiç değiştirilmediyse telefonun ayarını izler; dokununca o anki durumun tersi kalıcı olarak seçilir
+ACT.motionPref = () => { prefs.reduceMotion = !SS.reduceMotion(); SS.savePrefs(); SS.applyLook(); SS.sfx && SS.sfx('click'); render(); };
 ACT.pref = d => { prefs[d.k] = !prefs[d.k]; SS.savePrefs(); SS.applyLook(); SS.sfx && SS.sfx('click'); render(); };
 const _look = SS.applyLook;
 SS.applyLook = () => { _look(); const r = document.documentElement; r.dataset.big = prefs.big ? '1' : ''; r.dataset.left = prefs.left ? '1' : ''; };
 SS.applyLook();
-const _haptic = SS.haptic;
-SS.haptic = strong => { if (prefs.haptic !== false) _haptic(strong); };
 SS.miniSpeed = () => prefs.slow ? .8 : 1;
 
 /* =========================================================
@@ -601,7 +602,7 @@ const GUARD = {
   casPlay: d => ['cards', 'wheel', 'dice', 'race', 'slot'].includes(d.g),
   renameShip: () => !!document.getElementById('shipName'),
   hagOffer: () => !!document.getElementById('hagRange'),
-  ltog: d => !!document.querySelector('.ledger') && typeof d.id === 'string',
+  ltog: d => !!document.querySelector('#modal .ledger') && typeof d.id === 'string',
   task: d => ['with', 'work', 'rest'].includes(d.t),
   theme: d => SS.THEMES.some(t => t.id === d.t),
   style: d => d.s === 'pixel' || d.s === 'vector',

@@ -310,9 +310,11 @@ ACT.wheelSpin = () => {
   const end = WDEG + 360 * 4 + ((target - cur + 360) % 360) + rnd(-a * .3, a * .3);
   wheelView('Çark dönüyor…');
   const cv = document.getElementById('wheelCv'); WDEG = end;
-  requestAnimationFrame(() => requestAnimationFrame(() => { cv.style.transition = 'transform 2.6s cubic-bezier(.15,.85,.2,1)'; cv.style.transform = `rotate(${end}deg)`; }));
+  // Hareketi azalt açıkken çark kısa döner (0,8 sn); sonuç aynı
+  const quick = SS.reduceMotion && SS.reduceMotion(), spin = quick ? 800 : 2600;
+  requestAnimationFrame(() => requestAnimationFrame(() => { cv.style.transition = `transform ${spin}ms cubic-bezier(.15,.85,.2,1)`; cv.style.transform = `rotate(${end}deg)`; }));
   SS.sfx('fire');
-  setTimeout(() => { BUSY = false; const m = WHEEL[i], w = settle(n, m, CAS_EV.wheel); wheelView(m ? `×${String(m).replace('.', ',')}: ${fmt(w)} geri aldın${w > n ? '!' : '.'}` : 'Boş dilim. Bahis kasanın.'); }, 2750);
+  setTimeout(() => { BUSY = false; const m = WHEEL[i], w = settle(n, m, CAS_EV.wheel); wheelView(m ? `×${String(m).replace('.', ',')}: ${fmt(w)} geri aldın${w > n ? '!' : '.'}` : 'Boş dilim. Bahis kasanın.'); }, spin + 150);
 };
 
 /* --- Kara Delik Zarı --- */
@@ -466,13 +468,13 @@ SS.showRewardedAd = (done, cancel) => {
   const T = 5; let t = 0, iv = 0;
   adCancel = () => { clearInterval(iv); adCancel = null; SS.closeModal(); SS.render(); cancel && cancel(); };
   SS.modal(`<p class="eyebrow">Sponsor arası</p><h2>Enerji yükleniyor…</h2><div class="ad-box"><b>Space Scrapper</b><small>Reklam alanı</small></div>
-    <div class="track"><i id="adBar" style="width:0%"></i></div><p class="muted" id="adTxt">${T} saniye</p>
+    <div class="track"><i id="adBar" class="ad-fill"></i></div><p class="muted" id="adTxt">${T} saniye</p>
     <div class="row">${btn('Vazgeç', 'adCancel', {}, 'ghost sm')}</div>`);
   iv = setInterval(() => {
     t++; const bar = document.getElementById('adBar'), tx = document.getElementById('adTxt');
     // pencere başka yoldan kapandıysa (geri tuşu, Esc) reklam iptal sayılır
     if (!bar) { clearInterval(iv); adCancel = null; cancel && cancel(); return; }
-    bar.style.width = (t / T * 100) + '%'; tx.textContent = t >= T ? 'Tamam' : `${T - t} saniye`;
+    bar.style.transform = `scaleX(${t / T})`; tx.textContent = t >= T ? 'Tamam' : `${T - t} saniye`;
     if (t >= T) { clearInterval(iv); adCancel = null; SS.closeModal(); done(); }
   }, 1000);
 };
@@ -702,7 +704,7 @@ G.shooter = (opts, onEnd) => {
     // yaşam modülü
     c.fillStyle = P.metalD; c.fillRect(0, 560, W, 40); c.fillStyle = P.metal; c.fillRect(0, 560, W, 5);
     for (let x = 14; x < W; x += 36) { c.fillStyle = P.warn; c.globalAlpha = .7; c.fillRect(x, 574, 14, 8); } c.globalAlpha = 1;
-    if (hurt > 0) { c.fillStyle = P.bad; c.globalAlpha = hurt; c.fillRect(0, 0, W, H); c.globalAlpha = 1; }
+    if (hurt > 0 && SS.Stage.motion()) { c.fillStyle = P.bad; c.globalAlpha = hurt; c.fillRect(0, 0, W, H); c.globalAlpha = 1; }
     c.fillStyle = P.accent; shots.forEach(s => c.fillRect(s.x - 1.5, s.y - 7, 3, 10));
     c.fillStyle = P.bad; eshots.forEach(s => { c.beginPath(); c.arc(s.x, s.y, 3.5, 0, TAU); c.fill(); });
     for (const o of foes) {
@@ -752,7 +754,7 @@ G.shield = (opts, onEnd) => {
   };
   g.draw = (c, P, t) => {
     starfield(c, W, H, t * .3, P, 50);
-    if (hurt > 0) { c.fillStyle = P.bad; c.globalAlpha = hurt * .8; c.fillRect(0, 0, W, H); c.globalAlpha = 1; }
+    if (hurt > 0 && SS.Stage.motion()) { c.fillStyle = P.bad; c.globalAlpha = hurt * .8; c.fillRect(0, 0, W, H); c.globalAlpha = 1; }
     for (const o of rocks) {
       const x = cx + Math.cos(o.a) * o.d, y = cy + Math.sin(o.a) * o.d;
       if (pit && o.d > 200) { c.strokeStyle = P.warn; c.globalAlpha = .35; c.setLineDash([4, 6]); c.beginPath(); c.moveTo(x, y); c.lineTo(cx + Math.cos(o.a) * R, cy + Math.sin(o.a) * R); c.stroke(); c.setLineDash([]); c.globalAlpha = 1; }

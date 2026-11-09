@@ -4,8 +4,7 @@
 const { pick, rint, fmt, clamp } = SS;
 
 /* ---------- telefon köprüsü ---------- */
-SS.native = () => window.SS_NATIVE || null;
-SS.haptic = strong => { const n = SS.native(); if (n) n.post({ type: 'haptic', strong: !!strong }); };
+// SS.native ve SS.haptic ui.js'te tanımlı (tek titreşim tanımı)
 
 /* ---------- rehberli ilk gün ---------- */
 // Her adımın anlatıcı metni, tamamlanma koşulu ve haritada vurgulanacak yer

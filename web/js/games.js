@@ -266,7 +266,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     const P = SS.Art.P();
     if (JUNK_K.includes(it.kind)) { if (combo >= 3) SS.FX.text(fx, OX - 80, OY - 20, 'Kombo bitti', P.metalL); combo = 0; return 1; }
     combo++; bestCombo = Math.max(bestCombo, combo);
-    if (combo >= 2) { SS._combo = combo; SS.sfx('combo'); SS.FX.text(fx, OX - 80, OY - 20, `Kombo ×${combo}`, combo >= 5 ? P.crystal : P.good, `+%${Math.min(15, (combo - 1) * 3)} değer`); if (combo % 5 === 0) SS.haptic && SS.haptic(false); }
+    if (combo >= 2) { SS._combo = combo; SS.sfx('combo'); SS.FX.text(fx, OX - 80, OY - 20, `Kombo ×${combo}`, combo >= 5 ? P.crystal : P.good, `+%${Math.min(15, (combo - 1) * 3)} değer`); if (combo % 5 === 0) SS.haptic('success'); }
     return 1 + Math.min(.15, (combo - 1) * .03);
   }
   function collect(it) {
@@ -283,7 +283,7 @@ G.scrap = (zoneId, onEnd, ct) => {
       ct.got++; const P = SS.Art.P(); myVal += ct.per;
       SS.FX.text(fx, OX + 80, OY - 20, `Hedef ${ct.got}/${ct.qty}`, P.good, `+${SS.fmt(ct.per)} · müşteriye`);
       SS.FX.burst(fx, OX, OY, [P.good, P.accent], 20, 3); SS.sfx('big');
-      if (ct.got === ct.qty) { freeze = .22; shake = 6; SS.FX.burst(fx, W / 2, H / 2, [P.good, P.accent, P.star, P.crystal], 90, 7); SS.FX.text(fx, W / 2, H / 2, 'Sözleşme tamam!', P.good, '+%50 tamamlama primi'); SS.sfx('win'); SS.haptic && SS.haptic(true); }
+      if (ct.got === ct.qty) { freeze = .22; shake = 6; SS.FX.burst(fx, W / 2, H / 2, [P.good, P.accent, P.star, P.crystal], 90, 7); SS.FX.text(fx, W / 2, H / 2, 'Sözleşme tamam!', P.good, '+%50 tamamlama primi'); SS.sfx('win'); }
       if (it.kind !== 'box') return;
     }
     const P = SS.Art.P(), tx = OX + 80, ty = OY - 20;
@@ -411,7 +411,7 @@ G.scrap = (zoneId, onEnd, ct) => {
     SS.Stage.hud(`<span class="${low ? 'warn' : ''}">⏱ ${Math.ceil(time)}</span>${rex ? `<span class="${myVal > rex.val ? 'ok' : 'warn'}">Sen ${SS.fmt(Math.round(myVal))} · Rex ${SS.fmt(Math.round(rex.val))}</span>` : ''}${combo >= 2 ? `<span class="ok">Kombo ×${combo}</span>` : ''}${daily ? `<span class="ok">Skor ${score}</span><span>${got.length} parça</span>` : `${ct ? `<span class="${ct.got >= ct.qty ? 'ok' : ''}">Hedef ${ct.got}/${ct.qty}</span>` : ''}<span>Kargo ${SS.cargoUsed()}/${SS.cargoCap()}</span>`}`);
   };
   g.draw = (c, P, t) => {
-    if (shake > 0) c.translate(rnd(-shake, shake) * .5, rnd(-shake, shake) * .5);
+    if (shake > 0 && SS.Stage.motion()) c.translate(rnd(-shake, shake) * .5, rnd(-shake, shake) * .5);
     SS.Art.space(c, W, H, t, zoneId, stars, P);
     if (scene) drawScene(c, W, H, t, P, scene, V);
     for (const a of actors) if (a.type === 'whale') drawWhale(c, a, t, P);

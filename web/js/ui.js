@@ -19,7 +19,30 @@ function syncBars(t) {
   try { const bg = getComputedStyle(root).getPropertyValue('--bg').trim(), m = document.querySelector('meta[name="theme-color"]'); if (m && bg) m.setAttribute('content', bg); } catch (e) {}
   try { const sb = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.SystemBars; if (sb && sb.setStyle) { const r = sb.setStyle({ style: t === 'lavanta' ? 'LIGHT' : 'DARK' }); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
 }
-SS.applyLook = () => { root.dataset.style = prefs.style; const t = SS.themeId(); root.dataset.theme = t; syncBars(t); };
+SS.applyLook = () => { root.dataset.style = prefs.style; const t = SS.themeId(); root.dataset.theme = t; syncBars(t); root.dataset.motion = SS.reduceMotion() ? 'reduce' : ''; };
+
+/* ---------- hareketi azalt ---------- */
+// prefs.reduceMotion: true (azalt) / false (tam hareket) / yok ya da 'auto' (telefonun "hareketi azalt" ayarını izler)
+const motionMQ = window.matchMedia ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+SS.reduceMotion = () => prefs.reduceMotion === true || (prefs.reduceMotion !== false && !!(motionMQ && motionMQ.matches));
+if (motionMQ) { const onMotion = () => { root.dataset.motion = SS.reduceMotion() ? 'reduce' : ''; };
+  if (motionMQ.addEventListener) motionMQ.addEventListener('change', onMotion); else if (motionMQ.addListener) motionMQ.addListener(onMotion); }
+
+/* ---------- titreşim (tek tanım) ---------- */
+// Olay türüne göre desen; "Titreşim" ayarı kapalıysa sessiz. Telefon uygulaması köprüsü (SS_NATIVE) varsa ona iletilir,
+// yoksa tarayıcının navigator.vibrate'i kullanılır. Art arda gelen çağrılar 60 ms'de bire indirilir.
+// Eski çağrılar için: SS.haptic(true) → 'warn', SS.haptic(false) / boş → 'tap'.
+SS.native = () => window.SS_NATIVE || null;
+const HAPTIC = { tap: 10, success: [15, 40, 15], warn: 30, fail: [40, 30, 40], 'catch': 12 };
+let hapticAt = 0;
+SS.haptic = kind => {
+  if (typeof kind !== 'string') kind = kind ? 'warn' : 'tap';
+  if (!HAPTIC[kind] || prefs.haptic === false) return;
+  const now = Date.now(); if (now - hapticAt < 60) return; hapticAt = now;
+  const pattern = HAPTIC[kind], n = SS.native();
+  if (n) { try { n.post({ type: 'haptic', strong: kind === 'warn' || kind === 'fail' || kind === 'success', kind, pattern }); } catch (e) {} return; }
+  try { navigator.vibrate && navigator.vibrate(pattern); } catch (e) {}
+};
 // Sistem teması oyun açıkken değişirse 'auto' anında izler
 if (darkMQ) { const onScheme = () => { if (prefs.theme !== 'auto') return; SS.applyLook(); if (document.getElementById('mini')) return; if (window.S) SS.render(); else if (SS.titleScreen) SS.titleScreen(); };
   if (darkMQ.addEventListener) darkMQ.addEventListener('change', onScheme); else if (darkMQ.addListener) darkMQ.addListener(onScheme); }
@@ -35,7 +58,7 @@ function tone(f, d, type, vol, slide = 0, delay = 0) {
   o.connect(g).connect(AC.destination); o.start(t); o.stop(t + d);
 }
 SS.sfx = k => {
-  if (k === 'big' || k === 'boom' || k === 'bad') SS.haptic && SS.haptic(k === 'boom');
+  const hk = { big: 'success', win: 'success', boom: 'warn', bad: 'fail', grab: 'catch' }[k]; if (hk) SS.haptic(hk);
   if (prefs.muted || !ac()) return;
   const w = prefs.style === 'pixel' ? 'square' : 'triangle', v = prefs.style === 'pixel' ? .045 : .08;
   try {
@@ -80,25 +103,57 @@ SS.toast = (msg, kind = '') => {
   if (bad) { d.setAttribute('role', 'alert'); d.addEventListener('click', () => d.remove()); }
   t.appendChild(d);
   while (t.children.length > 3) t.firstElementChild.remove();
-  setTimeout(() => d.classList.add('out'), life); setTimeout(() => d.remove(), life + 500);
+  // giriş: CSS (.toast kayarak/solarak gelir); çıkış: .out sınıfı solarak kaybolur, sonra öğe silinir
+  setTimeout(() => d.classList.add('out'), life); setTimeout(() => d.remove(), life + 400);
+  if (kind === 'ach') SS.haptic('success');
 };
 // Pencereler: başlık aria-labelledby ile bağlanır, odak pencerede kalır, arka plan (inert) erişilemez, kapanınca odak geri döner.
 // opts.dismiss: boşluğa (karartmaya) dokunmak pencereyi kapatır. Yalnızca bilgi ve onay pencerelerinde açılır;
 // karar, akşam defteri, sonuç, oyun sonu ve reklam pencereleri kapanmaz.
 let modalReturn = null;
 const setInert = on => ['app', 'mini'].forEach(id => { const e = document.getElementById(id); if (e) { if (on) e.setAttribute('inert', ''); else e.removeAttribute('inert'); } });
+// Hareket: pencere yalnızca AÇILIRKEN canlanır (karartma solar, kâğıt .96'dan büyür). Açıkken içeriği yenilenen pencere
+// (SS.modal yeniden çağrılır) canlanmaz; giriş sürerken yenilenirse canlanma kaldığı yerden sürer (negatif gecikme).
+// Kapanış durumu anında işler (#modal hidden olur, içerik silinir); kapanma canlanması ayrı, tıklanamaz bir kopyada (#modalGhost) oynar.
+// Kopya sırasında yeni pencere açılırsa kopya hemen silinir. Aynı görevde kapat + aç (pencere değişimi) canlanmaz.
+let enterAt = -1e9, closedAt = -1e9;
+const ENTER_MS = 340;
+const dropGhost = () => { const g = document.getElementById('modalGhost'); if (g) g.remove(); };
 SS.modal = (html, cls = '', opts = {}) => {
   const m = document.getElementById('modal');
+  dropGhost();
+  const now = performance.now(), opening = m.hidden && now - closedAt > 30 && !SS.reduceMotion() && !document.hidden;
   if (m.hidden) { const a = document.activeElement; modalReturn = a && a !== document.body && !m.contains(a) ? { el: a, id: a.id, key: a.dataset && a.dataset.act ? JSON.stringify(a.dataset) : null } : null; }
+  if (opening) enterAt = now;
+  m.classList.toggle('m-enter', now - enterAt < ENTER_MS);
   m.innerHTML = `<div class="sheet ${cls}" role="dialog" aria-modal="true">${html}</div>`;
-  const sh = m.firstElementChild, hd = sh.querySelector('h1, h2, h3') || sh.querySelector('.eyebrow');
+  const sh = m.firstElementChild, since = now - enterAt;
+  if (since < ENTER_MS) { sh.classList.add('enter'); m.style.setProperty('--m-delay', since > 1 ? -Math.round(since) + 'ms' : '0ms'); }
+  const hd = sh.querySelector('h1, h2, h3') || sh.querySelector('.eyebrow');
   if (hd) { if (!hd.id) hd.id = 'modalTitle'; sh.setAttribute('aria-labelledby', hd.id); }
   m.dataset.dismiss = opts.dismiss ? '1' : '';
   m.hidden = false; setInert(true); SS.Art.paintAll(m);
   const f = m.querySelector('[data-autofocus]') || m.querySelector('.sheet button:not([disabled])'); f && f.focus({ preventScroll: true });
 };
+// Kapanma canlanması için görsel kopya: kimliksiz, eylemsiz, erişilebilirlik ağacının dışında; ~150 ms sonra silinir
+function exitGhost(m) {
+  dropGhost();
+  const sh = m.firstElementChild; if (!sh || SS.reduceMotion() || document.hidden) return;
+  const g = document.createElement('div'); g.id = 'modalGhost'; g.className = 'modal-ghost'; g.setAttribute('aria-hidden', 'true'); g.setAttribute('inert', '');
+  const c = sh.cloneNode(true); c.classList.remove('enter'); c.removeAttribute('role'); c.removeAttribute('aria-modal'); c.removeAttribute('aria-labelledby');
+  // tuvallerin çizimi kopyaya aktarılır (kopya boş tuval olurdu)
+  const src = sh.querySelectorAll('canvas'), dst = c.querySelectorAll('canvas');
+  dst.forEach((d, i) => { try { if (src[i].width && src[i].height) d.getContext('2d').drawImage(src[i], 0, 0); } catch (e) {} });
+  c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+  c.querySelectorAll('[data-act],[data-draw],[data-prev]').forEach(e => { e.removeAttribute('data-act'); e.removeAttribute('data-draw'); e.removeAttribute('data-prev'); });
+  c.scrollTop = sh.scrollTop;
+  g.appendChild(c); m.after(g); c.scrollTop = sh.scrollTop;
+  setTimeout(() => { if (g.isConnected) g.remove(); }, 200);
+}
 SS.closeModal = () => {
-  const m = document.getElementById('modal'), was = !m.hidden; m.hidden = true; m.innerHTML = ''; m.dataset.dismiss = ''; setInert(false);
+  const m = document.getElementById('modal'), was = !m.hidden;
+  if (was) { closedAt = performance.now(); try { exitGhost(m); } catch (e) { dropGhost(); } }
+  m.hidden = true; m.innerHTML = ''; m.dataset.dismiss = ''; m.classList.remove('m-enter'); m.style.removeProperty('--m-delay'); enterAt = -1e9; setInert(false);
   const r = modalReturn; modalReturn = null;
   // odak, ekran yeniden çizildikten sonra aynı düğmeye (ya da eşine) döner
   if (was && r) setTimeout(() => { if (!m.hidden) return; let el = r.el && r.el.isConnected ? r.el : null;
@@ -574,6 +629,7 @@ function render() {
   if (SS.tutCheck()) SS.save();
   app().innerHTML = SS.storeBand() + hud() + coach() + `<main id="main" data-v="${S.view}" class="v-${S.view}">${VIEWS[S.view]()}</main>` + dock();
   document.getElementById('main').scrollTop = st;
+  motionAfterRender();
   SS.Art.paintAll(app());
   if (S.view === 'map') startMap(); else clearTimeout(mapTimer);
   if (document.getElementById('habCanvas') || document.getElementById('roomCanvas')) startHab(); else clearTimeout(habTimer);
@@ -581,6 +637,52 @@ function render() {
 }
 SS.render = render;
 SS.VIEWS = VIEWS;
+
+/* ---------- hareket: görünüm geçişi ve nakit sayacı ---------- */
+// Görünüm (S.view) değişince içerik kısa bir solma + kaymayla gelir; aynı görünümde yeniden çizim canlanmaz.
+// Geçiş sürerken ekran yeniden çizilirse canlanma kaldığı yerden sürer (negatif gecikme), baştan başlamaz.
+let viewShown = null, viewAt = -1e9, viewGame = null;
+const VIEW_MS = 200;
+// Nakit sayacı: S.cash iki çizim arasında değişince göstergedeki sayı ~400 ms'de yeni değere sayar, yanında "+₡120" belirir.
+// Son değer her zaman tam S.cash'tir; hareketi azalt açıkken, sekme gizliyken ya da yeni oyunda doğrudan yazılır.
+let cashShown = null, cashAnim = null, cashGame = null;
+const CASH_MS = 400;
+function cashText(el, v) { const t = fmt(v); if (el.firstChild && el.firstChild.nodeType === 3) { if (el.firstChild.data !== t) el.firstChild.data = t; } else el.textContent = t; }
+function cashStop() { if (cashAnim) { cancelAnimationFrame(cashAnim.raf); cashAnim = null; } }
+function cashDelta(box, d) {
+  box.querySelectorAll('.cash-delta').forEach(e => e.remove());
+  const e = document.createElement('i'); e.className = 'cash-delta ' + (d > 0 ? 'up' : 'down'); e.setAttribute('aria-hidden', 'true');
+  e.textContent = (d > 0 ? '+' : '−') + fmt(Math.abs(d)); box.appendChild(e);
+  e.addEventListener('animationend', () => e.remove()); setTimeout(() => e.isConnected && e.remove(), 1400);
+}
+function cashTick(now) {
+  const a = cashAnim; if (!a) return;
+  const el = a.el.isConnected ? a.el : document.querySelector('.hud-cash b');
+  if (!el) { cashAnim = null; return; } a.el = el;
+  const k = Math.min(1, (now - a.t0) / CASH_MS), e = 1 - Math.pow(1 - k, 3);
+  if (k >= 1) { cashText(el, a.to); cashShown = a.to; cashAnim = null; return; }
+  const v = a.from + (a.to - a.from) * e; cashShown = v; cashText(el, v);
+  a.raf = requestAnimationFrame(cashTick);
+}
+function motionAfterRender() {
+  const rm = SS.reduceMotion() || document.hidden, now = performance.now(), game = S;
+  // görünüm geçişi
+  const main = document.getElementById('main');
+  if (viewGame === game && viewShown !== null && viewShown !== S.view && !rm) viewAt = now;
+  if (viewGame !== game) viewAt = -1e9;
+  viewShown = S.view; viewGame = game;
+  if (main && now - viewAt < VIEW_MS) { main.classList.add('v-enter'); const since = Math.round(now - viewAt); if (since > 1) main.style.setProperty('--v-delay', -since + 'ms'); }
+  // nakit sayacı
+  const el = document.querySelector('.hud-cash b'), to = S.cash;
+  if (!el || rm || cashShown === null || !isFinite(to) || !isFinite(cashShown) || game !== cashGame) { cashStop(); cashShown = to; cashGame = game; return; }
+  if (cashAnim && cashAnim.to === to) { cashAnim.el = el; cashText(el, cashShown); return; }
+  const prevTarget = cashAnim ? cashAnim.to : cashShown, d = to - prevTarget;
+  if (!d) { cashStop(); cashShown = to; return; }
+  const from = cashShown; cashStop();
+  cashAnim = { from, to, t0: now, el, raf: requestAnimationFrame(cashTick) };
+  cashText(el, from);
+  if (Math.abs(Math.round(d)) >= 1) cashDelta(el.parentElement, d);
+}
 SS.ui = { panel, btn, icon, face, esc, pct, dots, dur, subTabs: (...a) => subTabs(...a), resultModal: (...a) => resultModal(...a), afterJob: () => afterJob(), cardsOpen: () => ACT.cards() };
 
 /* ---------- akşam defteri ---------- */
@@ -892,7 +994,7 @@ const ACT = {
         ${left < req ? '<div class="alert">Bu gece oksijen, kira ve bakım gibi zorunlu ödemelere paran yetmeyebilir; eksik kalan gecikmiş borca yazılır.</div>' : ''}
         <div class="row">${btn('Evet, hepsini öde', 'pay', { n: 'all', ok: 1 }, 'danger')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`, '', { dismiss: true });
     }
-    const n = SS.payLoan(d.n === 'all' ? S.cash : +d.n); if (n) { SS.toast(`${fmt(n)} borç ödendi.`, 'good'); SS.sfx('coin'); } SS.flow();
+    const n = SS.payLoan(d.n === 'all' ? S.cash : +d.n); if (n) { SS.toast(`${fmt(n)} borç ödendi.`, 'good'); SS.sfx('coin'); SS.haptic('success'); } SS.flow();
   },
   arrears: () => { const n = SS.payArrears(); if (n) SS.toast(`Gecikmiş borçtan ${fmt(n)} ödendi.`, 'good'); render(); },
   story: d => storyModal(d.id),

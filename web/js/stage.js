@@ -100,6 +100,14 @@ function padEdges(g) {
     c.restore();
   } catch (e) {}
 }
+// Ekran sarsıntısı ve tam ekran kırmızı parlama yalnızca "Hareketi azalt" kapalıyken
+Stage.motion = () => !(SS.reduceMotion && SS.reduceMotion());
+// Oyun bitince sonuca göre titreşim (kazanma / kaybetme; çıkışta yok)
+function endHaptic(r) {
+  if (!r || r.quit || !SS.haptic) return;
+  const ok = r.win !== undefined ? r.win : r.ok !== undefined ? r.ok : r.landed !== undefined ? r.landed : null;
+  if (ok === true) SS.haptic('success'); else if (ok === false) SS.haptic('fail');
+}
 function loop(now) {
   if (!cur) return;
   // Çıkış sorusu açıkken oyun donar: son kare ekranda kalır, süre işlemez
@@ -124,7 +132,7 @@ function loop(now) {
   g.tctx.clearRect(0, 0, g.W, g.H);
   if (g.drawUI) { g.tctx.save(); if (g.dx || g.dy) g.tctx.translate(g.dx || 0, g.dy || 0); g.drawUI(g.tctx, SS.Art.P(), g.t); g.tctx.restore(); }
   if (g.done) {
-    const res = g.result; Stage.close();
+    const res = g.result; Stage.close(); try { endHaptic(res); } catch (e) {}
     g.onEnd && g.onEnd(res);
     return;
   }
