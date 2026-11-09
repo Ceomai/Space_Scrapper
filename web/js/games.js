@@ -446,10 +446,11 @@ G.scrap = (zoneId, onEnd, ct) => {
   };
   g.drawUI = (c, P) => {
     c.font = SS.tfont(11); c.textAlign = 'center'; c.textBaseline = 'middle';
+    const th = Math.round(SS.Stage.textPx(11)) + 5; // küçük ekranda büyüyen yazıyla kutu da büyür
     for (const it of [...items, hook.held]) if (it && it.tag) {
       const w = c.measureText(it.tag).width + 10;
-      c.fillStyle = P.ui; c.fillRect(it.x - w / 2, it.y - it.r - 22, w, 16);
-      c.fillStyle = P.accent; c.fillText(it.tag, it.x, it.y - it.r - 14);
+      c.fillStyle = P.ui; c.fillRect(it.x - w / 2, it.y - it.r - 6 - th, w, th);
+      c.fillStyle = P.accent; c.fillText(it.tag, it.x, it.y - it.r - 6 - th / 2);
     }
     SS.FX.drawText(fx, c, P);
     if (intro > 0) { c.globalAlpha = Math.min(1, intro); c.textAlign = 'center'; c.fillStyle = P.ui; c.fillRect(20, 250, W - 40, 62);
@@ -514,7 +515,8 @@ G.deliver = (ct, onEnd) => {
   const thr = SS.lvl('thruster'), gyro = SS.lvl('gyro');
   const g = { title: 'Teslimat: ' + ct.dest, W, H, quitLabel: 'Vazgeç',
     helpers: [SS.assist('tolga') && 'Tolga: +40 yakıt, pist daha geniş', thr && `İtici ${thr}: güçlü itki`, gyro && `Jiroskop ${gyro}: toleranslı iniş`].filter(Boolean),
-    controls: [{ id: 'left', label: '◀ Sol', hold: 1 }, { id: 'thrust', label: 'İtki', hold: 1, cls: 'primary big' }, { id: 'right', label: 'Sağ ▶', hold: 1 }] };
+    // yön düğmeleri bir köşede yan yana, itki öbür köşede (solak modda yer değiştirir)
+    controls: [{ id: 'left', label: '◀ Sol', hold: 1, cls: 'dir' }, { id: 'right', label: 'Sağ ▶', hold: 1, cls: 'dir' }, { id: 'thrust', label: 'İtki', hold: 1, cls: 'primary big' }] };
   const grav = .012 + ct.diff * .004 + ((ct.mods || []).includes('heavy') ? .004 : 0), thrust = .052 * (1 + thr * .15), rotSp = .05, fuelMax = 100 + pilot * 15 + (SS.assist('tolga') ? 40 : 0) + (ct.diff - 1) * 35 + (ct.fragile ? 30 : 0) + ((ct.mods || []).includes('heavy') ? 25 : 0), burn = .3 * (1 - thr * .1);
   // Pist en az 42 px: gemi 24 px, rüzgârda bile insanca bir pay kalsın
   const padW = Math.max(56, 96 - ct.diff * 12 + pilot * 4 + (SS.assist('tolga') ? 14 : 0) - ((ct.mods || []).includes('narrow') ? 14 : 0));
@@ -803,11 +805,12 @@ G.sort = (shift, onEnd) => {
     SS.FX.draw(fx, c);
     c.fillStyle = P.ui; c.fillRect(10, 8, W - 20, 6); c.fillStyle = time < 8 ? P.bad : P.accent; c.fillRect(10, 8, (W - 20) * time / timeMax, 6);
   };
+  const kb = SS.finePointer(); // klavye ipucu yalnızca fare/klavyeli cihazda
   g.drawUI = (c, P) => {
     c.textAlign = 'center';
     BINS.forEach((b, i) => {
       c.fillStyle = P.text; c.font = SS.tfont(14); c.fillText(b.label, b.x, binY + 40);
-      c.fillStyle = P.metal; c.font = SS.tfont(11); c.fillText(`tuş ${i + 1}`, b.x, binY + 55);
+      if (kb) { c.fillStyle = P.metal; c.font = SS.tfont(11); c.fillText(`tuş ${i + 1}`, b.x, binY + 55); }
     });
     const cur = falling.slice().sort((a, b) => b.y - a.y)[0];
     if (cur) {

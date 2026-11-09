@@ -1,11 +1,13 @@
 // Space Scrapper — mini oyun sahnesi: tam ekran katman, canvas ölçekleme, döngü, kontroller
 (function(SS){
 const Stage = SS.Stage = {};
-let cur = null, raf = 0, last = 0;
+let cur = null, raf = 0, last = 0, paused = false;
+// Fare/dokunmatik yüzey: klavye ipuçları yalnızca hassas işaretçide (masaüstü) gösterilir
+SS.finePointer = () => { try { return matchMedia('(pointer:fine)').matches; } catch (e) { return true; } };
 
 Stage.open = game => {
   Stage.close(true);
-  cur = game; game.input = {}; game.t = 0; game.done = false;
+  cur = game; game.input = {}; game.t = 0; game.done = false; paused = false;
   const el = document.createElement('div');
   el.className = 'mini'; el.id = 'mini';
   el.innerHTML = `<div class="mini-top">
@@ -16,7 +18,11 @@ Stage.open = game => {
     ${(game.helpers || []).length ? `<div class="mini-help">${game.helpers.map(h => `<span>${h}</span>`).join('')}</div>` : ''}
     <div class="mini-stage" id="miniStage"><div class="mini-wrap" id="miniWrap"><canvas id="miniCanvas"></canvas><canvas id="miniText" aria-hidden="true"></canvas></div></div>
     <div class="mini-ctl" id="miniCtl">${(game.controls || []).map(c =>
-      `<button class="btn ${c.cls || ''}" data-ctl="${c.id}" ${c.hold ? 'data-hold="1"' : ''}>${c.label}</button>`).join('')}</div>`;
+      `<button class="btn ${c.cls || ''}${c.color ? ' tint' : ''}" data-ctl="${c.id}" ${c.hold ? 'data-hold="1"' : ''}${c.color ? ` style="--ctl-c:${c.color}"` : ''}>${c.label}</button>`).join('')}</div>
+    <div class="mini-ask" id="miniAsk" role="dialog" aria-modal="true" aria-labelledby="miniAskT" hidden><div class="mini-ask-box">
+      <h2 id="miniAskT">Oyun duraklatıldı</h2>
+      <div class="mini-ask-row"><button class="btn ghost danger-t" id="miniQuitYes">Çık</button><button class="btn primary" id="miniQuitNo">Devam</button></div>
+    </div></div>`;
   document.body.appendChild(el);
   document.body.classList.add('in-mini');
   const cv = el.querySelector('#miniCanvas'), tc = el.querySelector('#miniText'), wrap = el.querySelector('#miniWrap');
@@ -31,6 +37,7 @@ Stage.open = game => {
       game.dx = Math.round((game.W - baseW) / 2); game.dy = Math.round((game.H - baseH) / 2); game._padN = 0;
     }
     const s = Math.min(bw / game.W, bh / game.H);
+    game._scale = s > 0 ? s : 1; game._refit = true;
     wrap.style.width = Math.floor(game.W * s) + 'px'; wrap.style.height = Math.floor(game.H * s) + 'px';
     const r = SS.Art.setup(cv, game.W, game.H, .5);
     game.ctx = r.ctx; game.pixel = r.pixel;
@@ -49,9 +56,24 @@ Stage.open = game => {
       const on = e => { e.preventDefault(); game.input[id] = true; b.classList.add('held'); };
       const off = e => { e.preventDefault(); game.input[id] = false; b.classList.remove('held'); };
       b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
-    } else b.addEventListener('click', e => { e.preventDefault(); game.action && game.action(id); });
+    } else {
+      // Dokunuşta beklemeden tepki: eylem pointerdown'da çalışır, ardından gelen click yok sayılır.
+      // Klavye (Enter / Boşluk) yalnızca click üretir, o yol olduğu gibi çalışır.
+      let downAt = -1e9;
+      b.addEventListener('pointerdown', e => {
+        if (e.button !== 0 || b.disabled || paused) return;
+        downAt = performance.now(); game.action && game.action(id);
+      });
+      b.addEventListener('click', e => {
+        e.preventDefault();
+        if (performance.now() - downAt < 1000) { downAt = -1e9; return; }
+        if (!paused) game.action && game.action(id);
+      });
+    }
   });
-  el.querySelector('#miniQuit').onclick = () => { if (!game.done) game.finish('quit'); };
+  el.querySelector('#miniQuit').onclick = () => Stage.askQuit();
+  el.querySelector('#miniQuitYes').onclick = () => { const g = cur; Stage.resume(); if (g && !g.done) g.finish('quit'); };
+  el.querySelector('#miniQuitNo').onclick = () => Stage.resume();
   game.init && game.init();
   last = performance.now();
   raf = requestAnimationFrame(loop);
@@ -80,9 +102,12 @@ function padEdges(g) {
 }
 function loop(now) {
   if (!cur) return;
+  // Çıkış sorusu açıkken oyun donar: son kare ekranda kalır, süre işlemez
+  // (ekran boyutu değişirse donmuş kare yeni boyutta bir kez yeniden çizilir)
+  if (paused && !cur._refit) { last = now; raf = requestAnimationFrame(loop); return; }
   const dt = Math.min(.05, (now - last) / 1000) * (SS.miniSpeed ? SS.miniSpeed() : 1); last = now;
-  const g = cur;
-  if (!g.done) { g.t += dt; g.update(dt, dt * 60); }
+  const g = cur; g._refit = false;
+  if (!g.done && !paused) { g.t += dt; g.update(dt, dt * 60); }
   if (cur !== g) return;
   g.ctx.save();
   if (g.dx || g.dy) {
@@ -108,15 +133,48 @@ function loop(now) {
 Stage.close = silent => {
   cancelAnimationFrame(raf);
   if (cur && cur._fit) window.removeEventListener('resize', cur._fit);
-  cur = null;
+  cur = null; paused = false;
   const el = document.getElementById('mini'); if (el) el.remove();
   document.body.classList.remove('in-mini');
 };
 Stage.key = (e, down) => {
+  if (cur && paused) {
+    // Soru açıkken: Esc devam ettirir, Tab iki düğme arasında döner, Enter/Boşluk odaktaki düğmeye gider
+    if (!down) return false;
+    if (e.key === 'Escape') { Stage.resume(); return true; }
+    if (e.key === 'Tab') {
+      const f = [document.getElementById('miniQuitYes'), document.getElementById('miniQuitNo')].filter(Boolean);
+      const i = f.indexOf(document.activeElement); (f[(i + (e.shiftKey ? f.length - 1 : 1)) % f.length] || f[0]).focus(); return true;
+    }
+    return false;
+  }
   if (!cur || cur.done || !cur.key) return false;
   return cur.key(e.key, down) !== false;
 };
 Stage.active = () => !!cur;
+
+// Çıkış onayı: Bitir / Pes et düğmesi ve Android geri tuşu oyunu duraklatıp "Çık / Devam" sorar
+Stage.paused = () => paused;
+Stage.askQuit = () => {
+  if (!cur || cur.done || paused) return false;
+  paused = true;
+  // basılı tutulan yön / itki düğmeleri bırakılmış sayılır
+  cur.input = {}; document.querySelectorAll('#miniCtl .held').forEach(b => b.classList.remove('held'));
+  const a = document.getElementById('miniAsk'); if (a) a.hidden = false;
+  const no = document.getElementById('miniQuitNo'); if (no) no.focus();
+  return true;
+};
+Stage.resume = () => {
+  if (!paused) return;
+  paused = false; last = performance.now();
+  const a = document.getElementById('miniAsk'); if (a) a.hidden = true;
+  const q = document.getElementById('miniQuit'); if (q && cur) q.focus();
+};
+// Geri tuşu: soru açıksa kapatıp oyuna döner, değilse soruyu açar
+Stage.back = () => { if (paused) Stage.resume(); else Stage.askQuit(); };
+// Küçük ekranda tuval küçültülür; oyun içi yazı en az ~11 CSS px görünsün diye boyut ölçek oranıyla telafi edilir
+// (en çok 1,5 kat: yatay telefonda yazı yerleşimi taşmasın)
+Stage.textPx = px => { const s = cur && cur._scale; if (!s || s >= 1) return px; return Math.max(px, Math.min(px * 1.5, 11 / s)); };
 
 // Ortak yardımcı: oyun içi uçan yazılar ve parçacıklar
 SS.FX = {
@@ -144,6 +202,6 @@ SS.FX = {
 // Tuval yazı tipleri theme.css'teki belirteçlerden okunur: SS.font() → --display, SS.font('--font-sans') → her stilde Chakra Petch
 SS.font = (v = '--display') => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || 'sans-serif';
 // Oyun içi yazılar: piksel stilde okunaklı terminal fontu biraz daha büyük kullanılır
-SS.tfont = (px, w = 'bold') => SS.Art.style() === 'pixel' ? `${Math.round(px * 1.3)}px ${SS.font('--font-term')}` : `${w} ${px}px ${SS.font()}`;
+SS.tfont = (px, w = 'bold') => { px = Stage.textPx(px); return SS.Art.style() === 'pixel' ? `${Math.round(px * 1.3)}px ${SS.font('--font-term')}` : `${w} ${Math.round(px * 10) / 10}px ${SS.font()}`; };
 
 })(window.SS);

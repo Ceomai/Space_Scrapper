@@ -494,8 +494,8 @@ SS.flow = () => {
    ========================================================= */
 SS.onBack = () => {
   try {
-    const q = document.getElementById('miniQuit');
-    if (document.getElementById('mini') && q) { q.click(); return 'mini'; }
+    // mini oyunda: önce duraklatıp "Çık / Devam" sorar; soru açıkken geri tuşu oyuna döner
+    if (document.getElementById('mini') && SS.Stage.active()) { SS.Stage.back(); return 'mini'; }
     const m = document.getElementById('modal');
     if (m && !m.hidden) { if (window.S && S.over) return 'over'; ACT.close(); return 'modal'; }
     if (window.S && S.view !== 'map') { S.view = 'map'; render(); return 'map'; }

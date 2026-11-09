@@ -27,7 +27,7 @@ body{height:100%;overflow:hidden}
 body{margin:0;background-color:var(--bg);color:var(--ink);font-family:var(--body);font-size:var(--tx-base);line-height:1.45;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;
   background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px}
 :root[data-style="pixel"] body{line-height:1.25}
-#app{height:100%;max-width:560px;margin:0 auto;display:flex;flex-direction:column;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+#app{height:100%;max-width:var(--w-content);margin:0 auto;display:flex;flex-direction:column;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;line-height:1.1;text-wrap:balance}
 h2{font-size:var(--fs-23);letter-spacing:.01em} h3{font-size:var(--tx-h3);text-transform:uppercase;letter-spacing:.06em}
 :root[data-style="pixel"] h2{font-size:var(--tx-xl)} :root[data-style="pixel"] h3{font-size:var(--tx-h3);letter-spacing:.02em}
@@ -87,6 +87,18 @@ canvas.ico{display:block;flex:none}
 .chips{display:flex;gap:var(--sp-1-5);flex-wrap:wrap;font-family:var(--mono);font-size:var(--tx-xs);color:var(--muted)}
 .chips span{border:1px solid var(--line);padding:1px 7px;background:var(--surface2)}
 .chips b{color:var(--ink);font-weight:400}
+/* kısa ekran: üst konsolda saat, para ve enerji; öbür göstergeler ▾ düğmesiyle açılır */
+.hud-more{display:none}
+@media (max-height:640px){
+  .hud{gap:var(--sp-1-5);padding-top:var(--sp-2);padding-bottom:var(--sp-2)}
+  .gauges{grid-template-columns:1fr auto}
+  .hud.open .gauges{grid-template-columns:1fr 1fr auto}
+  .hud:not(.open) .gauge.x,.hud:not(.open) .chips{display:none}
+  .hud-more{display:block;grid-row:1;grid-column:-2;position:relative;min-width:44px;min-height:28px;padding:0 var(--sp-2);border:1px solid var(--ctl-border);background:var(--surface2);color:var(--ink);font-family:var(--mono);font-size:var(--tx-xs);cursor:pointer}
+  .hud-more::before{content:"";position:absolute;inset:-8px 0} /* görsel 28px, dokunma alanı 44px */
+  .hud-more.warn{color:var(--bad);border-color:var(--bad)}
+  .hud-more:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+}
 
 /* ---------- ana alan ---------- */
 main{flex:1;overflow-y:auto;padding-block:var(--sp-4) var(--sp-6);padding-left:max(var(--sp-3-5),env(safe-area-inset-left,0px));padding-right:max(var(--sp-3-5),env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:var(--sp-3);-webkit-overflow-scrolling:touch}
@@ -419,6 +431,12 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .gear-line b{color:var(--good);font-family:var(--mono)} .gear-line small{grid-column:1/-1;color:var(--muted)}
 .map-bottom .qb{flex-direction:column;gap:1px;padding:5px var(--sp-0-5);min-width:0;background:var(--surface2)}
 .map-bottom .qb.hot{background:var(--accent)}
+/* "Daha" menüsü: 5'ten fazla hızlı düğme olunca fazlası burada */
+.map-bottom{position:relative}
+.qb-pop{position:absolute;bottom:calc(100% + var(--sp-1));right:var(--sp-2);z-index:4;display:flex;flex-direction:column;gap:var(--sp-1);min-width:160px;padding:var(--sp-1-5);background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shadow)}
+.qb-pop[hidden]{display:none}
+.map-bottom .qb-pop .qb{flex-direction:row;justify-content:flex-start;gap:var(--sp-2);min-height:44px;padding:var(--sp-1-5) var(--sp-2-5)}
+.map-bottom .qb-pop .qb span{font-size:var(--tx-caps)}
 .map-area.compact .node .n-cost{display:none}
 .map-area.compact .node{transform:translate(-50%,16px);padding:1px 5px}
 .map-area.compact .node.edge-r{transform:translate(calc(-100% + 26px),16px)} .map-area.compact .node.edge-l{transform:translate(-26px,16px)}
@@ -487,20 +505,36 @@ body:has(main.v-map) #toast{--toast-lift:var(--toast-lift-map)} /* haritada altt
 /* ---------- mini oyun katmanı ---------- */
 .mini{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding:calc(var(--sp-2) + env(safe-area-inset-top,0px)) max(var(--sp-3),env(safe-area-inset-right,0px)) calc(var(--sp-2-5) + env(safe-area-inset-bottom,0px)) max(var(--sp-3),env(safe-area-inset-left,0px));gap:7px;box-sizing:border-box}
 body.in-mini{overflow:hidden}
-.mini-top{display:flex;align-items:center;gap:var(--sp-2-5);max-width:560px;width:100%;margin:0 auto}
-.mini-title{font-family:var(--display);font-size:var(--fs-base);font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1}
-.mini-hud{display:flex;gap:var(--sp-2-5);font-family:var(--mono);font-size:var(--tx-sm);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap}
+.mini-top{display:flex;align-items:center;gap:var(--sp-2-5);max-width:var(--w-content);width:100%;margin:0 auto}
+/* dar telefonda önce başlık kısalır (…), göstergeler tek satırda kalır, düğme hiç küçülmez */
+.mini-title{font-family:var(--display);font-size:var(--fs-base);font-weight:700;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1 1 0}
+.mini-hud{display:flex;gap:var(--sp-2-5);font-family:var(--mono);font-size:var(--tx-sm);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden}
+.mini-hud span{white-space:nowrap;flex:none}
+#miniQuit{flex:none}
+@media (max-width:420px){.mini-top{gap:var(--sp-2)}.mini-hud{gap:var(--sp-1-5);font-size:var(--tx-xs)}}
 .mini-hud .warn{color:var(--bad)} .mini-hud .ok{color:var(--good)}
-.mini-help{display:flex;gap:5px;flex-wrap:wrap;max-width:560px;width:100%;margin:0 auto}
+.mini-help{display:flex;gap:5px;flex-wrap:wrap;max-width:var(--w-content);width:100%;margin:0 auto}
 .mini-help span{font-family:var(--mono);font-size:var(--tx-2xs);padding:var(--sp-0-5) 7px;border:1px solid var(--good);color:var(--good);text-transform:uppercase;letter-spacing:.03em}
-.mini-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+.mini-stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;width:100%;max-width:var(--w-content);margin:0 auto}
 .mini-wrap{position:relative;overflow:hidden;border:1px solid var(--line2);box-sizing:content-box;max-width:100%}
 .mini-wrap canvas{display:block;width:100%;height:100%;touch-action:none;user-select:none;-webkit-user-select:none}
 #miniText{position:absolute;inset:0;pointer-events:none}
-.mini-ctl{display:flex;gap:var(--sp-2);max-width:560px;width:100%;margin:0 auto}
+.mini-ctl{display:flex;gap:var(--sp-2);max-width:var(--w-content);width:100%;margin:0 auto}
 .mini-ctl .btn{flex:1;min-height:54px;font-size:var(--fs-base);user-select:none;-webkit-user-select:none;touch-action:none}
 .mini-ctl .btn.big{flex:1.6}
 .mini-ctl .btn.held{filter:brightness(1.25)}
+/* yön düğmeleri bir köşede bitişik, ana eylem (itki) öbür köşede */
+.mini-ctl .btn.dir+.btn.primary{margin-left:var(--sp-4)}
+/* düğme, tuvaldeki karşılığıyla aynı renkte (laboratuvar tüpleri) */
+.mini-ctl .btn.tint{background:color-mix(in srgb,var(--ctl-c) 28%,var(--surface2));color:var(--ink);box-shadow:inset 0 -6px 0 var(--ctl-c),inset 0 0 0 1px var(--ctl-c)}
+@media (max-width:420px){.mini-ctl .btn{padding-left:var(--sp-1);padding-right:var(--sp-1);letter-spacing:.02em}}
+/* çıkış onayı: oyun duraklar, "Çık / Devam" sorulur */
+.mini-ask{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;background:var(--scrim);padding:var(--sp-4)}
+.mini-ask[hidden]{display:none}
+.mini-ask-box{background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shadow);padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-3);width:100%;max-width:300px}
+.mini-ask-box h2{font-family:var(--display);font-size:var(--tx-lg);text-transform:uppercase;letter-spacing:.04em;text-align:center}
+.mini-ask-row{display:flex;gap:var(--sp-2)}
+.mini-ask-row .btn{flex:1;min-height:48px}
 :root[data-style="pixel"] .mini-title{font-size:var(--tx-md)} :root[data-style="pixel"] .mini-ctl .btn{font-size:var(--fs-22)}
 .hero-ship{flex-direction:row!important;align-items:center}
 .hero-ship canvas{width:130px!important;height:65px!important;flex:none}
@@ -537,9 +571,19 @@ button.hud-loc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 :root[data-big="1"] .node .n-name,:root[data-big="1"] .node .n-cost{font-size:calc(var(--fs-2xs) / var(--fs-k))}
 :root[data-big="1"][data-style="pixel"] .node .n-name,:root[data-big="1"][data-style="pixel"] .node .n-cost{font-size:calc(var(--fs-xs) / var(--fs-k))}
 :root[data-left="1"] .dock{direction:rtl} :root[data-left="1"] .dock button{direction:ltr}
-:root[data-left="1"] .mini-ctl{flex-direction:row-reverse}
+:root[data-left="1"] .mini-ctl .btn.primary{order:-1} /* solak: yalnızca ana eylem sola geçer; yön ve sıralı düğmeler doğal sırada */
+:root[data-left="1"] .mini-ctl .btn.dir+.btn.primary{margin-left:0;margin-right:var(--sp-4)}
+:root[data-left="1"] .mini-ask-row{flex-direction:row-reverse}
+:root[data-left="1"] .qb-pop{right:auto;left:var(--sp-2)}
 :root[data-left="1"] #modal .row{flex-direction:row-reverse;justify-content:flex-end}
 :root[data-left="1"] .map-bottom{direction:rtl} :root[data-left="1"] .map-bottom .qb{direction:ltr}
+.rotate-hint{display:none}
+/* yatay ve kısa dokunmatik ekran (telefon): dikey çevirme önerisi. Masaüstünde (fare) hiç görünmez */
+@media (orientation:landscape) and (max-height:499px) and (pointer:coarse){
+  .rotate-hint{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-3);padding:var(--sp-6);background:var(--bg);color:var(--ink);text-align:center;font-family:var(--display);font-size:var(--tx-lg)}
+  .rotate-hint span{font-size:var(--fs-glyph-lg);color:var(--accent);line-height:1}
+  .rotate-hint p{max-width:22em}
+}
 .store-warn{flex-shrink:0;background:var(--bad);color:var(--btn-ink);font-family:var(--mono);font-size:var(--tx-xs);padding:var(--sp-1-5) max(var(--sp-3),env(safe-area-inset-right,0px)) var(--sp-1-5) max(var(--sp-3),env(safe-area-inset-left,0px));text-align:center}
 .weeksum{border:1px solid var(--line2);padding:var(--sp-2) var(--sp-2-5);margin:8px 0;background:var(--surface2)}
 .tips{padding-left:18px;display:grid;gap:var(--sp-1-5)}
@@ -550,6 +594,7 @@ button.hud-loc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 <div id="app"></div>
 <div id="modal" hidden></div>
 <div id="toast" aria-live="polite"></div>
+<div class="rotate-hint" role="status"><span aria-hidden="true">⟳</span><p>Daha rahat oynamak için telefonu dikey çevir</p></div>
 
 <script charset="utf-8" src="js/i18n-en.js"></script>
 <script charset="utf-8" src="js/i18n.js"></script>

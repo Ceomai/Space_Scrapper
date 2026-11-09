@@ -48,14 +48,14 @@ const VIEWS = [[320, 568], [360, 640], [375, 667], [390, 844], [412, 915], [768,
     try {
       const state = await p.evaluate(() => ({ mini: !!document.getElementById('mini'), modal: !document.getElementById('modal').hidden, over: !!(window.S && S.over), title: !!document.querySelector('main.title') }));
       if (state.title) { log.push('title'); const c = await p.$('[data-act=cont]'); if (!c) break; await c.click(); await p.waitForTimeout(200); continue; }
-      if (state.mini) { if (miniRun === 0) minis++; if (++miniRun > 400) { errs.push({ step, msg: 'mini oyun bitmiyor: ' + log.filter(x => String(x).startsWith('MINI')).slice(-1)[0] }); await p.click('#miniQuit').catch(() => {}); miniRun = 0; } } else miniRun = 0;
+      if (state.mini) { if (miniRun === 0) minis++; if (++miniRun > 400) { errs.push({ step, msg: 'mini oyun bitmiyor: ' + log.filter(x => String(x).startsWith('MINI')).slice(-1)[0] }); await p.click('#miniQuit').catch(() => {}); await p.click('#miniQuitYes').catch(() => {}); miniRun = 0; } } else miniRun = 0;
       if (state.mini) {
         if (!log.length || !String(log[log.length-1]).startsWith('ctl') && !String(log[log.length-1]).startsWith('tap')) { const tt = await p.evaluate(() => document.querySelector('#mini .mini-title').textContent + ' | ' + (document.getElementById('miniHud') || {}).innerText); log.push('MINI ' + tt); }
         const r = rand();
         if (r < .55) { const ctl = await p.$$('#miniCtl button:not([disabled])'); if (ctl.length) { const c = pick(ctl); await c.click({ timeout: 800 }).catch(() => {}); log.push('ctl'); } }
         else if (r < .9) { const box = await p.$('#miniCanvas'); const bb = box && await box.boundingBox(); if (bb) { await p.mouse.click(bb.x + rand() * bb.width, bb.y + rand() * bb.height); log.push('tap'); } }
         else if (r < .97) { await p.waitForTimeout(400); log.push('bekle'); }
-        else { await p.click('#miniQuit', { timeout: 800 }).catch(() => {}); log.push('quit'); }
+        else { await p.click('#miniQuit', { timeout: 800 }).catch(() => {}); await p.click(Math.random() < .8 ? '#miniQuitYes' : '#miniQuitNo', { timeout: 800 }).catch(() => {}); log.push('quit'); }
         await p.waitForTimeout(40);
       } else {
         // ara sıra günü bitir

@@ -718,7 +718,7 @@ G.shooter = (opts, onEnd) => {
     c.restore();
     SS.FX.draw(fx, c);
   };
-  g.drawUI = (c, P) => { SS.FX.drawText(fx, c, P); if (g.t < 2.5) { c.textAlign = 'center'; c.font = SS.tfont(16); c.fillStyle = P.text; c.fillText('40 saniye dayan. Gemi kendiliğinden ateş eder.', W / 2, 300); c.fillText('Dokun ya da oklarla yön ver.', W / 2, 324); } };
+  g.drawUI = (c, P) => { SS.FX.drawText(fx, c, P); if (g.t < 2.5) { c.textAlign = 'center'; c.font = SS.tfont(16); c.fillStyle = P.text; c.fillText('40 saniye dayan. Gemi kendiliğinden ateş eder.', W / 2, 300); c.fillText(SS.finePointer() ? 'Dokun ya da oklarla yön ver.' : 'Dokunarak yön ver.', W / 2, 324); } };
   g.onEnd = onEnd; SS.Stage.open(g);
 };
 
@@ -840,7 +840,9 @@ G.memory = (opts, onEnd) => {
   let round = 0, lives = 2 + (SS.hasCrew('ela') ? 1 : 0), seq = [], pos = 0, phase = 'wait', pt = 1.2, flash = -1, flashT = 0, endT = -1;
   const PADS = [{ x: 95, y: 230, n: 'Kırmızı', c: 'bad' }, { x: 265, y: 230, n: 'Yeşil', c: 'good' }, { x: 95, y: 410, n: 'Mavi', c: 'crystal' }, { x: 265, y: 410, n: 'Sarı', c: 'accent' }];
   const fx = SS.FX.make();
-  const g = { title: opts.title, W, H, quitLabel: 'Pes et', helpers: opts.helpers, controls: PADS.map((p, i) => ({ id: String(i), label: p.n })) };
+  // düğmeler tuvaldeki tüplerle aynı renkte; klavye ipucu (1–4) yalnızca fare/klavyeli cihazda
+  const kb = SS.finePointer(), PAL0 = SS.Art.P();
+  const g = { title: opts.title, W, H, quitLabel: 'Pes et', helpers: opts.helpers, controls: PADS.map((p, i) => ({ id: String(i), label: p.n, color: PAL0[p.c] })) };
   g.finish = why => { if (g.done) return; g.done = true; g.result = { win: why === 'won', quit: why === 'quit' }; };
   const newSeq = () => { seq = Array.from({ length: 3 + round }, () => rint(0, 3)); pos = 0; phase = 'show'; pt = .5; flash = -1; };
   const press = i => {
@@ -886,7 +888,7 @@ G.memory = (opts, onEnd) => {
   g.drawUI = (c, P) => {
     c.textAlign = 'center'; c.font = SS.tfont(14); c.fillStyle = P.text;
     c.fillText(phase === 'show' ? 'Yanan tüpleri sırasıyla izle…' : phase === 'input' ? 'Aynı sırayla dokun' : '', W / 2, 90);
-    PADS.forEach((p, i) => { c.font = SS.tfont(12); c.fillStyle = P.text; c.fillText(`${p.n} · ${i + 1}`, p.x, p.y + 68); });
+    PADS.forEach((p, i) => { c.font = SS.tfont(12); c.fillStyle = P.text; c.fillText(kb ? `${p.n} · ${i + 1}` : p.n, p.x, p.y + 68); });
     SS.FX.drawText(fx, c, P);
   };
   g.onEnd = onEnd; SS.Stage.open(g);

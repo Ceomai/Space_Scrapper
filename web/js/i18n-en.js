@@ -3304,5 +3304,14 @@ window.SS.I18N_EN = {"Yaşam Modülü":"Habitat",
 "Bu geceki zorunlu ödemeler (tahmini)":"Tonight's required bills (estimate)",
 "Bu gece oksijen, kira ve bakım gibi zorunlu ödemelere paran yetmeyebilir; eksik kalan gecikmiş borca yazılır.":"You might not cover tonight's must-pays like oxygen, rent and upkeep; whatever's short goes on your arrears.",
 "Evet, hepsini öde":"Yes, pay it all",
-"Otomatik (sistem)":"Automatic (system)"
+"Otomatik (sistem)":"Automatic (system)",
+"Oyun duraklatıldı":"Game paused",
+"Çık":"Quit",
+"Dokunarak yön ver.":"Tap to steer.",
+"Diğer göstergeler":"More stats",
+"Daha":"More",
+"Diğer kısayollar":"More shortcuts",
+"Daha rahat oynamak için telefonu dikey çevir":"Turn your phone upright for a more comfortable game",
+"{1} için rehber":"Guide: {1}",
+"Gün {6} · Ay {7}":"Day {6} · Month {7}"
 };

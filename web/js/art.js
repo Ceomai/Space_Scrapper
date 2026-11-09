@@ -221,7 +221,8 @@ Art.item = (c, it, t, P) => {
       c.fillStyle = P.ui; for (let i = -r; i < r; i += 8) { c.beginPath(); c.moveTo(i, -r * .8); c.lineTo(i + 4, -r * .8); c.lineTo(i + 1, -r * .8 + 5); c.lineTo(i - 3, -r * .8 + 5); c.fill(); }
       c.fillStyle = P.ui; c.font = `bold ${r * 1.1}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('?', 0, 3);
       c.restore();
-      if (it.radar) { c.save(); c.globalAlpha = .9; c.fillStyle = P.ui; c.fillRect(x - 13, y - r - 22, 26, 16); c.fillStyle = P.accent; c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(it.radar, x, y - r - 14); c.restore(); }
+      // radar etiketi: küçük ekranda yazı ~11 CSS px altına inmesin (kutu yazıyla birlikte büyür)
+      if (it.radar) { const k = SS.Stage && SS.Stage.textPx ? SS.Stage.textPx(10) / 10 : 1; c.save(); c.globalAlpha = .9; c.fillStyle = P.ui; c.fillRect(x - 13 * k, y - r - 6 - 16 * k, 26 * k, 16 * k); c.fillStyle = P.accent; c.font = `bold ${10 * k}px sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(it.radar, x, y - r - 6 - 8 * k); c.restore(); }
       break;
     case 'bug': { c.save(); c.translate(x, y); c.scale(it.vx > 0 ? 1 : -1, 1);
       const wig = Math.sin(t * 18 + (it.seed || 0)) * 3;

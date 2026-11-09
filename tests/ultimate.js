@@ -57,7 +57,7 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
       if (lv(JSON.parse(after.ship)) - lv(B.ship) > 1) issues.push(`${act}: çift dokunuşla iki geliştirme alındı`);
       if (lv(JSON.parse(after.sk)) - lv(B.sk) > 1) issues.push(`${act}: iki beceri eğitimi alındı`);
       if (after.cash < 0 || !isFinite(after.cash)) issues.push(`${act}: para ${after.cash}`);
-      await p.evaluate(() => { const q = document.getElementById('miniQuit'); q && q.click(); SS.closeModal(); });
+      await p.evaluate(() => { const q = document.getElementById('miniQuit'); q && q.click(); const y = document.getElementById('miniQuitYes'); y && y.click(); SS.closeModal(); });
     }
     issues.length ? fail('Çift dokunuş', issues) : ok('Çift dokunuş', `${scenarios.length} eylemde çift işlem yok`);
     if (p.errs.length) fail('Çift dokunuş sayfa hataları', p.errs); await p.ctx.close(); }
@@ -101,7 +101,7 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
   /* 5. Mini oyun kare süresi (gerçek zamanlı, 2 sn) */
   { const p = await page({ prefs: { style: 'pixel', muted: true } }); await newGame(p);
     const r = await p.evaluate(async () => {
-      const out = {}; const measure = async (name, open) => { open(); const ts = []; let last = performance.now(); await new Promise(res => { const f = t => { ts.push(t - last); last = t; if (ts.length < 90) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); }); const q = document.getElementById('miniQuit'); q && q.click(); await new Promise(r => setTimeout(r, 200)); SS.closeModal(); ts.sort((a, b) => a - b); out[name] = Math.round(ts[Math.floor(ts.length * .9)]); };
+      const out = {}; const measure = async (name, open) => { open(); const ts = []; let last = performance.now(); await new Promise(res => { const f = t => { ts.push(t - last); last = t; if (ts.length < 90) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); }); const q = document.getElementById('miniQuit'); q && q.click(); const y = document.getElementById('miniQuitYes'); y && y.click(); await new Promise(r => setTimeout(r, 200)); SS.closeModal(); ts.sort((a, b) => a - b); out[name] = Math.round(ts[Math.floor(ts.length * .9)]); };
       await measure('hurda', () => SS.Games.scrap('pirate', () => {}, null));
       await measure('savunma', () => SS.Games.shooter({ title: 'x', helpers: [] }, () => {}));
       await measure('kalkan', () => SS.Games.shield({ title: 'x', helpers: [] }, () => {}));
@@ -114,7 +114,7 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
   /* 6. Günün Avı determinizmi */
   { const r = [];
     for (let i = 0; i < 2; i++) { const p = await page({ fast: true }); await newGame(p);
-      r.push(await p.evaluate(async () => { let snap = null; const o = SS.Stage.open; SS.Stage.open = g => { o(g); const d = g._dbg(); snap = JSON.stringify({ v: d.V.id, items: d.items.map(it => [it.kind, Math.round(it.x), Math.round(it.y)]) }); setTimeout(() => document.getElementById('miniQuit').click(), 30); }; SS.startHunt({ seed: 4242, mode: 'practice' }); await new Promise(r => setTimeout(r, 600)); return snap; }));
+      r.push(await p.evaluate(async () => { let snap = null; const o = SS.Stage.open; SS.Stage.open = g => { o(g); const d = g._dbg(); snap = JSON.stringify({ v: d.V.id, items: d.items.map(it => [it.kind, Math.round(it.x), Math.round(it.y)]) }); setTimeout(() => { document.getElementById('miniQuit').click(); document.getElementById('miniQuitYes').click(); }, 30); }; SS.startHunt({ seed: 4242, mode: 'practice' }); await new Promise(r => setTimeout(r, 600)); return snap; }));
       await p.ctx.close(); }
     r[0] && r[0] === r[1] ? ok('Günün Avı herkes için aynı', `${JSON.parse(r[0]).items.length} nesne, saha ${JSON.parse(r[0]).v}`) : fail('Günün Avı determinizmi', [String(r[0]).slice(0, 80), String(r[1]).slice(0, 80)]); }
 

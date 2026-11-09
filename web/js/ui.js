@@ -157,19 +157,21 @@ function coach() {
   const nar = SS.narrator() || 'captain';
   return `<div class="coach">${face(nar, 34)}<p><b>Görev ${S.tut + 1}/${SS.TUTORIAL.length}</b> ${esc(SS.tx(st.text))}</p><button class="coach-x" data-act="skipTut" aria-label="Rehberi geç">Geç</button></div>`;
 }
+// Kısa ekranda (yükseklik ≤ 640 px) üst konsol yalnızca saat, para ve enerjiyi gösterir; öbür göstergeler açılır düğmenin arkasında
+let hudOpen = false;
 function hud() {
-  const seg = (lbl, v, m, k) => { const n = Math.round(pct(v, m) / 10); return `<div class="gauge ${v / m < .25 ? 'low' : ''}"><span>${lbl}</span><div class="segs ${k}">${Array.from({ length: 10 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div><b>${Math.round(v)}</b></div>`; };
-  const v = VIEW_NAME(), late = S.time >= 1320;
-  return `<header class="hud">
+  const seg = (lbl, v, m, k, x) => { const n = Math.round(pct(v, m) / 10); return `<div class="gauge ${v / m < .25 ? 'low' : ''}${x ? ' x' : ''}"><span>${lbl}</span><div class="segs ${k}">${Array.from({ length: 10 }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div><b>${Math.round(v)}</b></div>`; };
+  const v = VIEW_NAME(), late = S.time >= 1320, low = S.hunger < 25 || S.health < 25 || S.morale < 25 || S.arrears > 0 || S.strikes > 0;
+  return `<header class="hud${hudOpen ? ' open' : ''}">
     <div class="hud-row">
       <button class="hud-loc" data-act="ctxHelp" aria-label="${v.name} için rehber"><span class="pcode">${v.code} ?</span><b>${v.name}</b></button>
       <div class="hud-clock ${late ? 'late' : ''}"><b>${SS.clock()}</b><span>Gün ${S.day} · Ay ${Math.floor((S.day - 1) / 28) + 1}</span></div>
       <div class="hud-cash"><b>${fmt(S.cash)}</b><span>${SS.rank().name}</span></div>
       <button class="help" data-act="menu" aria-label="Menü">☰</button>
     </div>
-    <div class="gauges">${seg('Enerji', S.energy, SS.maxEnergy(), 'en')}${seg('Tokluk', S.hunger, 100, 'hu')}${seg('Sağlık', S.health, 100, 'he')}${seg('Moral', S.morale, 100, 'mo')}</div>
+    <div class="gauges" id="hudStats">${seg('Enerji', S.energy, SS.maxEnergy(), 'en')}<button class="hud-more${low ? ' warn' : ''}" data-act="hudMore" aria-expanded="${hudOpen}" aria-controls="hudStats hudChips" aria-label="Diğer göstergeler"><span aria-hidden="true">${low ? '! ' : ''}${hudOpen ? '▴' : '▾'}</span></button>${seg('Tokluk', S.hunger, 100, 'hu', 1)}${seg('Sağlık', S.health, 100, 'he', 1)}${seg('Moral', S.morale, 100, 'mo', 1)}</div>
     ${SS.adsLeft && SS.adsLeft() > 0 && S.energy < 50 ? `<button class="ad-chip" data-act="adEnergy" aria-label="Reklam izle, enerji kazan">⚡ +${SS.AD.energy} enerji <small>reklam ${SS.adsLeft()}/${SS.AD.perDay}</small></button>` : ''}
-    <div class="chips"><span>Yakıt <b>${S.fuel}/${SS.tankCap()}</b></span><span>Kargo <b>${SS.cargoUsed()}/${SS.cargoCap()}</b></span><span>Torp. <b>${S.torps}</b></span><button class="chip-btn ${S.arrears || S.strikes ? 'neg' : ''}" data-act="debtCal" aria-label="Borç ve ödeme takvimi">Borç <b>${fmt(S.loan + S.arrears)}</b>${SS.M().deadline && S.loan > 0 ? ` · ${SS.M().deadline - S.day + 1} gün` : ''}</button></div>
+    <div class="chips" id="hudChips"><span>Yakıt <b>${S.fuel}/${SS.tankCap()}</b></span><span>Kargo <b>${SS.cargoUsed()}/${SS.cargoCap()}</b></span><span>Torp. <b>${S.torps}</b></span><button class="chip-btn ${S.arrears || S.strikes ? 'neg' : ''}" data-act="debtCal" aria-label="Borç ve ödeme takvimi">Borç <b>${fmt(S.loan + S.arrears)}</b>${SS.M().deadline && S.loan > 0 ? ` · ${SS.M().deadline - S.day + 1} gün` : ''}</button></div>
     ${SS.planStrip ? SS.planStrip() : ''}
   </header>`;
 }
@@ -185,6 +187,22 @@ function dock() {
 }
 
 /* ---------- HARİTA ---------- */
+// Hızlı düğme şeridi: en çok 5 düğme görünür; fazlası "Daha" menüsüne gider. Acil (vurgulu / uyarılı) düğmeler önce görünür.
+const QB_MAX = 5;
+function quickBar(list) {
+  const all = list.filter(Boolean); if (all.length <= QB_MAX) return all.join('');
+  const urgent = h => /class="qb (hot|warn)\b/.test(h);
+  const keep = new Set(all.map((h, i) => [h, i]).sort((a, b) => urgent(b[0]) - urgent(a[0]) || a[1] - b[1]).slice(0, QB_MAX - 1).map(x => x[1]));
+  const more = all.filter((h, i) => !keep.has(i));
+  return all.filter((h, i) => keep.has(i)).join('') +
+    `<button class="qb qb-more${more.some(urgent) ? ' warn' : ''}" id="qbMoreBtn" data-act="qbMore" aria-haspopup="true" aria-expanded="false" aria-controls="qbPop"><b aria-hidden="true">⋯</b><span>Daha</span></button>` +
+    `<div class="qb-pop" id="qbPop" role="group" aria-label="Diğer kısayollar" hidden>${more.join('')}</div>`;
+}
+const qbPopShow = on => {
+  const pop = document.getElementById('qbPop'), b = document.getElementById('qbMoreBtn'); if (!pop || !b) return;
+  pop.hidden = !on; b.setAttribute('aria-expanded', String(on));
+  if (on) { const f = pop.querySelector('button'); f && f.focus(); }
+};
 const MAPSTARS = SS.Art.makeStars(90, 360, 320);
 function mapView() {
   const rx = SS.rexWeek(), mine = S.weekEarned || 0, nx = SS.nextShip(), nr = SS.nextRank();
@@ -201,16 +219,16 @@ function mapView() {
       return `<button class="node ${here ? 'here' : ''} ${open ? '' : 'closed'} ${aim ? 'aim' : ''} ${l.x > .78 ? 'edge-r' : l.x < .22 ? 'edge-l' : ''}" style="left:${l.x * 100}%;top:${l.y * 100}%" data-act="go" data-to="${l.id}" aria-label="${l.name}, ${here ? 'buradasın' : open ? `${c.min} dakika` : 'kapalı'}">
         <span class="n-name">${rk >= 0 ? `<i class="rk">${rk + 1}</i>` : ''}${l.name}</span><span class="n-cost">${here ? 'Buradasın' : open ? `${c.min} dk · ${c.energy} en` : `Kapalı · ${SS.openLabel(l.id)}`}</span></button>`;
     }).join('')}</div>
-    <div class="map-bottom">
-      ${S.decision ? `<button class="qb hot" data-act="mapPanel" data-p="decision"><b>!</b><span>Karar</span></button>` : ''}
-      <button class="qb ${S.mile && !S.mile.done && S.mile.due - S.day <= 1 ? 'warn' : ''}" data-act="mapPanel" data-p="goals"><b>${done}/3</b><span>Hedefler</span></button>
-      <button class="qb" data-act="route"><b>${S.route && S.route.length ? S.route.length : '↝'}</b><span>Rota</span></button>
-      ${S.billFix ? `<button class="qb hot" data-act="billFix"><b>🔧</b><span>Onar</span></button>` : ''}
-      ${SS.crewList().length ? `<button class="qb ${sickN ? 'warn' : ''}" data-act="mapPanel" data-p="crew"><b>${SS.crewList().length}</b><span>Hane</span></button>` : ''}
-      ${SS.cquestActive && SS.cquestActive() ? `<button class="qb hot" data-act="cquest"><b>♥</b><span>Görev</span></button>` : ''}
-      ${S.trial && !S.trial.done ? `<button class="qb hot" data-act="trial"><b>⚠</b><span>Tehdit</span></button>` : ''}
-      <button class="qb daily" data-act="dailyPanel"><b>${SS.pendingChallenge ? '⚔' : '★'}</b><span>Günün Avı</span></button>
-      ${S.bulletin ? `<button class="qb" data-act="bulletin"><b>${S.event ? '●' : '○'}</b><span>Bülten</span></button>` : ''}
+    <div class="map-bottom">${quickBar([
+      S.decision && `<button class="qb hot" data-act="mapPanel" data-p="decision"><b>!</b><span>Karar</span></button>`,
+      `<button class="qb ${S.mile && !S.mile.done && S.mile.due - S.day <= 1 ? 'warn' : ''}" data-act="mapPanel" data-p="goals"><b>${done}/3</b><span>Hedefler</span></button>`,
+      `<button class="qb" data-act="route"><b>${S.route && S.route.length ? S.route.length : '↝'}</b><span>Rota</span></button>`,
+      S.billFix && `<button class="qb hot" data-act="billFix"><b>🔧</b><span>Onar</span></button>`,
+      SS.crewList().length && `<button class="qb ${sickN ? 'warn' : ''}" data-act="mapPanel" data-p="crew"><b>${SS.crewList().length}</b><span>Hane</span></button>`,
+      SS.cquestActive && SS.cquestActive() && `<button class="qb hot" data-act="cquest"><b>♥</b><span>Görev</span></button>`,
+      S.trial && !S.trial.done && `<button class="qb hot" data-act="trial"><b>⚠</b><span>Tehdit</span></button>`,
+      `<button class="qb daily" data-act="dailyPanel"><b>${SS.pendingChallenge ? '⚔' : '★'}</b><span>Günün Avı</span></button>`,
+      S.bulletin && `<button class="qb" data-act="bulletin"><b>${S.event ? '●' : '○'}</b><span>Bülten</span></button>`])}
     </div></section>`;
 }
 function mapPanel(p) {
@@ -949,10 +967,21 @@ SS.titleScreen = titleScreen;
 document.addEventListener('toggle', e => { if (e.target && e.target.classList && e.target.classList.contains('setup-more')) T.more = e.target.open; }, true);
 ACT.lang = d => { if (d.l === 'tr' || d.l === 'en') { SS.save && window.S && SS.save(); SS.setLang(d.l); } };
 
+ACT.qbMore = () => { const pop = document.getElementById('qbPop'); qbPopShow(!!pop && pop.hidden); };
+ACT.hudMore = () => {
+  hudOpen = !hudOpen;
+  const h = document.querySelector('.hud'), b = h && h.querySelector('.hud-more'); if (!h || !b) return;
+  h.classList.toggle('open', hudOpen); b.setAttribute('aria-expanded', String(hudOpen));
+  const sp = b.querySelector('span'); if (sp) sp.textContent = (b.classList.contains('warn') ? '! ' : '') + (hudOpen ? '▴' : '▾');
+};
+// menü dışına dokunmak ya da Esc menüyü kapatır; menüden bir düğme seçilince de kapanır
+document.addEventListener('click', e => { const pop = document.getElementById('qbPop'); if (pop && !pop.hidden && !e.target.closest('#qbMoreBtn')) qbPopShow(false); });
+document.addEventListener('keydown', e => { const pop = document.getElementById('qbPop'); if (e.key === 'Escape' && pop && !pop.hidden) { qbPopShow(false); const b = document.getElementById('qbMoreBtn'); b && b.focus(); } });
+
 /* ---------- dinleyiciler ---------- */
 // Çift dokunuş koruması: aynı düğmeye 400 ms içinde ikinci basış yok sayılır (sekme ve gezinme hariç)
 let lastTap = { key: '', t: 0 };
-const NO_DEBOUNCE = new Set(['lang', 'sub', 'rhGo', 'casBet', 'racePick', 'pickCrew', 'pickDiff', 'pickTone', 'theme', 'style', 'roomSel', 'ltog', 'close', 'guide']);
+const NO_DEBOUNCE = new Set(['hudMore', 'qbMore', 'lang', 'sub', 'rhGo', 'casBet', 'racePick', 'pickCrew', 'pickDiff', 'pickTone', 'theme', 'style', 'roomSel', 'ltog', 'close', 'guide']);
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
   const a = ACT[b.dataset.act]; if (!a) return;

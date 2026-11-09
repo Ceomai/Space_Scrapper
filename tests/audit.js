@@ -210,7 +210,7 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
       SS.flow(); for (let i = 0; i < 12 && !document.getElementById('modal').hidden; i++) SS.ACT.close();
       SS.ACT.menu(); SS.onBack(); out.push(document.getElementById('modal').hidden ? 'modal kapandı' : 'MODAL AÇIK');
       S.loc = 'market'; S.view = 'market'; SS.render(); SS.onBack(); out.push(S.view === 'map' ? 'haritaya döndü' : 'HARİTAYA DÖNMEDİ');
-      SS.Games.repair({ size: 4, what: 'x', pay: 1, mods: [] }, () => {}); SS.onBack();
+      SS.Games.repair({ size: 4, what: 'x', pay: 1, mods: [] }, () => {}); SS.onBack(); out.push(SS.Stage.paused() ? 'mini duraklatıldı' : 'MİNİ DURAKLAMADI'); SS.onBack(); out.push(!SS.Stage.paused() && document.getElementById('mini') ? 'geri ile devam' : 'DEVAM YOK'); SS.onBack(); document.getElementById('miniQuitYes').click();
       return out.join(', ');
     });
     await p.waitForTimeout(400);

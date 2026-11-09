@@ -55,7 +55,7 @@ const URL = '' + (process.env.GAME_URL || 'file://' + require('path').resolve(__
   await run('Bütün mini oyunlar · art arda aç-kapat', async p => {
     await start(p);
     await p.evaluate(async () => {
-      const w = ms => new Promise(r => setTimeout(r, ms)); const G = SS.Games, quit = () => { const q = document.getElementById('miniQuit'); if (q) q.click(); };
+      const w = ms => new Promise(r => setTimeout(r, ms)); const G = SS.Games, quit = () => { const q = document.getElementById('miniQuit'); if (q) q.click(); const y = document.getElementById('miniQuitYes'); if (y) y.click(); };
       SS.refreshBoard(true);
       const b = { deliver: null, repair: null, sort: null };
       for (const z of ['belt', 'yard', 'gas', 'pirate', 'lost']) { G.scrap(z, () => {}, null); await w(300); quit(); await w(100); }

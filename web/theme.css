@@ -54,6 +54,7 @@
   --toast-lift:68px;              /* bildirimlerin alttan uzaklığı: alt çubuğun (48px + boşluk) üstü */
   --toast-lift-mini:84px;         /* mini oyunda: alt kontrol düğmelerinin (54px) üstü */
   --toast-lift-map:132px;         /* haritada: alt çubuk + hızlı düğme şeridinin üstü */
+  --w-content:560px;              /* ana içerik ve mini oyun katmanının en geniş hâli (tablet / masaüstü) */
 
   /* köşe yarıçapı ve pah (chamfer) */
   --r-sm:4px; --r-md:6px; --r-lg:8px; --r-pill:999px;
