@@ -749,6 +749,7 @@ G.sort = (shift, onEnd) => {
   const per = shift.per + (SS.assist('ela') ? 2 : 0) + repBonus;
   const timeMax = shift.time + SS.moraleTime();
   const spd = shift.speed * .75; // bant ve gelme sıklığı %25 yavaş
+  const SLIDE = 1.15; // eşyalar bantta %15 daha hızlı kayar (gelme sıklığı değişmez); %20'yi geçmemeli
   let time = timeMax, el = 0, spawnT = 0, score = 0, streak = 0, right = 0, wrong = 0, missed = 0, endT = -1;
   const falling = [], flying = [], fx = SS.FX.make();
   const binY = 505;
@@ -784,7 +785,7 @@ G.sort = (shift, onEnd) => {
       const [kind, bin] = shift.mix != null && Math.random() < .6 ? pick(POOL.filter(p => p[1] === shift.mix)) : pick(POOL);
       falling.push({ kind, bin, x: 180 + rnd(-16, 16), y: -20, r: 15, rot: rnd(-.5, .5), seed: Math.random() * 9, vx: 1 });
     }
-    const sp = (1.1 + el * .03) * spd;
+    const sp = (1.1 + el * .03) * spd * SLIDE;
     for (let i = falling.length - 1; i >= 0; i--) {
       const o = falling[i]; o.y += sp * f;
       if (o.y > binY - 18) { falling.splice(i, 1); missed++; streak = 0; score -= 2; SS.FX.text(fx, o.x, binY - 30, 'Kaçtı! -2', SS.Art.P().bad); }
@@ -796,7 +797,7 @@ G.sort = (shift, onEnd) => {
     c.fillStyle = P.space0; c.fillRect(0, 0, W, H);
     c.fillStyle = P.space1; c.fillRect(140, 0, 80, binY - 20);
     c.strokeStyle = P.metalD; c.lineWidth = 3; c.beginPath(); c.moveTo(140, 0); c.lineTo(140, binY - 20); c.moveTo(220, 0); c.lineTo(220, binY - 20); c.stroke();
-    c.fillStyle = P.metalD; for (let y = (t * 40) % 30 - 30; y < binY - 20; y += 30) c.fillRect(144, y, 72, 3);
+    c.fillStyle = P.metalD; for (let y = (t * 40 * SLIDE) % 30 - 30; y < binY - 20; y += 30) c.fillRect(144, y, 72, 3);
     c.fillStyle = P.warn; c.globalAlpha = .7; for (let x = 0; x < W; x += 24) { c.beginPath(); c.moveTo(x, binY - 26); c.lineTo(x + 12, binY - 26); c.lineTo(x + 6, binY - 20); c.fill(); } c.globalAlpha = 1;
     const cols = [P.metal, P.bug, P.tank];
     BINS.forEach((b, i) => {
