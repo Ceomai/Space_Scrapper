@@ -23,23 +23,23 @@ const expire = () => { for (const b of S.board || []) if (b.rush && !b.done && S
 SS.on('time:after', expire, { order: 10 });
 SS.on('time:after', () => { SS.checkDecals && SS.checkDecals(); }, { order: 20 });
 SS.rushTag = b => b.rush && !b.done ? `<span class="tag hot">ACİL +%40 · ${SS.clock(b.until)}'e kadar</span>` : '';
-const _job = ACT.job;
-ACT.job = d => {
-  const b = (S.board || []).find(x => x.id === (d && d.id)), rush = b && b.rush && !b.done;
-  if (b && b.rush && !b.done && S.time > b.until) { expire(); SS.toast('Bu acil ilanın süresi doldu.', 'bad'); render(); return; }
-  const r = _job(d);
+// Acil ilan işleri (events.js 'job:allow' / 'job:before' / 'job:after')
+const rushOf = d => (S.board || []).find(x => x.id === (d && d.id));
+SS.on('job:allow', ({ d }) => {
+  const b = rushOf(d);
+  if (b && b.rush && !b.done && S.time > b.until) { expire(); SS.toast('Bu acil ilanın süresi doldu.', 'bad'); render(); return false; }
+}, { order: 10 });
+SS.on('job:before', ctx => { const b = rushOf(ctx.d); ctx.rushJob = b; ctx.wasRush = b && b.rush && !b.done; }, { order: 10 });
+SS.on('job:after', ({ rushJob: b, wasRush: rush }) => {
   if (rush && b.done && !b.expired) { st().rush = (st().rush || 0) + 1; SS.checkDecals(); }
-  return r;
-};
+}, { order: 10 });
 
 /* =========================================================
    HAFTANIN AVI: haftada bir yeni tohum, 40 saniye, daha çok tank ve zor saha koşulu
    ========================================================= */
 SS.weekNo = () => Math.floor((Date.parse(SS.todayKey()) - Date.parse('2026-01-05')) / (7 * 864e5)) + 1;
 SS.weeklySeed = () => ((SS.weekNo() * 48271) % 2147483 + 11) | 0;
-const _start = SS.startHunt;
-SS.startHunt = o => {
-  if (o.mode !== 'weekly') return _start(o);
+SS.HUNT_MODES.weekly = o => {
   const zone = ['yard', 'gas', 'pirate'][o.seed % 3];
   SS.Games.scrap(zone, res => weeklyEnd(res, o.seed, zone), { daily: true, weekly: true, seed: o.seed, kinds: [], qty: 0, got: 0, title: `Haftanın Avı #${SS.weekNo()}` });
 };

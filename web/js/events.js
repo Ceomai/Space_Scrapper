@@ -8,6 +8,9 @@
 //   v = SS.filter(name, value, ...args)          // süzgeç: aynı sırayla fn(value, ...args) çağrılır, dönen değer
 //                                                // bir sonrakine geçer (undefined dönerse değer değişmez); hata veren
 //                                                // işleyici atlanır, değer ondan önceki haliyle devam eder
+//   ok = SS.ask(name, ...args)                   // izin sorusu: aynı sırayla çağrılır; biri tam olarak false
+//                                                // dönerse durur ve false döner (sonrakiler çağrılmaz), yoksa true.
+//                                                // Hata veren işleyici "izin ver" sayılır (bir kez raporlanır)
 // Bir işleyicinin hatası yakalanır ve (işleyici başına bir kez) console.error'a yazılır; diğer işleyiciler ve
 // çağıran akış devam eder. SS.hooks: hata ayıklama için olay adı → [{ fn, order, id }] haritası.
 //
@@ -33,6 +36,17 @@
 //   'board:new' (board)   world.js SS.refreshBoard yeni bir pano kurduğunda (S.board = board atandıktan hemen sonra;
 //                         pano yenilenmediyse yayılmaz). Math.random kullanan işleyicilerin sırası oyunu değiştirir.
 //       10  fun.js     acil ilan seçimi (%45, ücret ×1.4)
+//   'job:allow' SORU (ctx)  ui.js ACT.job başında; ctx = { d } (d: eylem verisi). false → iş başlamaz, undefined döner.
+//       10  fun.js     süresi dolmuş acil ilan: kapatır, uyarır, engeller
+//   'job:before' (ctx)    izin verildiyse, işten önce
+//       10  fun.js     acil ilan mı? (ctx.rushJob, ctx.wasRush) — otomatik yakıttan önce bakılır
+//       20  polish.js  otomatik yakıt / (hurda sözleşmesinde) otomatik satış
+//   'job:after'  (ctx)    işten sonra (mini oyun açılmış olabilir); ctx.res = işin dönüşü (ACT.job bunu döndürür)
+//       10  fun.js     acil ilan tamamlandıysa sayaç + çıkartma
+//   'scrap:before' (d)    ui.js ACT.scrap başında (polish.js GUARD doğrulamasından sonra)
+//       10  polish.js  otomatik yakıt/satış, SS._lastDive
+//   SS.HUNT_MODES[mode](o)  olay değil, kayıt: social.js SS.startHunt bu kipte bir işlev varsa ona devreder
+//       weekly  fun.js  Haftanın Avı
 //   SS.genGoals olay değil: expand.js onu bir strateji olarak sarmalıyor (aslını 12 kez yeniden deneyip S.goals'ı
 //   değiştirir); bir gözlemci değil, üretici yerine geçme.
 window.SS = window.SS || {};
@@ -59,6 +73,19 @@ SS.emit = (name, ...args) => {
       if (!h.failed) { h.failed = true; console.error(`[SS.emit] '${name}' işleyicisi hata verdi (order ${h.order}):`, e); }
     }
   }
+};
+
+SS.ask = (name, ...args) => {
+  const list = hooks[name];
+  if (!list || !list.length) return true;
+  for (let i = 0; i < list.length; i++) {
+    const h = list[i];
+    try { if (h.fn(...args) === false) return false; }
+    catch (e) {
+      if (!h.failed) { h.failed = true; console.error(`[SS.ask] '${name}' işleyicisi hata verdi (order ${h.order}), izin verildi sayıldı:`, e); }
+    }
+  }
+  return true;
 };
 
 SS.filter = (name, value, ...args) => {

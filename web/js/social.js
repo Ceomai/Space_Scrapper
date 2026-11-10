@@ -29,7 +29,11 @@ SS.parseChallenge = str => {
 SS.pendingChallenge = SS.parseChallenge(location.hash);
 
 /* ---------- bir tur başlat ---------- */
-SS.startHunt = ({ seed, mode, target }) => {
+// Ek kipler kendi başlatıcısını SS.HUNT_MODES[mode] olarak kaydeder (ör. fun.js: weekly); yoksa varsayılan tur
+SS.HUNT_MODES = {};
+SS.startHunt = o => {
+  if (o && Object.prototype.hasOwnProperty.call(SS.HUNT_MODES, o.mode)) return SS.HUNT_MODES[o.mode](o);
+  const { seed, mode, target } = o;
   const zone = SS.seedZone(seed), no = SS.dailyNo();
   const title = mode === 'daily' ? `Günün Avı #${no}` : mode === 'challenge' ? `Meydan okuma · ${target} puan` : 'Antrenman';
   SS.Games.scrap(zone, res => SS.onHuntEnd({ res, seed, mode, target, zone }), { daily: true, seed, kinds: [], qty: 0, got: 0, title });

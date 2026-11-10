@@ -825,6 +825,43 @@ function sortBrief(b) {
 
 /* ---------- eylemler ---------- */
 const job = (cost, mins, fn) => { const b = SS.jobBlock(cost, mins); if (b) { SS.toast(b, 'bad'); return; } fn(); };
+// İlan panosundaki bir işi başlatır (ACT.job olayların arasında çağırır)
+const runJob = d => {
+  const b = S.board.find(x => x.id === d.id); if (!b || b.done) return;
+  if (b.type === 'order') { if (SS.fulfilOrder(b.id)) { SS.bump('order'); SS.checkGoals(); SS.sfx('big'); SS.toast(`Sipariş teslim edildi: ${fmt(b.pay)}`, 'good'); render(); } return; }
+  job(b.energy, b.dur, () => {
+    if ((b.type === 'deliver' || b.type === 'hunt') && S.fuel < b.fuel) return;
+    if (b.type === 'hunt') {
+      if (S.flags.storm) return;
+      S.fuel -= b.fuel; b.done = true; SS.useJob(b.energy, b.dur); S.stats.runs++; SS.bump('scrap'); S.zoneUse[b.zone] = (S.zoneUse[b.zone] || 0) + 1; SS.save();
+      const ct = { kinds: b.kinds, qty: b.qty, per: b.per, label: b.label, got: 0 };
+      return SS.Games.scrap(b.zone, res => {
+        const full = ct.got >= ct.qty, pay = SS.huntContractPay(b, ct.got, ct.fat);
+        SS.earn(pay); if (ct.got) { SS.bump('hunt'); S.stats.hunts = (S.stats.hunts || 0) + 1; } if (full) SS.repGain('scrap');
+        res.contract = { got: ct.got, qty: ct.qty, pay, full, client: b.client };
+        scrapDone(res);
+      }, ct);
+    }
+    if (b.type === 'sort') return sortBrief(b);
+    if (b.type === 'deliver') S.fuel -= b.fuel;
+    b.done = true; SS.useJob(b.energy, b.dur); SS.save();
+    if (b.type === 'deliver') SS.Games.deliver(b, res => {
+      const tip = res.tip || 0;
+      if (res.ok) res.pay = SS.deliverPay(res.pay);
+      if (res.ok) { SS.earn(res.pay + tip); S.stats.deliver++; SS.bump('deliver'); SS.mood(3); SS.repGain('deliver'); }
+      afterJob();
+      resultModal(res.ok ? `${fmt(res.pay + tip)} kazandın` : res.quit ? 'Teslimattan vazgeçtin' : 'Kargo dağıldı',
+        (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what[0].toLocaleUpperCase('tr') + b.what.slice(1)} ${b.dest}'ya ulaştı.${res.rough ? ' Sert indin, kargo sarsıldı: ödeme %30 kesildi.' : ''}${tip ? ` Yumuşak iniş bahşişi: ${fmt(tip)}.` : ''} Kalan yakıt bonusu ödemeye eklendi. Teslimat itibarı +1.</p>`
+          : `<p>${res.quit ? 'Müşteri sinirli ama yaşıyorsun.' : SS.fun() ? 'Kargo pistin her yerine saçıldı. Müşteri yine de teşekkür kartı gönderdi. Para yok ama.' : 'Gövde sarsıldı, kargo mahvoldu. Ücret yok.'}</p>`) + helpLine(['tolga']), res.ok, 'deliver');
+    });
+    else SS.Games.repair(b, res => {
+      const pay = res.ok ? SS.repairPay(res.pay) : res.pay;
+      if (res.ok) { SS.earn(pay); S.stats.repair++; SS.bump('repair'); SS.repGain('repair'); if ((b.mods || []).includes('loyal')) S.aff.vida = Math.min(100, S.aff.vida + 5); }
+      afterJob();
+      resultModal(res.ok ? `${fmt(pay)} kazandın` : 'Tamir yarım kaldı', (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what} yeniden çalışıyor. Tamir itibarı +1.</p>` : '<p>Süre doldu. Müşteri başka bir tamirci çağırdı.</p>') + helpLine(['ela', 'tolga']), res.ok, 'repair');
+    });
+  });
+};
 const ACT = {
   view: d => { SS.closeModal(); if (d.v !== 'map' && d.v !== 'log' && d.v !== S.loc) return ACT.go({ to: d.v }); S.view = d.v; SS.sfx('click'); render(); document.getElementById('main').scrollTop = 0; },
   go: d => {
@@ -881,41 +918,14 @@ const ACT = {
   unplace: d => { const x = SS.storeDecor(+d.i); if (x) SS.toast(`${x.name} depoya kaldırıldı.`); SS.closeModal(); render(); },
   sellDecor: d => { const x = SS.sellDecor(+d.i); if (x) SS.toast(`${x.name} satıldı.`, 'good'); render(); },
   buy: d => { const it = S.stock.find(x => x.key === d.k), err = SS.buyStock(d.k); if (err) return SS.toast(err, 'bad'); SS.sfx('coin'); SS.checkGoals(); render(); if (it && it.decor) SS.toast('Dekor depoya eklendi. Yaşam Modülü > Odalar\'da bir yuvaya yerleştir.', 'good'); },
+  // Olaylar (events.js): 'job:allow' (izin) → 'job:before' → iş → 'job:after'; ctx = { d, res }
   job: d => {
-    const b = S.board.find(x => x.id === d.id); if (!b || b.done) return;
-    if (b.type === 'order') { if (SS.fulfilOrder(b.id)) { SS.bump('order'); SS.checkGoals(); SS.sfx('big'); SS.toast(`Sipariş teslim edildi: ${fmt(b.pay)}`, 'good'); render(); } return; }
-    job(b.energy, b.dur, () => {
-      if ((b.type === 'deliver' || b.type === 'hunt') && S.fuel < b.fuel) return;
-      if (b.type === 'hunt') {
-        if (S.flags.storm) return;
-        S.fuel -= b.fuel; b.done = true; SS.useJob(b.energy, b.dur); S.stats.runs++; SS.bump('scrap'); S.zoneUse[b.zone] = (S.zoneUse[b.zone] || 0) + 1; SS.save();
-        const ct = { kinds: b.kinds, qty: b.qty, per: b.per, label: b.label, got: 0 };
-        return SS.Games.scrap(b.zone, res => {
-          const full = ct.got >= ct.qty, pay = SS.huntContractPay(b, ct.got, ct.fat);
-          SS.earn(pay); if (ct.got) { SS.bump('hunt'); S.stats.hunts = (S.stats.hunts || 0) + 1; } if (full) SS.repGain('scrap');
-          res.contract = { got: ct.got, qty: ct.qty, pay, full, client: b.client };
-          scrapDone(res);
-        }, ct);
-      }
-      if (b.type === 'sort') return sortBrief(b);
-      if (b.type === 'deliver') S.fuel -= b.fuel;
-      b.done = true; SS.useJob(b.energy, b.dur); SS.save();
-      if (b.type === 'deliver') SS.Games.deliver(b, res => {
-        const tip = res.tip || 0;
-        if (res.ok) res.pay = SS.deliverPay(res.pay);
-        if (res.ok) { SS.earn(res.pay + tip); S.stats.deliver++; SS.bump('deliver'); SS.mood(3); SS.repGain('deliver'); }
-        afterJob();
-        resultModal(res.ok ? `${fmt(res.pay + tip)} kazandın` : res.quit ? 'Teslimattan vazgeçtin' : 'Kargo dağıldı',
-          (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what[0].toLocaleUpperCase('tr') + b.what.slice(1)} ${b.dest}'ya ulaştı.${res.rough ? ' Sert indin, kargo sarsıldı: ödeme %30 kesildi.' : ''}${tip ? ` Yumuşak iniş bahşişi: ${fmt(tip)}.` : ''} Kalan yakıt bonusu ödemeye eklendi. Teslimat itibarı +1.</p>`
-            : `<p>${res.quit ? 'Müşteri sinirli ama yaşıyorsun.' : SS.fun() ? 'Kargo pistin her yerine saçıldı. Müşteri yine de teşekkür kartı gönderdi. Para yok ama.' : 'Gövde sarsıldı, kargo mahvoldu. Ücret yok.'}</p>`) + helpLine(['tolga']), res.ok, 'deliver');
-      });
-      else SS.Games.repair(b, res => {
-        const pay = res.ok ? SS.repairPay(res.pay) : res.pay;
-        if (res.ok) { SS.earn(pay); S.stats.repair++; SS.bump('repair'); SS.repGain('repair'); if ((b.mods || []).includes('loyal')) S.aff.vida = Math.min(100, S.aff.vida + 5); }
-        afterJob();
-        resultModal(res.ok ? `${fmt(pay)} kazandın` : 'Tamir yarım kaldı', (res.ok ? (SS.relicGift ? SS.relicGift() : '') + `<p>${b.what} yeniden çalışıyor. Tamir itibarı +1.</p>` : '<p>Süre doldu. Müşteri başka bir tamirci çağırdı.</p>') + helpLine(['ela', 'tolga']), res.ok, 'repair');
-      });
-    });
+    const ctx = { d };
+    if (!SS.ask('job:allow', ctx)) return;
+    SS.emit('job:before', ctx);
+    ctx.res = runJob(d);
+    SS.emit('job:after', ctx);
+    return ctx.res;
   },
   startSort: d => {
     const b = S.board.find(x => x.id === d.id); if (!b || b.done) return;
@@ -925,13 +935,14 @@ const ACT = {
       resultModal(`${fmt(res.pay)} kazandın`, `<ul class="kv"><li><span>Doğru</span><b>${res.right}</b></li><li><span>Yanlış</span><b>${res.wrong}</b></li><li><span>Kaçan</span><b>${res.missed}</b></li></ul>${helpLine(['ela', 'pit'])}`, true, 'sort');
     });
   },
-  scrap: d => job(SS.COST.scrap, SS.DUR.scrap, () => {
+  // Olay (events.js): 'scrap:before' (d)
+  scrap: d => { SS.emit('scrap:before', d); return job(SS.COST.scrap, SS.DUR.scrap, () => {
     const z = SS.ZONES.find(x => x.id === d.z);
     if (S.flags.storm || z.fuel > S.fuel) return;
     S.fuel -= z.fuel; SS.useJob(SS.COST.scrap, SS.DUR.scrap); S.stats.runs++; SS.bump('scrap');
     S.zoneUse[z.id] = (S.zoneUse[z.id] || 0) + 1; SS.save();
     SS.Games.scrap(z.id, scrapDone);
-  }),
+  }); },
   workshop: () => job(SS.COST.workshop, 60, () => {
     const m = S.cargo.filter(c => c.cat === 'metal' && !c.proc).slice(0, 6); if (!m.length) return;
     SS.useJob(SS.COST.workshop, 60); m.forEach(c => { c.proc = true; c.cat = 'part'; c.value = Math.round(c.value * 1.8); });

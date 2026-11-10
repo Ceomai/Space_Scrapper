@@ -302,19 +302,16 @@ SS.autoSellCargo = () => {
   const n = idx.length, got = SS.sellIdx(idx, .95); SS.toast(`Otomatik satış: ${n} parça, ${fmt(got)} (%5 aracı payı)`, 'good');
   return got;
 };
-const _job = ACT.job;
-ACT.job = d => {
+// İşten/dalıştan hemen önce otomatik yakıt ve satış (events.js 'job:before' / 'scrap:before')
+SS.on('job:before', ({ d }) => {
   const b = S.board.find(x => x.id === d.id);
   if (b && !b.done && (b.type === 'hunt' || b.type === 'deliver') && !SS.jobBlock(b.energy, b.dur)) { SS.autoFuelFor(b.fuel); if (b.type === 'hunt') SS.autoSellCargo(); }
-  return _job(d);
-};
-const _scrap = ACT.scrap;
-ACT.scrap = d => {
+}, { order: 20 });
+SS.on('scrap:before', d => {
   const z = SS.ZONES.find(x => x.id === d.z);
   if (z && !SS.jobBlock(SS.COST.scrap, SS.DUR.scrap)) { SS.autoFuelFor(z.fuel); SS.autoSellCargo(); }
   SS._lastDive = d.z;
-  return _scrap(d);
-};
+}, { order: 10 });
 
 /* =========================================================
    ARAYÜZ · 4 iş verimi

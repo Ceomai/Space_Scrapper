@@ -226,6 +226,53 @@ test('Olaylar: passTime → time:after (acil süresi → çıkartma), refreshBoa
   same(log[1], ['b-mid', true]);
 });
 
+test('Soru (SS.ask): ilk false durdurur, hata izin sayılır', () => {
+  const E = load(), errs = [], log = [];
+  E.console = { ...console, error: (...a) => errs.push(a) };
+  assert.strictEqual(E.SS.ask('t:a', 1), true, 'işleyicisiz soru izin verir');
+  E.SS.on('t:a', () => { throw new Error('boom'); }, { order: 1 });
+  E.SS.on('t:a', x => { log.push(['a', x]); return undefined; }, { order: 2 });
+  const off = E.SS.on('t:a', () => { log.push(['b']); return false; }, { order: 3 });
+  E.SS.on('t:a', () => { log.push(['c']); }, { order: 4 });
+  assert.strictEqual(E.SS.ask('t:a', 7), false);
+  same(log, [['a', 7], ['b']]);
+  off(); log.length = 0;
+  assert.strictEqual(E.SS.ask('t:a', 8), true);
+  same(log, [['a', 8], ['c']]);
+  assert.strictEqual(errs.length, 1);
+});
+test('Olaylar: ACT.job (izin → önce: acil → otomatik yakıt → iş → sonra), ACT.scrap, avlanma kipleri', () => {
+  const E = load(), SS = E.SS, ACT = SS.ACT;
+  same(SS.hooks['job:allow'].map(h => h.order), [10]);
+  same(SS.hooks['job:before'].map(h => h.order), [10, 20]);
+  same(SS.hooks['job:after'].map(h => h.order), [10]);
+  same(SS.hooks['scrap:before'].map(h => h.order), [10]);
+  const S = newGame(E), log = [];
+  SS.render = () => {}; // DOM yok
+  SS.on('job:allow', ctx => { log.push(['allow-last', ctx.d.id]); }, { order: 99 });
+  SS.on('job:before', ctx => log.push(['before-mid', ctx.wasRush]), { order: 15 });
+  SS.on('job:before', () => log.push(['before-last']), { order: 99 });
+  SS.on('job:after', ctx => log.push(['after-first', ctx.res]), { order: -1 });
+  // süresi dolmuş acil ilan: fun (10) engeller, sonraki izin/önce/sonra çağrılmaz
+  S.board = [{ id: 'r1', type: 'deliver', rush: true, until: S.time - 1, done: false, pay: 100, energy: 1, dur: 1, fuel: 0 }];
+  assert.strictEqual(ACT.job({ id: 'r1' }), undefined);
+  same(log, []); assert.ok(S.board[0].expired, 'süresi dolan ilan kapanmalı');
+  // olmayan ilan: bütün aşamalar sırayla, iş undefined döner
+  ACT.job({ id: 'yok' });
+  same(log, [['allow-last', 'yok'], ['before-mid', null], ['before-last'], ['after-first', null]]); // JSON: undefined → null
+  // scrap:before doğrulamadan (GUARD) sonra: geçersiz bölge hiç yayılmaz
+  log.length = 0; SS.on('scrap:before', d => log.push(['scrap', d.z, SS._lastDive]), { order: 99 });
+  ACT.scrap({ z: 'yok' }); same(log, []);
+  S.energy = 0; ACT.scrap({ z: SS.ZONES[0].id }); same(log, [['scrap', SS.ZONES[0].id, SS.ZONES[0].id]]);
+  // kip kaydı: weekly fun.js'ten, bilinmeyen kip varsayılan tura düşer
+  const calls = []; SS.Games.scrap = (zone, cb, ct) => calls.push([zone, !!ct.weekly, ct.title]);
+  assert.ok(typeof SS.HUNT_MODES.weekly === 'function');
+  SS.startHunt({ seed: 4, mode: 'weekly' }); SS.startHunt({ seed: 4, mode: 'practice' });
+  SS.HUNT_MODES.test = o => calls.push(['test', o.seed]); SS.startHunt({ seed: 9, mode: 'test' });
+  same(calls.map(c => c.slice(0, 2)), [['gas', true], [SS.seedZone(4), false], ['test', 9]]);
+  assert.strictEqual(calls[1][2], 'Antrenman');
+});
+
 /* ---------- iş ödemeleri ve fiyatlar (ui.js'ten ayrıldı) ---------- */
 test('İş ödemeleri: sözleşme, teslimat, tamir, fiyatlar', () => {
   const S = newGame(W, ['pit']);
