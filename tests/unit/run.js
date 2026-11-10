@@ -156,6 +156,51 @@ test('Olaylar: SS.newDay sırası (fun → polish günün işi → çekirdek →
   assert.strictEqual(SS.newDay(), undefined, 'notes verilmezse de çalışır, değer döndürmez');
 });
 
+test('Süzgeç: değer sırayla aktarılır, undefined değiştirmez, hata önceki değerle devam eder', () => {
+  const E = load(), errs = [];
+  E.console = { ...console, error: (...a) => errs.push(a) };
+  assert.strictEqual(E.SS.filter('t:f', 5), 5, 'işleyicisiz süzgeç değeri aynen döndürür');
+  E.SS.on('t:f', (v, k) => v * k, { order: 2 });
+  E.SS.on('t:f', v => v + 1, { order: 1 });
+  E.SS.on('t:f', () => undefined, { order: 3 });
+  E.SS.on('t:f', () => { throw new Error('boom'); }, { order: 4 });
+  const off = E.SS.on('t:f', v => v - 100, { order: 5 });
+  assert.strictEqual(E.SS.filter('t:f', 2, 10), 30 - 100);
+  off();
+  assert.strictEqual(E.SS.filter('t:f', 2, 10), 30);
+  assert.strictEqual(errs.length, 1);
+});
+test('Olaylar: SS.sleep (önce → gövde → newDay → sonra), ledger süzgeci ve goals:after', () => {
+  const E = load(), SS = E.SS;
+  same(SS.hooks['sleep:before'].map(h => h.order), [10]);
+  same(SS.hooks['sleep:after'].map(h => h.order), [10]);
+  same(SS.hooks.ledger.map(h => h.order), [10]);
+  same(SS.hooks['goals:after'].map(h => h.order), [10]);
+  const S = newGame(E), log = [];
+  SS.on('sleep:before', ctx => log.push(['sb-first', ctx.sel === null, 'day0' in ctx]), { order: -1 });
+  SS.on('sleep:before', ctx => log.push(['sb-last', ctx.day0, typeof ctx.bonds0]), { order: 99 });
+  SS.on('day:before', () => log.push(['day:before', S.day]), { order: 99 });
+  SS.on('sleep:after', ctx => log.push(['sa-first', S.day, !!ctx.res, !!S.billFix]), { order: -1 });
+  SS.on('sleep:after', ctx => log.push(['sa-last', S.billFix]), { order: 99 });
+  S.billFix = { name: 'Arıza', amt: 0 };
+  let res;
+  SS.on('sleep:after', ctx => { res = ctx.res; }, { order: 100 });
+  const out = SS.sleep(null);
+  same(log, [['sb-first', true, false], ['sb-last', 1, 'object'], ['day:before', 2], ['sa-first', 2, true, true], ['sa-last', null]]);
+  assert.ok(out === res && Array.isArray(out.R) && Array.isArray(out.notes), 'sleep ctx.res döner');
+  // ledger: polish (10) kalemleri L[1]'e ekler; daha sonraki süzgeç onları görür
+  S.billFix = { name: 'Arıza', amt: 7 };
+  SS.on('ledger', L => { log.push(['ledger-last', L[1].id]); return L.concat({ id: 'probe', amt: 0 }); }, { order: 99 });
+  const L = SS.ledger();
+  assert.strictEqual(L[1].id, 'billfix'); assert.strictEqual(L[L.length - 1].id, 'probe');
+  same(log.slice(-1), [['ledger-last', 'billfix']]);
+  // goals:after hedeflerden sonra
+  S.goals = [{ key: 'zz', target: 1, txt: 'x', reward: 10, done: false }]; S.today.zz = 1;
+  SS.on('goals:after', () => log.push(['goals:after', S.goals[0].done]), { order: 99 });
+  SS.checkGoals();
+  same(log.slice(-1), [['goals:after', true]]);
+});
+
 /* ---------- iş ödemeleri ve fiyatlar (ui.js'ten ayrıldı) ---------- */
 test('İş ödemeleri: sözleşme, teslimat, tamir, fiyatlar', () => {
   const S = newGame(W, ['pit']);

@@ -90,8 +90,7 @@ SS.checkMile = () => {
     SS.toast(`Kilometre taşı: ${S.mile.txt} (+${fmt(S.mile.reward)})`, 'ach'); SS.sfx && SS.sfx('big');
   }
 };
-const _goals = SS.checkGoals;
-SS.checkGoals = () => { _goals(); try { SS.checkMile(); } catch (e) {} };
+SS.on('goals:after', () => { try { SS.checkMile(); } catch (e) {} }, { order: 10 });
 
 /* =========================================================
    B8 · BARIŞMA KARARLARI
@@ -135,18 +134,19 @@ SS.on('day:after', notes => {
   if (S.bulletin) { S.bulletin.notes = notes.slice(); S.bulletin.mile = S.mile && !S.mile.done && S.mile.start === S.day ? S.mile.txt : null; S.bulletin.dailyJob = S.dailyJob; S.bulletin.lucky = SS.luckyNight(); }
 }, { order: 10 });
 SS.billLaterDue = () => (S.billLater || []).filter(b => b.due === S.day);
-const _ledger = SS.ledger;
-SS.ledger = () => {
-  const L = _ledger();
+// Akşam defterine masraf kalemleri (events.js 'ledger' süzgeci)
+SS.on('ledger', L => {
   SS.billLaterDue().forEach((b, i) => L.splice(1, 0, { id: 'billlate' + i, name: `Ertelenen masraf: ${b.name}`, amt: b.amt, req: true }));
   if (S.bill && !S.bill.done && S.bill.shown) L.splice(1, 0, { id: 'billnow', name: `Ödenmemiş masraf: ${S.bill.name}`, amt: S.bill.amt, req: true });
   if (S.billFix) L.splice(1, 0, { id: 'billfix', name: `Onarılmayan arıza: ${S.billFix.name}`, amt: S.billFix.amt, req: true });
   return L;
-};
-const _sleep = SS.sleep;
-SS.sleep = sel => {
-  const d0 = S.day, bonds = Object.fromEntries(SS.crewList().map(id => [id, S.crew[id].bond]));
-  const res = _sleep(sel);
+}, { order: 10 });
+// Uyku: önce bağların fotoğrafı, sonra masrafların kapanması ve bağ uyarısı (events.js 'sleep:before'/'sleep:after')
+SS.on('sleep:before', ctx => {
+  ctx.day0 = S.day; ctx.bonds0 = Object.fromEntries(SS.crewList().map(id => [id, S.crew[id].bond]));
+}, { order: 10 });
+SS.on('sleep:after', ctx => {
+  const d0 = ctx.day0, bonds = ctx.bonds0, res = ctx.res;
   S.billLater = (S.billLater || []).filter(b => b.due > d0);
   if (S.bill && !S.bill.done && S.bill.shown) S.bill.done = true;
   S.billFix = null;
@@ -160,8 +160,7 @@ SS.sleep = sel => {
       res.notes.push(msg); if (S.bulletin && S.bulletin.day === S.day) S.bulletin.notes.push(msg);
     }
   }
-  return res;
-};
+}, { order: 10 });
 
 /* =========================================================
    B6 · ESER TAKASI (Zara'nın koleksiyon masası)

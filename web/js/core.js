@@ -265,6 +265,7 @@ SS.checkGoals = () => {
     g.done = true; SS.earn(g.reward); SS.mood(4);
     SS.toast(`Günlük hedef tamam: ${g.txt} (+${fmt(g.reward)})`, 'good');
   }
+  SS.emit('goals:after');
 };
 
 /* ---------- olaylar ---------- */
@@ -431,10 +432,19 @@ SS.ledger = () => {
     if (c.sick) L.push({ id: 'med_' + id, name: `İlaç: ${cp.name}`, amt: Math.round(45 * cm), warn: `İlaçsız ${3 - c.sickDays} gece daha geçerse seni terk eder.` });
   }
   if (SS.hasCrew('ela') && S.day % 7 === 0 && !(S.perks && S.perks.scholar)) L.push({ id: 'school', name: SS.comp('ela').weeklyName, amt: Math.round(SS.comp('ela').weekly * cm), warn: 'Ödemezsen Ela okuldan uzaklaştırılır: bağ -12, moral -4.' });
-  return L;
+  return SS.filter('ledger', L);
 };
 
+// Olaylar (events.js): 'sleep:before' gövdeden önce, 'sleep:after' gövdeden (gün geçişi dahil) sonra; ikisi de ctx alır.
+// ctx = { sel, res }: sel oyuncunun seçimi (gövdeden önce değiştirilebilir), res gövdenin sonucu { R, notes } (sonra eklenir)
 SS.sleep = (sel) => {
+  const ctx = { sel };
+  SS.emit('sleep:before', ctx);
+  ctx.res = sleepBody(ctx.sel);
+  SS.emit('sleep:after', ctx);
+  return ctx.res;
+};
+const sleepBody = (sel) => {
   S.lastDay = { day: S.day, earned: S.today.earned || 0 };
   const m = SS.M(), R = [], notes = SS.notes.splice(0), L = SS.ledger();
   if (!sel) sel = new Set(L.filter(i => !i.req).map(i => i.id));
