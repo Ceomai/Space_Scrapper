@@ -26,5 +26,9 @@ jobs:
         run: |
           npm install --no-save --no-package-lock playwright@1.63.0
           npx playwright install --with-deps chromium
+      - name: Yerel makineyle aynı yedek fontlar (emoji ve sistem fontu farkı yerleşim testlerini şaşırtmasın)
+        run: |
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core fonts-noto-color-emoji
+          fc-cache -f >/dev/null
       - name: Testleri çalıştır
         run: node tests/run.js ${{ github.event.inputs.kapsam == 'tam' && 'tam' || 'hızlı' }}

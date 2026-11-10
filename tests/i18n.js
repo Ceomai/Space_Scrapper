@@ -1,6 +1,7 @@
 // İngilizce dil testi: bütün ekranları, pencereleri ve mini oyunları İngilizce açar; ekranda ya da tuvalde
 // kalan Türkçe metni listeler. Türkçe modun hiç etkilenmediğini de kontrol eder.
 const { chromium } = require('playwright');
+const fontsReady = require('./fonts');
 const URL = '' + (process.env.GAME_URL || 'file://' + require('path').resolve(__dirname, '../web/index.html')) + '';
 const NAMES = /Pıtırcık|Gülşen|Şükrü|Türkçe|Çaycı|Ömer|Şeyma|Gökçe|İpek|Işık|Ayşe|Öykü|Çağla|Özge|Gök|Ünal|Şahin|Ölmez|Güneş|Kılıç|Yıldırım|Doğan|Bülent|Çelik/g;
 (async () => {
@@ -12,7 +13,7 @@ const NAMES = /Pıtırcık|Gülşen|Şükrü|Türkçe|Çaycı|Ömer|Şeyma|Gök�
     window.__cv = new Set(); const C2 = CanvasRenderingContext2D.prototype, o = C2.fillText;
     C2.fillText = function (t, ...r) { if (typeof t === 'string' && window.__cv.size < 50000) window.__cv.add(t); return o.call(this, t, ...r); };
   });
-  await p.goto(URL); await p.waitForTimeout(400);
+  await p.goto(URL); await fontsReady(p); await p.waitForTimeout(400);
   const left = new Map();
   const grab = async where => {
     const r = await p.evaluate(() => { const t = document.body.innerText; const c = [...window.__cv]; window.__cv.clear();
@@ -52,7 +53,7 @@ const NAMES = /Pıtırcık|Gülşen|Şükrü|Türkçe|Çaycı|Ömer|Şeyma|Gök�
   await ctx.close();
   // Türkçe mod değişmedi mi
   const ctx2 = await b.newContext({ viewport: { width: 390, height: 844 } }); const p2 = await ctx2.newPage();
-  await p2.goto(URL); await p2.waitForTimeout(300);
+  await p2.goto(URL); await fontsReady(p2); await p2.waitForTimeout(300);
   const trOk = await p2.evaluate(() => document.body.textContent.includes('Hayata başla') && document.documentElement.lang === 'tr' && SS.T('Hayata başla') === 'Hayata başla');
   await ctx2.close(); await b.close();
   const list = [...left.entries()];

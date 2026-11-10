@@ -1,4 +1,5 @@
 const { chromium } = require('playwright');
+const fontsReady = require('./fonts');
 const URL = '' + (process.env.GAME_URL || 'file://' + require('path').resolve(__dirname, '../web/index.html')) + '';
 (async () => {
   const b = await chromium.launch();
@@ -12,7 +13,7 @@ const URL = '' + (process.env.GAME_URL || 'file://' + require('path').resolve(__
     report.push(`${errs.length ? '✗' : '✓'} ${name}${note ? ' · ' + note : ''}${errs.length ? '\n    ' + errs.slice(0, 3).join('\n    ') : ''}`);
     await ctx.close();
   };
-  const start = async p => { await p.goto(URL); await p.waitForTimeout(300); await p.click('[data-act=start]'); await p.waitForTimeout(150); await p.click('.sheet [data-act=close]'); }; // giriş hikâyesi; kılavuz artık kendiliğinden açılmıyor
+  const start = async p => { await p.goto(URL); await fontsReady(p); await p.waitForTimeout(300); await p.click('[data-act=start]'); await p.waitForTimeout(150); await p.click('.sheet [data-act=close]'); }; // giriş hikâyesi; kılavuz artık kendiliğinden açılmıyor
   await run('Tarayıcı depolaması kapalı', async p => { await start(p); await p.evaluate(() => { SS.ACT.ledger(); }); await p.click('[data-act=sleepNow]'); return 'gün ' + await p.evaluate(() => S.day); },
     { init: () => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('blocked'); } }); } });
   await run('Bozuk kayıt dosyası', async p => { await p.goto(URL); await p.evaluate(() => { localStorage.setItem('space-scrapper-save-v3', '{bozuk'); localStorage.setItem('space-scrapper-prefs', 'xx'); localStorage.setItem('space-scrapper-daily', '[]'); }); await p.reload(); await p.waitForTimeout(300); await start(p); return 'başladı'; });

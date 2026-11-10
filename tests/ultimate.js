@@ -1,12 +1,13 @@
 // Kapsamlı test paketi: içerik, çift dokunuş, yerleşim, bellek/performans, köprü, determinizm, çok uzun oyun
 const { chromium } = require('playwright');
+const fontsReady = require('./fonts');
 const fs = require('fs');
 const URL = '' + (process.env.GAME_URL || 'file://' + require('path').resolve(__dirname, '../web/index.html')) + '';
 const R = []; const ok = (n, d = '') => R.push(`✓ ${n}${d ? ' · ' + d : ''}`); const fail = (n, d) => R.push(`✗ ${n}\n    ${[].concat(d).slice(0, 6).join('\n    ')}`);
 const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel(); ch.port1.onmessage = () => { const cbs = q.splice(0); fake += 1000 / 60; cbs.forEach(cb => { try { cb(fake); } catch (e) { setTimeout(() => { throw e; }); } }); }; performance.now = () => fake; window.requestAnimationFrame = cb => { q.push(cb); ch.port2.postMessage(0); return 1; }; window.cancelAnimationFrame = () => {}; };
 (async () => {
   const b = await chromium.launch({ args: ['--enable-precise-memory-info', '--js-flags=--expose-gc'] });
-  const page = async (opts = {}) => { const ctx = await b.newContext({ viewport: opts.vp || { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message + ' @ ' + (e.stack || '').split('\n')[1])); if (opts.fast) await p.addInitScript(FAST); if (opts.prefs) await p.addInitScript(pr => localStorage.setItem('space-scrapper-prefs', JSON.stringify(pr)), opts.prefs); await p.goto(URL); await p.waitForTimeout(250); p.ctx = ctx; return p; };
+  const page = async (opts = {}) => { const ctx = await b.newContext({ viewport: opts.vp || { width: 390, height: 844 } }); const p = await ctx.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message + ' @ ' + (e.stack || '').split('\n')[1])); if (opts.fast) await p.addInitScript(FAST); if (opts.prefs) await p.addInitScript(pr => localStorage.setItem('space-scrapper-prefs', JSON.stringify(pr)), opts.prefs); await p.goto(URL); await fontsReady(p); await p.waitForTimeout(250); p.ctx = ctx; return p; };
   const newGame = (p, crew = ['pit', 'ela', 'tolga'], diff = [1, 1, 1], tone = 'fun') => p.evaluate(([c, d, t]) => { window.S = SS.newState(d, t, 'T', c); S.nextEvent = null; SS.newDay([]); S.tut = null; SS.closeModal(); SS.render(); }, [crew, diff, tone]);
 
   /* 1. İçerik denetimi: her metnin iki tonu var mı, boş/undefined var mı */
@@ -66,7 +67,7 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
   for (const vp of [{ width: 320, height: 568 }, { width: 360, height: 740 }, { width: 412, height: 915 }, { width: 768, height: 1024 }]) for (const style of ['vector', 'pixel']) {
     const p = await page({ vp, prefs: { style, theme: 'gece', muted: true } }); await newGame(p);
     const r = await p.evaluate(() => {
-      const bad = []; S.cash = 50000; S.tier = 1; S.lic = { deliver: 1, repair: 1, sort: 1, order: 1, scrap2: 1, scrap3: 1 }; S.decorStore = SS.DECOR.slice(0, 5).map(d => d.id); S.cargo = [{ kind: 'sat', value: 90, cat: 'metal' }, { kind: 'relic', value: 300, cat: 'relic', relic: 'r1' }];
+      const bad = [], warn = []; S.cash = 50000; S.tier = 1; S.lic = { deliver: 1, repair: 1, sort: 1, order: 1, scrap2: 1, scrap3: 1 }; S.decorStore = SS.DECOR.slice(0, 5).map(d => d.id); S.cargo = [{ kind: 'sat', value: 90, cat: 'metal' }, { kind: 'relic', value: 300, cat: 'relic', relic: 'r1' }];
       S.trial = { id: 'raid', day: 1, demand: 300, head: 'x', text: 'x', done: false }; S.decision = SS.DECISIONS[0].id;
       const subs = { home: ['room', 'crew', 'items', 'house'], jobs: ['all', 'hunt', 'deliver', 'repair', 'other'], hangar: ['hunt', 'upg', 'yard'], market: ['sell', 'buy'], cantina: ['food', 'tables'], academy: ['lic', 'skill'], casino: ['games', 'lounge'], log: ['cap', 'rehber', 'story', 'ach', 'set'] };
       const rect = e => e.getBoundingClientRect();
@@ -75,13 +76,14 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
         const tag = v + (sb ? '/' + sb : '');
         document.querySelectorAll('#app [data-act]').forEach(e => { const r = rect(e); if (!r.width) return; const scr = (() => { let q = e.parentElement; while (q && q !== document.body) { const cs = getComputedStyle(q); if (/(auto|scroll)/.test(cs.overflowX) && q.scrollWidth > q.clientWidth) return true; q = q.parentElement; } return false; })(); if (!scr && (r.right > innerWidth + 1 || r.left < -1)) bad.push(`${tag}: ekran dışı "${e.innerText.slice(0, 20)}"`); const hb = e.classList.contains('node') ? r.height + parseFloat(getComputedStyle(e, '::before').height || 0) : r.height; if (hb < 28 && !e.classList.contains('coach-x') && !e.classList.contains('chip-bet')) bad.push(`${tag}: küçük dokunma alanı ${Math.round(r.height)}px "${(e.innerText || e.getAttribute('aria-label') || '').slice(0, 20)}"`); });
         document.querySelectorAll('#app .btn, #app .qb, #app .node .n-name, #app .node .n-cost').forEach(e => { if (e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).textOverflow !== 'ellipsis') bad.push(`${tag}: taşan yazı "${e.innerText.slice(0, 24)}"`); });
-        if (v === 'map') { const n = [...document.querySelectorAll('.node')].map(rect); for (let i = 0; i < n.length; i++) for (let j = i + 1; j < n.length; j++) { const a = n[i], c = n[j]; if (a.left < c.right - 4 && c.left < a.right - 4 && a.top < c.bottom - 4 && c.top < a.bottom - 4) bad.push(`harita: düğümler çakışıyor ${i}-${j}`); } }
+        if (v === 'map') { const n = [...document.querySelectorAll('.node')].map(rect); for (let i = 0; i < n.length; i++) for (let j = i + 1; j < n.length; j++) { const a = n[i], c = n[j]; if (a.left < c.right - 4 && c.left < a.right - 4 && a.top < c.bottom - 4 && c.top < a.bottom - 4) bad.push(`harita: düğümler çakışıyor ${i}-${j}`); else if (a.top < c.bottom - 4 && c.top < a.bottom - 4) { const gap = Math.max(c.left - a.right, a.left - c.right); if (gap < 2) warn.push(`harita: düğümler sınırda (${Math.round(gap)} px boşluk) ${i}-${j}`); } } }
         const de = document.documentElement; if (de.scrollHeight > innerHeight + 2 || de.scrollWidth > innerWidth + 2) bad.push(`${tag}: sayfa taşması`);
       }
-      return [...new Set(bad)];
+      return { bad: [...new Set(bad)], warn: [...new Set(warn)] };
     });
     const name = `Yerleşim ${vp.width}x${vp.height} ${style}`;
-    r.length ? fail(name, r) : ok(name); if (p.errs.length) fail(name + ' hataları', p.errs); await p.ctx.close();
+    // Sınırda kalan çakışmalar (2 px'ten az boşluk) başarısızlık değil, uyarıdır: başka bir makinede kırmızıya dönmeden önce haber verir
+    r.bad.length ? fail(name, r.bad) : ok(name, r.warn.length ? 'UYARI: ' + r.warn.join('; ') : ''); if (p.errs.length) fail(name + ' hataları', p.errs); await p.ctx.close();
   }
 
   /* 4. Bellek ve performans: 3000 ekran çizimi, harita animasyonu */

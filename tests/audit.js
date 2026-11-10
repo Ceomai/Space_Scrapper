@@ -2,6 +2,7 @@
 // kalıcılık, yaşam döngüsü, uygulama köprüsü, uç sayılar, geri tuşu ve performans ölçümleri.
 // Kullanım: node tests/audit.js [tur=1]   — çıktıdaki ✗ satırları başarısızlıktır.
 const { chromium } = require('playwright');
+const fontsReady = require('./fonts');
 const URL = process.env.GAME_URL || 'file://' + require('path').resolve(__dirname, '../web/index.html');
 const ROUNDS = +process.argv[2] || 1;
 const VIEWS = ['map', 'home', 'jobs', 'hangar', 'market', 'cantina', 'clinic', 'krell', 'academy', 'casino', 'log'];
@@ -27,7 +28,7 @@ const FAST = () => { let fake = 0; const q = []; const ch = new MessageChannel()
     await ctx.close().catch(() => {});
   };
   const boot = async (p, name) => {
-    await p.goto(URL); await p.waitForTimeout(200);
+    await p.goto(URL); await fontsReady(p); await p.waitForTimeout(200);
     if (name != null) await p.fill('#capName', name);
     await p.click('[data-act=start]'); await p.waitForTimeout(100);
     await p.evaluate(() => { SS.closeModal(); S.tut = null; S.easeSeen = 1; });

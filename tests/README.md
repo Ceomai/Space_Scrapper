@@ -20,3 +20,7 @@ node tests/run.js tam    # tam (~60 dk)
 | `fast.js` | Mini oyunları atlayıp oyunun bütün eylemlerini rastgele girdilerle sürer; her adımda değerlerin geçerliliğini denetler |
 | `monkey.js` | Gerçek arayüzde rastgele dokunan oturumlar (7 ekran boyutu, rastgele ayarlar) |
 | `deep.js` + `bot.js` | 27 zorluk birleşimi × hane seçenekleriyle oyunu baştan sona oynar; rastgele kararlar, sınamalar, banka kredisi, kaydet-yükle ve Yeni Oyun+ |
+
+## Fontlar
+
+Yerleşim testleri yazı genişliklerini ölçer. `tests/fonts.js` sayfa açıldığında oyunun kendi fontlarını (`web/fonts`) yükletip bekler; GitHub iş akışı da yerel makinedeki yedek fontları (DejaVu, Noto Color Emoji) kurar. Böylece iki ortam aynı genişlikleri ölçer. Harita etiketleri arasında 2 px'ten az boşluk kalırsa test geçer ama `UYARI` yazar: başka bir makinede kırmızıya dönmeden önce düzeltin.
