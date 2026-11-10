@@ -141,8 +141,8 @@ const curQ = () => { const id = S.cquest && S.cquest.id; const q = allQ().find(x
 SS.cquestActive = () => !!(window.S && curQ());
 const have = q => q.need.kind ? S.cargo.filter(c => c.kind === q.need.kind).length : S.cash;
 const ready = q => q.need.kind ? have(q) >= q.need.qty : S.cash >= q.need.cash;
-const _newDay = SS.newDay;
-SS.newDay = (notes = []) => {
+// Gün başında (SS.newDay gövdesinden önce, bkz. events.js 'day:before')
+SS.on('day:before', notes => {
   try {
     S.cqDone = S.cqDone && typeof S.cqDone === 'object' ? S.cqDone : {};
     S.cqLater = Array.isArray(S.cqLater) ? S.cqLater.filter(x => x && Number.isFinite(x.day)) : [];
@@ -154,8 +154,7 @@ SS.newDay = (notes = []) => {
       if (q) { S.cquest = { id: q.id }; notes.push(`${SS.comp(q.comp).name} senden bir şey istiyor: “${q.title}”. Üstteki ♥ Görev düğmesine bak.`); }
     }
   } catch (e) {}
-  return _newDay(notes);
-};
+}, { order: 10 });
 ACT.cquest = () => {
   const q = curQ(); if (!q) { S.cquest = null; return render(); }
   const n = q.need, need = n.kind ? `${n.qty} × ${SS.ITEMS[n.kind].name} (kargonda ${have(q)})` : `${fmt(n.cash)} (nakit ${fmt(S.cash)})`;

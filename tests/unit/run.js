@@ -113,6 +113,49 @@ test('Ekonomi: aynı tohum aynı sonucu verir (belirlenimci)', () => {
 });
 test('Ekonomi: zor ayarlarla da değişmezler korunur', () => { economy(3, 30, [2, 2, 2]); });
 
+/* ---------- olay veriyolu (events.js) ---------- */
+test('Olaylar: sıra, eşit sırada kayıt sırası, kaydı silme', () => {
+  const E = load(), log = [];
+  E.SS.on('t:x', () => log.push('b0'));
+  E.SS.on('t:x', () => log.push('c5'), { order: 5 });
+  E.SS.on('t:x', () => log.push('a-5'), { order: -5 });
+  const off = E.SS.on('t:x', () => log.push('d0'));
+  E.SS.on('t:x', (a, b) => log.push('args:' + a + b), { order: 9 });
+  E.SS.emit('t:x', 1, 2);
+  same(log, ['a-5', 'b0', 'd0', 'c5', 'args:12']);
+  off(); off(); log.length = 0;
+  E.SS.emit('t:x', 3, 4);
+  same(log, ['a-5', 'b0', 'c5', 'args:34']);
+  E.SS.emit('t:yok');
+});
+test('Olaylar: hatalı işleyici diğerlerini durdurmaz, bir kez raporlanır', () => {
+  const E = load(), log = [], errs = [];
+  E.console = { ...console, error: (...a) => errs.push(a) };
+  E.SS.on('t:e', () => log.push(1), { order: 1 });
+  E.SS.on('t:e', () => { throw new Error('boom'); }, { order: 2 });
+  E.SS.on('t:e', () => log.push(3), { order: 3 });
+  E.SS.emit('t:e'); E.SS.emit('t:e');
+  same(log, [1, 3, 1, 3]);
+  assert.strictEqual(errs.length, 1, 'hata işleyici başına bir kez yazılmalı');
+});
+test('Olaylar: SS.newDay sırası (fun → polish günün işi → çekirdek → polish taşı/bülten → haftalık özet)', () => {
+  const E = load(), SS = E.SS;
+  same(SS.hooks['day:before'].map(h => h.order), [10, 20]);
+  same(SS.hooks['day:after'].map(h => h.order), [10, 20]);
+  const S = newGame(E), log = [];
+  SS.on('day:before', n => log.push(['before-first', n.includes('gec'), S.bulletin.day]), { order: -1 });
+  SS.on('day:before', n => { log.push(['before-mid', n.includes('gec')]); S.dailyJob = 'X'; }, { order: 15 });
+  SS.on('day:before', () => log.push(['before-last', S.dailyJob !== 'X', S.bulletin.day]), { order: 99 });
+  SS.on('day:after', () => log.push(['after-first', S.bulletin.day, 'dailyJob' in S.bulletin]), { order: -1 });
+  SS.on('day:after', () => log.push(['after-mid', 'dailyJob' in S.bulletin, 'week' in S.bulletin]), { order: 15 });
+  SS.on('day:after', n => log.push(['after-last', 'week' in S.bulletin, n === S.bulletin.notes]), { order: 99 });
+  S.day = 8; S.weekSnap = null; S.cqLater = [{ day: 1, cash: 0, text: 'gec' }];
+  SS.newDay(['not']);
+  same(log, [['before-first', false, 1], ['before-mid', true], ['before-last', true, 1], ['after-first', 8, false], ['after-mid', true, false], ['after-last', true, false]]);
+  assert.ok(S.bulletin.notes.includes('not'), 'notlar bültene taşınmalı');
+  assert.strictEqual(SS.newDay(), undefined, 'notes verilmezse de çalışır, değer döndürmez');
+});
+
 /* ---------- iş ödemeleri ve fiyatlar (ui.js'ten ayrıldı) ---------- */
 test('İş ödemeleri: sözleşme, teslimat, tamir, fiyatlar', () => {
   const S = newGame(W, ['pit']);

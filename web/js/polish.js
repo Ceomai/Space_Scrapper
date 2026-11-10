@@ -115,8 +115,8 @@ for (const [id, R] of Object.entries(RECON)) SS.DECISIONS.push({ id: 'recon_' + 
    ========================================================= */
 const JOB_NAMES = { deliver: 'Teslimat', repair: 'Tamir', sort: 'Ayrıştırma', hunt: 'Hurda sözleşmesi' };
 SS.JOB_NAMES = JOB_NAMES;
-const _newDay = SS.newDay;
-SS.newDay = notes => {
+// Gün döngüsü olayları (sıralar events.js'te): önce masraf/günün işi, sonra kilometre taşı ve bülten ekleri
+SS.on('day:before', () => {
   // günün işi (ilan panosu yenilenmeden önce seçilir)
   const types = ['deliver', 'repair', 'sort'].filter(t => SS.hasLic(t));
   S.dailyJob = types.length ? pick(types) : null;
@@ -126,13 +126,14 @@ SS.newDay = notes => {
     const b = pick(BILLS); S.bill = { id: b.id, name: b.name, amt: SS.billAmount(), day: S.day, done: false };
     S.nextBill = S.day + rint(10, 14);
   }
-  _newDay(notes);
+}, { order: 20 });
+SS.on('day:after', notes => {
   if (S.decision === 'bill' && S.bill) S.bill.shown = true;
   // kilometre taşı
   if (S.mile && !S.mile.done && S.day > S.mile.due) { notes.push(`Kilometre taşı kaçtı: ${S.mile.txt}. Yenisi geldi.`); S.mile = null; }
   if ((!S.mile || S.mile.done) && S.day >= 3 && S.day >= (S.mileNext || 0)) SS.startMile();
   if (S.bulletin) { S.bulletin.notes = notes.slice(); S.bulletin.mile = S.mile && !S.mile.done && S.mile.start === S.day ? S.mile.txt : null; S.bulletin.dailyJob = S.dailyJob; S.bulletin.lucky = SS.luckyNight(); }
-};
+}, { order: 10 });
 SS.billLaterDue = () => (S.billLater || []).filter(b => b.due === S.day);
 const _ledger = SS.ledger;
 SS.ledger = () => {
@@ -449,9 +450,7 @@ SS.relicGift = () => {
    HAFTALIK ÖZET (her 7. günün ardından bültende)
    ========================================================= */
 const weekSnap = () => ({ deliver: S.stats.deliver, repair: S.stats.repair, sort: S.stats.sort, runs: S.stats.runs, hunts: S.stats.hunts || 0, earned: S.stats.earned, album: albumN(), miles: S.stats.miles || 0, decisions: S.stats.decisions });
-const _newDay2 = SS.newDay;
-SS.newDay = notes => {
-  _newDay2(notes);
+SS.on('day:after', () => {
   if (!S.weekSnap) S.weekSnap = weekSnap();
   if (S.day > 1 && S.day % 7 === 1) {
     const a = S.weekSnap, b = weekSnap(), rx = (S.rexLog || []).slice(-1)[0];
@@ -462,7 +461,7 @@ SS.newDay = notes => {
     S.weekSnap = b;
     if (S.bulletin) S.bulletin.week = S.weekSum;
   }
-};
+}, { order: 20 });
 SS.weekSumHtml = W => !W ? '' : `<div class="weeksum"><p class="label">${W.week}. haftanın özeti</p>
   <ul class="kv"><li><span>Kazanç</span><b>${fmt(W.earned)}</b></li>
   ${W.rex ? `<li class="${W.rex.win ? '' : 'neg'}"><span>Rex yarışı</span><b>${W.rex.win ? 'kazandın' : 'kaybettin'} · ${fmt(W.rex.mine)} / ${fmt(W.rex.rex)}</b></li>` : ''}

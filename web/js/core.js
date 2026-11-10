@@ -331,7 +331,9 @@ SS.decide = i => {
 };
 
 /* ---------- gün döngüsü ---------- */
-SS.newDay = notes => {
+// Olaylar (events.js): 'day:before' gövdeden önce, 'day:after' gövdeden (bülten hazırlandıktan) sonra; ikisi de notes alır
+SS.newDay = (notes = []) => {
+  SS.emit('day:before', notes);
   const echoes = S.echo.splice(0);
   S.ability = {}; S.pitZone = null; S.tolgaJob = false; S.boardWin = -1; S.stockWin = -1; S.flags = {};
   SS.applyTease();
@@ -375,6 +377,7 @@ SS.newDay = notes => {
     crew: SS.crewList().map(id => ({ id, status: SS.crewStatus(id) })),
     decision: S.decision && SS.curDecision() ? SS.curDecision().title : null, tease: S.teaseToday,
   };
+  SS.emit('day:after', notes);
 };
 
 // Hane durumu: aç / hasta / arızalı / iyi
