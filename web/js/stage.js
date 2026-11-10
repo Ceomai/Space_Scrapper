@@ -7,6 +7,8 @@ SS.finePointer = () => { try { return matchMedia('(pointer:fine)').matches; } ca
 
 Stage.open = game => {
   Stage.close(true);
+  // sonuç penceresinden ('Tekrar dal', 'Benzer iş') açılan oyunun kontrollerini pencere örtmesin
+  SS.closeModal && SS.closeModal();
   cur = game; game.input = {}; game.t = 0; game.done = false; paused = false;
   const el = document.createElement('div');
   el.className = 'mini'; el.id = 'mini';
@@ -57,16 +59,15 @@ Stage.open = game => {
       const off = e => { e.preventDefault(); game.input[id] = false; b.classList.remove('held'); };
       b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
     } else {
-      // Dokunuşta beklemeden tepki: eylem pointerdown'da çalışır, ardından gelen click yok sayılır.
-      // Klavye (Enter / Boşluk) yalnızca click üretir, o yol olduğu gibi çalışır.
-      let downAt = -1e9;
+      // Dokunuşta beklemeden tepki: eylem pointerdown'da çalışır, işaretçiden gelen click (detail > 0) her zaman yok sayılır
+      // (uzun basışta da). Klavye (Enter / Boşluk) ve programla tetiklenen click detail = 0 taşır, o yol olduğu gibi çalışır.
       b.addEventListener('pointerdown', e => {
         if (e.button !== 0 || b.disabled || paused) return;
-        downAt = performance.now(); game.action && game.action(id);
+        game.action && game.action(id);
       });
       b.addEventListener('click', e => {
         e.preventDefault();
-        if (performance.now() - downAt < 1000) { downAt = -1e9; return; }
+        if (e.detail > 0) return;
         if (!paused) game.action && game.action(id);
       });
     }

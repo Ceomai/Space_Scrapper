@@ -519,6 +519,7 @@ body:has(main.v-map) #toast{--toast-lift:var(--toast-lift-map)} /* haritada altt
 .toast.out{opacity:0;transform:translateY(8px)}
 @keyframes toastIn{from{opacity:0;transform:translateY(12px) scale(.98)}}
 .toast.bad{pointer-events:auto;cursor:pointer}
+body:has(#modal:not([hidden])) #toast{bottom:auto;top:calc(var(--sp-3) + env(safe-area-inset-top,0px));flex-direction:column-reverse} /* açık pencerenin alt düğmelerini örtmesin */
 
 /* ---------- mini oyun katmanı ---------- */
 .mini{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding:calc(var(--sp-2) + env(safe-area-inset-top,0px)) max(var(--sp-3),env(safe-area-inset-right,0px)) calc(var(--sp-2-5) + env(safe-area-inset-bottom,0px)) max(var(--sp-3),env(safe-area-inset-left,0px));gap:7px;box-sizing:border-box}

@@ -318,7 +318,7 @@ function startMap() {
   wrap.classList.toggle('compact', H < 460);
   const { ctx, pixel } = SS.Art.setup(cv, W, H, .55);
   const locs = SS.LOCS.map(l => ({ ...l, isOpen: l.id === 'home' || SS.isOpen(l.id) }));
-  const t0 = performance.now(), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const t0 = performance.now(), still = SS.reduceMotion();
   let drawn = false;
   const frame = () => {
     if (!cv.isConnected) return;
@@ -336,7 +336,7 @@ function startHab() {
   const room = document.getElementById('roomCanvas'), cv = room || document.getElementById('habCanvas'); if (!cv) return;
   const L = SS.habitatLayout(360, 300), W = 360, H = room ? 320 : 300, rid = room && room.dataset.room;
   const { ctx, pixel } = SS.Art.setup(cv, W, H, .6);
-  const t0 = performance.now(), still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const t0 = performance.now(), still = SS.reduceMotion();
   let drawn = false;
   const frame = () => {
     if (!cv.isConnected) return;
