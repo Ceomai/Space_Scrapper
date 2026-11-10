@@ -240,15 +240,20 @@ const stake = n => {
   return true;
 };
 // Şanslı gece (her haftanın 5. günü): ödeme beklenen değeri 1,0 olacak şekilde büyütülür; kasa avantajı yok
-const settle = (n, mult, ev) => {
+// Bahis, sonuç belli olduğu anda (bahis anında) kayda işlenir: book() parayı, istatistiği ve moral etkisini yazar ve kaydeder.
+// Animasyon yalnızca gösterir; bitince reveal() sesi çalar, hedefleri denetler ve ekranı tazeler. Böylece animasyon sırasında
+// pencere kapatılsa, ana menüye çıkılsa ya da gün değişse de bahis ne kaybolur ne iki kez ödenir.
+const book = (n, mult, ev) => {
   if (mult > 0 && ev && ev < 1 && SS.luckyNight && SS.luckyNight()) mult = mult / ev;
   const win = Math.round(n * mult);
   if (win) S.cash += win;
   S.casino.net += win - n;
-  if (win > n) { SS.mood(3); S.casino.best = Math.max(S.casino.best, win - n); SS.sfx('coin'); } else { SS.mood(SS.hard() ? -3 : -1); SS.sfx('bad'); }
-  S.today.casino = (S.today.casino || 0) + 1; SS.checkGoals(); SS.save(); render();
-  return win;
+  if (win > n) { SS.mood(3); S.casino.best = Math.max(S.casino.best, win - n); } else SS.mood(SS.hard() ? -3 : -1);
+  S.today.casino = (S.today.casino || 0) + 1; SS.save();
+  return { win, good: win > n, s0: S };
 };
+// Animasyon bitince: oyun aynı oyunsa (ana menüye çıkılıp kayıt yeniden açılmadıysa) etkiler ve ekran güncellenir
+const reveal = r => { if (window.S !== r.s0) return false; SS.sfx(r.good ? 'coin' : 'bad'); SS.checkGoals(); render(); return true; };
 const betRow = () => `<div class="row bets">${casBets().map(b => `<button class="chip-bet ${bet() === b ? 'on' : ''}" data-act="casBet" data-b="${b}" ${BUSY ? 'disabled' : ''}>${fmt(b)}</button>`).join('')}</div>`;
 const casHead = (name, rule) => `<p class="eyebrow">${name} · el başı ${CAS.mins} dk, ${CAS.en} enerji · bugün ${S.casino.today}/${CAS.limit}${SS.luckyNight && SS.luckyNight() ? ' · ŞANSLI GECE' : ''}</p>${rule ? `<p class="muted">${rule}</p>` : ''}`;
 // Animasyon bitince sonuç penceresi yalnızca oyuncu masada kaldıysa yeniden çizilir:
@@ -288,14 +293,13 @@ ACT.wheelSpin = () => {
   const target = (360 - i * a) % 360, cur = ((WDEG % 360) + 360) % 360;
   const end = WDEG + 360 * 4 + ((target - cur + 360) % 360) + rnd(-a * .3, a * .3);
   wheelView('Çark dönüyor…');
-  const cv = document.getElementById('wheelCv'), s0 = S; WDEG = end;
+  const cv = document.getElementById('wheelCv'), m = WHEEL[i], r = book(n, m, CAS_EV.wheel), w = r.win; WDEG = end;
   // Hareketi azalt açıkken çark kısa döner (0,8 sn); sonuç aynı
   const quick = SS.reduceMotion && SS.reduceMotion(), spin = quick ? 800 : 2600;
   requestAnimationFrame(() => requestAnimationFrame(() => { cv.style.transition = `transform ${spin}ms cubic-bezier(.15,.85,.2,1)`; cv.style.transform = `rotate(${end}deg)`; }));
   SS.sfx('fire');
   setTimeout(() => {
-    BUSY = false; if (window.S !== s0) return;
-    const show = casStill('wheelCv'), m = WHEEL[i], w = settle(n, m, CAS_EV.wheel);
+    BUSY = false; const show = casStill('wheelCv'); if (!reveal(r)) return;
     if (show) wheelView(m ? `×${String(m).replace('.', ',')}: ${fmt(w)} geri aldın${w > n ? '!' : '.'}` : 'Boş dilim. Bahis kasanın.');
   }, spin + 150);
 };
@@ -315,13 +319,12 @@ ACT.diceRoll = d => {
   if (BUSY) return; const n = bet(); if (!stake(n)) return;
   BUSY = true; diceView('Zarlar kara deliğe yuvarlanıyor…'); SS.sfx('click');
   // Sonuç baştan belirlenir ve bir kez ödenir; animasyon yalnızca gösterir (pencere kapatılsa da bahis sonuçlanır)
-  const fin = [rint(1, 6), rint(1, 6)], s0 = S; let k = 0, done = false;
+  const fin = [rint(1, 6), rint(1, 6)]; let k = 0, done = false;
   const s = fin[0] + fin[1], hit = d.k === 'lo' ? s <= 6 : d.k === 'hi' ? s >= 8 : d.k === 'seven' ? s === 7 : fin[0] === fin[1];
-  const m = DICE.find(x => x[0] === d.k)[2];
+  const m = DICE.find(x => x[0] === d.k)[2], r = book(n, hit ? m : 0, CAS_EV.dice[d.k]), w = r.win;
   const finish = show => {
     if (done) return; done = true; clearInterval(iv); DV = fin; BUSY = false;
-    if (window.S !== s0) return;
-    const w = settle(n, hit ? m : 0, CAS_EV.dice[d.k]);
+    if (!reveal(r)) return;
     if (show) diceView(hit ? `Toplam ${s}. Bildin: ${fmt(w)}!` : `Toplam ${s}. Bu sefer olmadı.`);
   };
   const iv = setInterval(() => {
@@ -346,7 +349,8 @@ ACT.raceGo = () => {
   if (BUSY) return; const n = bet(); if (!stake(n)) return;
   BUSY = true; RPOS = [0, 0, 0, 0]; raceView('Başladılar!'); SS.sfx('travel');
   let r = Math.random(), win = 0; for (let i = 0; i < RACERS.length; i++) { r -= RACERS[i].w; if (r <= 0) { win = i; break; } }
-  const T = RACERS.map((_, i) => i === win ? 3.2 : rnd(3.45, 4.3)), ph = RACERS.map(() => Math.random() * 6), t0 = performance.now(), s0 = S;
+  const T = RACERS.map((_, i) => i === win ? 3.2 : rnd(3.45, 4.3)), ph = RACERS.map(() => Math.random() * 6), t0 = performance.now();
+  const ok = win === RPICK, bk = book(n, ok ? RACERS[RPICK].m : 0, RACERS[RPICK].m * RACERS[RPICK].w), w = bk.win;
   const step = now => {
     const t = (now - t0) / 1000; let all = true;
     RACERS.forEach((_, i) => {
@@ -355,8 +359,7 @@ ACT.raceGo = () => {
       const el = document.getElementById('rc' + i); if (el) el.style.left = (RPOS[i] * 92) + '%';
     });
     if (!all) return requestAnimationFrame(step);
-    BUSY = false; if (window.S !== s0) return;
-    const show = casStill('rc0'), ok = win === RPICK, w = settle(n, ok ? RACERS[RPICK].m : 0, RACERS[RPICK].m * RACERS[RPICK].w);
+    BUSY = false; const show = casStill('rc0'); if (!reveal(bk)) return;
     if (show) raceView(ok ? `${RACERS[win].n} kazandı! ${fmt(w)} aldın.` : `${RACERS[win].n} kazandı. Senin meteorun geride kaldı.`);
   };
   requestAnimationFrame(step);
@@ -376,15 +379,15 @@ function slotView(msg) {
 ACT.slotPull = () => {
   if (BUSY) return; const n = bet(); if (!stake(n)) return;
   BUSY = true; slotView('Makaralar dönüyor…'); SS.sfx('click');
-  const fin = [rollSym(), rollSym(), rollSym()], t0 = performance.now(), s0 = S;
+  const fin = [rollSym(), rollSym(), rollSym()], t0 = performance.now();
+  const tri = fin[0] === fin[1] && fin[1] === fin[2], pair = !tri && (fin[0] === fin[1] || fin[1] === fin[2] || fin[0] === fin[2]);
+  const r = book(n, tri ? TRIPLE[fin[0]] : pair ? PAIR : 0, CAS_EV.slot), w = r.win;
   const iv = setInterval(() => {
     const t = performance.now() - t0;
     for (let i = 0; i < 3; i++) { const el = document.getElementById('sr' + i); if (!el) continue; el.textContent = t > 600 + i * 380 ? SYM[fin[i]] : SYM[rint(0, 4)]; if (t > 600 + i * 380) el.classList.add('stop'); }
     if (t > 600 + 2 * 380 + 120) {
       clearInterval(iv); SR = fin; BUSY = false;
-      if (window.S !== s0) return;
-      const show = casStill('sr0'), tri = fin[0] === fin[1] && fin[1] === fin[2], pair = !tri && (fin[0] === fin[1] || fin[1] === fin[2] || fin[0] === fin[2]);
-      const m = tri ? TRIPLE[fin[0]] : pair ? PAIR : 0, w = settle(n, m, CAS_EV.slot);
+      const show = casStill('sr0'); if (!reveal(r)) return;
       if (show) slotView(tri ? `Üçlü ${SYM[fin[0]]}! ${fmt(w)} kazandın!` : pair ? `İkili: ${fmt(w)} geri geldi.` : 'Boş. Makine sana göz kırptı.');
     }
   }, 60);
