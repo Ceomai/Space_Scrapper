@@ -38,7 +38,7 @@ function dailyPanel() {
     <small>En iyi skorun: ${d.best || 0}</small>`);
 }
 Object.assign(ACT, {
-  dailyPanel,
+  dailyPanel: () => { dailyPanel(); SS.emit('panel:daily'); }, // olay: events.js
   copyShare: () => SS.copyShare(),
   playDaily: () => { const d = SS.dailyData(); SS.closeModal(); SS.startHunt({ seed: SS.dailySeed(), mode: d.days[SS.todayKey()] ? 'practice' : 'daily' }); },
   playAgain: () => { const h = SS.lastHunt; if (!h) return; SS.closeModal(); SS.startHunt({ seed: h.seed, mode: h.mode === 'challenge' ? 'challenge' : 'practice', target: h.target }); },

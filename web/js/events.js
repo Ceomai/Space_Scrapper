@@ -53,6 +53,29 @@
 //       10  music.js   zamanlayıcıyı siler, SS.inAd = false, müzik döner
 //   'ad:native-done' (ok) yerel köprü window.SS_AD_DONE gelince, her şeyden önce (bekleyen reklam olmasa da)
 //       10  music.js   SS.inAd = false, müzik döner
+//   ARAYÜZ
+//   'view:market' SÜZGEÇ (html)  ui.js pazar görünümü
+//       10  polish.js  koleksiyon masası (eser takası) paneli
+//   'panel:a11y'  SÜZGEÇ (html)  polish.js SS.a11yPanel (Ayarlar › kolaylık ve erişilebilirlik)
+//       10  supporter.js  destekçi paketi paneli öne eklenir
+//   'ship:allow' SORU (d)  ui.js ACT.buyShip başında; false → alım bu çağrıda yapılmaz
+//       10  polish.js  son kontrol penceresi (d.ok ile onaylanınca pencereyi kapatıp izin verir)
+//   'flow:allow' SORU ()   ui.js SS.flow başında; false → bir özellik kendi penceresini açtı, sıra ilerlemez
+//       10  polish.js  kolaylıklar ipucu (bir kez)
+//   'look:applied' ()      ui.js SS.applyLook sonunda (tema/stil/hareket uygulandı)
+//       10  polish.js  büyük yazı ve solak düzeni (data-big, data-left)
+//   'panel:daily' ()       expand.js ACT.dailyPanel penceresi açıldıktan sonra (DOM'a eklemek için)
+//       10  fun.js     Haftanın Avı kutusu
+//   'panel:menu' ()        ui.js ACT.menu penceresi açıldıktan sonra
+//       10  pwa.js     "Ana ekrana ekle" düğmesi
+//   'prefs:sound' ()       ui.js ACT.mute / ACT.muteMenu sonunda
+//       10  music.js   müziği açar/kapatır
+//   SS.shareVia(o)  olay değil, strateji yuvası: social.js SS.share varsa ona, yoksa SS.shareBasic'e devreder
+//       pwa.js  telefonun paylaşım menüsü (navigator.share), olmazsa SS.shareBasic
+//   ÇİZİM (her karede; olay değil, düz kayıtlar — try/catch ve sıralama maliyeti yok)
+//   SS.Art.SHIP_AFTER[] (c, x, y, s, t, P, opts)  art.js Art.ship'ten sonra   · fun.js seçili çıkartma
+//   SS.Art.ITEM_DRAW[kind] (c, it, t, P)           art.js Art.item yerine      · games.js gold/ice/jelly/egg/amber/mimic
+//   SS.DECAL_DRAW[id] (c, x, y, s)                 fun.js SS.drawDecal yerine  · supporter.js crown/paw
 //   SS.HUNT_MODES[mode](o)  olay değil, kayıt: social.js SS.startHunt bu kipte bir işlev varsa ona devreder
 //       weekly  fun.js  Haftanın Avı
 //   SS.genGoals olay değil: expand.js onu bir strateji olarak sarmalıyor (aslını 12 kez yeniden deneyip S.goals'ı

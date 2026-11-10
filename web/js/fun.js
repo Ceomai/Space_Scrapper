@@ -53,16 +53,15 @@ function weeklyEnd(res, seed, zone) {
   SS.lastHunt = { score: res.score, grid: SS.gridOf(res.got), seed, mode: 'weekly', zone, first: !prev, best: Math.max(prev, res.score) };
   SS.huntResultModal();
 }
-const _daily = ACT.dailyPanel;
-ACT.dailyPanel = () => {
-  _daily();
+// Günün Avı penceresine Haftanın Avı kutusu (events.js 'panel:daily')
+SS.on('panel:daily', () => {
   const d = SS.dailyData(), wk = SS.weekNo(), mine = (d.weeks || {})[wk], box = document.querySelector('#modal .sheet') || document.querySelector('#modal');
   if (!box) return;
   const div = document.createElement('div'); div.className = 'weekly-box';
   div.innerHTML = `<p class="label">Haftanın Avı #${wk}</p><p class="muted">Herkese aynı, daha zor alan: 40 saniye, bol patlayıcı tank, sert saha koşulu. Haftada bir yenilenir; en iyi skorun kalır.</p>
     ${mine ? `<p>Bu haftaki en iyi skorun: <b>${mine.score}</b></p>` : ''}<div class="row">${btn(mine ? 'Haftanın Avı · tekrar' : 'Haftanın Avı\'nı oyna', 'playWeekly', {}, 'primary')}</div>`;
   box.appendChild(div);
-};
+}, { order: 10 });
 ACT.playWeekly = () => { SS.closeModal(); SS.startHunt({ seed: SS.weeklySeed(), mode: 'weekly' }); };
 
 /* =========================================================
@@ -80,7 +79,10 @@ SS.DECALS = [
 ];
 const DEC_SYM = { star: '★', rex: '▼', combo: '⚡', rush: '➤', week: '◷', heart: '♥', free: '⟨⟩', gem: '◆' };
 const DEC_COL = SS.DECAL_COL;
+// Ek çıkartma çizimleri: SS.DECAL_DRAW[id] = (c, x, y, s) (ör. supporter.js: crown, paw)
+SS.DECAL_DRAW = Object.create(null);
 SS.drawDecal = (c, id, x, y, s) => {
+  const f = SS.DECAL_DRAW[id]; if (f) return f(c, x, y, s);
   c.save(); c.translate(x, y); c.scale(s, s); c.fillStyle = DEC_COL[id] || '#fff'; c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1;
   c.beginPath();
   const star = (n, r1, r2) => { for (let i = 0; i < n * 2; i++) { const a = -Math.PI / 2 + i * Math.PI / n, r = i % 2 ? r2 : r1; c.lineTo(Math.cos(a) * r, Math.sin(a) * r); } c.closePath(); };
@@ -96,12 +98,11 @@ SS.drawDecal = (c, id, x, y, s) => {
   if (id === 'week') { c.fillStyle = 'rgba(0,0,0,.5)'; c.fillRect(-1, -4, 2, 5); c.fillRect(-1, 0, 4, 1.6); }
   c.restore();
 };
-const _ship = SS.Art.ship;
-SS.Art.ship = (c, x, y, s, t, P, opts = {}) => {
-  _ship(c, x, y, s, t, P, opts);
+// gemi çiziminin ardından seçili çıkartma (art.js Art.SHIP_AFTER)
+SS.Art.SHIP_AFTER.push((c, x, y, s, t, P, opts) => {
   if (opts.raw || !window.S || !S.decal || !SS.DECALS.some(d => d.id === S.decal)) return;
   SS.drawDecal(c, S.decal, x - 24 * s, y + 3 * s, s * .9);
-};
+});
 SS.checkDecals = () => {
   if (!window.S) return;
   S.decalSeen = S.decalSeen && typeof S.decalSeen === 'object' ? S.decalSeen : { star: 1 };

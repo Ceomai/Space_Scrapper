@@ -55,7 +55,9 @@ SS.huntText = h => {
 };
 
 /* ---------- paylaşım ---------- */
-SS.share = async ({ image, text }) => {
+// Paylaşım stratejisi: bir katman (pwa.js: telefonun paylaşım menüsü) SS.shareVia koyabilir; o da gerekirse SS.shareBasic'e döner
+SS.share = o => (SS.shareVia || SS.shareBasic)(o);
+SS.shareBasic = async ({ image, text }) => {
   const n = SS.native();
   if (n) { n.post({ type: 'share', image, text }); return; }
   SS.modal(`<p class="eyebrow">Paylaş</p><h2>Kartın hazır</h2>${image ? `<img class="share-img" src="${image}" alt="Paylaşım kartı">` : ''}

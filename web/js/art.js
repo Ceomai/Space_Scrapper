@@ -128,7 +128,7 @@ function shipTier(c, x, y, s, t, P, opts, tier) {
   }
   c.restore();
 }
-Art.ship = (c, x, y, s, t, P, opts = {}) => {
+const shipBase = (c, x, y, s, t, P, opts = {}) => {
   if (SS.paintPalette && !opts.raw) P = SS.paintPalette(P);
   if (opts.tier) return shipTier(c, x, y, s, t, P, opts, opts.tier);
   c.save(); c.translate(x, y); c.scale(s, s);
@@ -155,6 +155,13 @@ Art.ship = (c, x, y, s, t, P, opts = {}) => {
   // vinç yuvası
   c.fillStyle = P.metalD; c.fillRect(-7, 18, 14, 8);
   c.restore();
+};
+// Gemi çiziminden sonra çalışan süslemeler (ör. fun.js çıkartma). Her karede çağrılır: düz dizi, olay/try yok.
+// f(c, x, y, s, t, P, opts) — opts her zaman nesne
+Art.SHIP_AFTER = [];
+Art.ship = (c, x, y, s, t, P, opts = {}) => {
+  shipBase(c, x, y, s, t, P, opts);
+  for (let i = 0; i < Art.SHIP_AFTER.length; i++) Art.SHIP_AFTER[i](c, x, y, s, t, P, opts);
 };
 
 Art.claw = (c, x, y, ang, open, P) => {
@@ -191,7 +198,7 @@ function gem(c, x, y, r, col, col2, t, glow = true) {
   c.fillStyle = 'rgba(255,255,255,.7)'; c.fillRect(x - r * .35, y - r * .7, r * .25, r * .35);
 }
 
-Art.item = (c, it, t, P) => {
+const itemBase = Art.itemBase = (c, it, t, P) => {
   const { x, y, r } = it;
   switch (it.kind) {
     case 'bolts': nut(c, x - 6, y + 3, 7, P); nut(c, x + 6, y + 5, 6.5, P); nut(c, x + 1, y - 5, 6.5, P);
@@ -258,6 +265,9 @@ Art.item = (c, it, t, P) => {
     case 'debris': c.fillStyle = P.metalD; poly(c, [[x - 7, y - 3], [x + 2, y - 7], [x + 8, y + 2], [x - 2, y + 7]]); c.fill(); break;
   }
 };
+// Ek eşya türlerinin çizimi (ör. games.js: gold, ice, jelly…): tür → f(c, it, t, P). Her karede: düz kayıt, olay/try yok.
+Art.ITEM_DRAW = Object.create(null);
+Art.item = (c, it, t, P) => { const f = Art.ITEM_DRAW[it.kind]; return f ? f(c, it, t, P) : itemBase(c, it, t, P); };
 
 /* ---------- ikonlar ve portreler ---------- */
 Art.icon = (c, kind, W, H, P, arg) => {

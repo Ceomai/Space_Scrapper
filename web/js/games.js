@@ -70,8 +70,8 @@ function drawScene(c, W, H, t, P, sc, V) {
   if (V.id === 'storm') { c.fillStyle = 'rgba(255,90,60,.06)'; c.fillRect(0, 0, W, H); }
 }
 // Yeni eşyaların çizimi
-const itemBase = SS.Art.item;
-SS.Art.item = (c, it, t, P) => {
+const itemBase = SS.Art.itemBase;
+const newItem = (c, it, t, P) => {
   const { x, y, r } = it;
   switch (it.kind) {
     case 'gold': itemBase(c, { ...it, kind: 'rock' }, t, P);
@@ -99,8 +99,8 @@ SS.Art.item = (c, it, t, P) => {
       if (it.teeth) { c.save(); c.translate(x, y); c.fillStyle = '#fff'; for (let i = -r + 2; i < r - 2; i += 5) { c.beginPath(); c.moveTo(i, r * .1); c.lineTo(i + 2.5, r * .45); c.lineTo(i + 5, r * .1); c.fill(); }
         c.fillStyle = P.bad; c.fillRect(-r * .5, -r * .45, 3, 3); c.fillRect(r * .3, -r * .45, 3, 3); c.restore(); } return;
   }
-  itemBase(c, it, t, P);
 };
+for (const k of ['gold', 'ice', 'jelly', 'egg', 'amber', 'mimic']) SS.Art.ITEM_DRAW[k] = newItem; // art.js kaydı
 // Yaratıklar ve tehlikeler
 const segDist = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy || 1, k = clamp(((px - ax) * dx + (py - ay) * dy) / l, 0, 1); return Math.hypot(px - ax - k * dx, py - ay - k * dy); };
 function drawEel(c, e, t, P) {

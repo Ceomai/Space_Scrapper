@@ -297,6 +297,29 @@ test('Olaylar: ödüllü reklam (ad:needed → ad:start → ad:end tam bir kez �
   same(log, [['done']]); off();
 });
 
+test('Arayüz olayları ve çizim kayıtları: sıralar, süzgeç bileşimi, kısa devre', () => {
+  const E = load(), SS = E.SS;
+  const ord = n => (SS.hooks[n] || []).map(h => h.order);
+  for (const n of ['view:market', 'panel:a11y', 'ship:allow', 'flow:allow', 'look:applied', 'panel:daily', 'panel:menu', 'prefs:sound']) same(ord(n), [10], n);
+  same(Object.keys(SS.Art.ITEM_DRAW).sort(), ['amber', 'egg', 'gold', 'ice', 'jelly', 'mimic']);
+  same(Object.keys(SS.DECAL_DRAW).sort(), ['crown', 'paw']);
+  assert.strictEqual(SS.Art.SHIP_AFTER.length, 1);
+  assert.strictEqual(typeof SS.shareVia, 'function'); assert.strictEqual(typeof SS.shareBasic, 'function');
+  const S = newGame(E);
+  // a11y: destekçi paneli erişilebilirlik panelinin önünde; sonraki süzgeç ikisini de görür
+  let seen = ''; SS.on('panel:a11y', h => { seen = h; return h + '<!--son-->'; }, { order: 99 });
+  const a = SS.a11yPanel();
+  assert.ok(seen.indexOf('Destekçi paketi') >= 0 && seen.indexOf('Destekçi paketi') < seen.indexOf('Kolaylık ve erişilebilirlik'), 'sıra: destekçi → kolaylık');
+  assert.ok(a.endsWith('<!--son-->'));
+  // flow:allow false → sıra ilerlemez (ui.js gövdesi çalışmaz)
+  SS.pendingStory = 'x'; const off = SS.on('flow:allow', () => false, { order: -1 });
+  SS.flow(); assert.strictEqual(SS.pendingStory, 'x', 'kısa devre'); off(); SS.pendingStory = null;
+  // ship:allow: polish engel yoksa (borç var) izin verir, çekirdek uyarır; probe sırası
+  const log = []; SS.on('ship:allow', d => log.push(['ship', d.b]), { order: 99 }); SS.toast = m => log.push(['toast', m]);
+  S.loan = 100; SS.ACT.buyShip({ b: '0' });
+  same(log, [['ship', '0'], ['toast', 'Bu gemiyi şu an alamazsın.']]);
+});
+
 /* ---------- iş ödemeleri ve fiyatlar (ui.js'ten ayrıldı) ---------- */
 test('İş ödemeleri: sözleşme, teslimat, tamir, fiyatlar', () => {
   const S = newGame(W, ['pit']);

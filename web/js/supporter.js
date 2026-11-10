@@ -49,14 +49,14 @@ if (SS.DECALS) SS.DECALS.push(
   { id: 'crown', name: 'Destekçi tacı', how: 'Destekçi paketi', sym: '♛', col: SS.DECAL_COL.crown, test: () => owned },
   { id: 'paw', name: 'Pıtırcık patisi', how: 'Destekçi paketi', sym: '🐾', col: SS.DECAL_COL.paw, test: () => owned },
 );
-const _decal = SS.drawDecal;
-if (_decal) SS.drawDecal = (c, id, x, y, s) => {
-  if (id !== 'crown' && id !== 'paw') return _decal(c, id, x, y, s);
+// fun.js SS.drawDecal kaydı: destekçi çıkartmaları
+const drawSupDecal = (c, id, x, y, s) => {
   c.save(); c.translate(x, y); c.scale(s, s); c.strokeStyle = 'rgba(0,0,0,.45)'; c.lineWidth = 1; c.beginPath();
   if (id === 'crown') { c.fillStyle = SS.DECAL_COL.crown; c.moveTo(-7, 5); c.lineTo(-7, -3); c.lineTo(-3.5, 1); c.lineTo(0, -6); c.lineTo(3.5, 1); c.lineTo(7, -3); c.lineTo(7, 5); c.closePath(); c.fill(); c.stroke(); }
   else { c.fillStyle = SS.DECAL_COL.paw; c.ellipse(0, 2.5, 4.2, 3.4, 0, 0, Math.PI * 2); c.fill(); [[-5, -2.5], [-1.8, -5.5], [1.8, -5.5], [5, -2.5]].forEach(([a, b]) => { c.beginPath(); c.arc(a, b, 1.7, 0, Math.PI * 2); c.fill(); }); }
   c.restore();
 };
+for (const id of ['crown', 'paw']) SS.DECAL_DRAW[id] = (c, x, y, s) => drawSupDecal(c, id, x, y, s);
 
 /* ---------- arayüz: Seyir Defteri › Ayarlar ---------- */
 SS.supporterPanel = () => {
@@ -67,8 +67,8 @@ SS.supporterPanel = () => {
     : `${perks}<p class="muted">Destekçi paketi Space Scrapper'ın Android uygulamasında satın alınabilir.</p>`;
   return SS.ui.panel('Destekçi paketi', body, { code: 'DST' });
 };
-const _a11y = SS.a11yPanel;
-SS.a11yPanel = () => SS.supporterPanel() + (_a11y ? _a11y() : '');
+// Ayarlar › erişilebilirlik panelinin önüne destekçi paketi (events.js 'panel:a11y' süzgeci)
+SS.on('panel:a11y', h => SS.supporterPanel() + h, { order: 10 });
 ACT.buySupporter = () => {
   if (owned || busy) return;
   const C = window.CdvPurchase, p = product || (store && store.get(PID));

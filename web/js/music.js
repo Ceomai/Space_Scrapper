@@ -49,7 +49,7 @@ const unlock = () => { unlocked = true; SS.music.update(); };
 document.addEventListener('visibilitychange', () => SS.music.update());
 // Ses düğmeleri müziği de etkiler; ayarlara ayrı bir müzik düğmesi
 const ACT = SS.ACT;
-for (const k of ['mute', 'muteMenu']) { const f = ACT[k]; if (f) ACT[k] = (...a) => { const r = f(...a); SS.music.update(); return r; }; }
+SS.on('prefs:sound', () => SS.music.update(), { order: 10 }); // ui.js mute/muteMenu (events.js)
 ACT.musicToggle = () => { prefs.music = prefs.music === false; SS.savePrefs ? SS.savePrefs() : null; try { localStorage.setItem('space-scrapper-prefs', JSON.stringify(prefs)); } catch (e) {} SS.music.update(); SS.render(); };
 // reklam sırasında müzik susar (reklam bitince, yarıda kalınca ya da 60 sn sonra geri gelir) — events.js 'ad:*'
 // reklam iptal edilir ya da hiç gelmezse (cancel) SS.inAd hemen temizlenir

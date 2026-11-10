@@ -19,7 +19,7 @@ function syncBars(t) {
   try { const bg = getComputedStyle(root).getPropertyValue('--bg').trim(), m = document.querySelector('meta[name="theme-color"]'); if (m && bg) m.setAttribute('content', bg); } catch (e) {}
   try { const sb = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform() && window.Capacitor.Plugins && window.Capacitor.Plugins.SystemBars; if (sb && sb.setStyle) { const r = sb.setStyle({ style: t === 'lavanta' ? 'LIGHT' : 'DARK' }); if (r && r.catch) r.catch(() => {}); } } catch (e) {}
 }
-SS.applyLook = () => { root.dataset.style = prefs.style; const t = SS.themeId(); root.dataset.theme = t; syncBars(t); root.dataset.motion = SS.reduceMotion() ? 'reduce' : ''; };
+SS.applyLook = () => { root.dataset.style = prefs.style; const t = SS.themeId(); root.dataset.theme = t; syncBars(t); root.dataset.motion = SS.reduceMotion() ? 'reduce' : ''; SS.emit('look:applied'); }; // olay: events.js
 
 /* ---------- hareketi azalt ---------- */
 // prefs.reduceMotion: true (azalt) / false (tam hareket) / yok ya da 'auto' (telefonun "hareketi azalt" ayarını izler)
@@ -171,7 +171,9 @@ SS.closeModal = () => {
 
 // Sıralı modal akışı
 const Q = [];
+// 'flow:allow' sorusu false ise (bir özellik kendi penceresini açtı) sıra bu çağrıda ilerlemez — events.js
 SS.flow = () => {
+  if (!SS.ask('flow:allow')) return;
   if (SS.notes.length) { const n = SS.notes.splice(0); Q.unshift(() => noteModal(n)); }
   if (SS.pendingStory) {
     // Giriş hikâyesinden sonra kılavuz artık kendiliğinden açılmaz: koç adımları yol gösterir, kılavuz ☰ menüsünde
@@ -633,7 +635,8 @@ function toneControls(cur, act) {
 
 // Depolama çalışmıyorsa her ekranın tepesinde kalıcı uyarı şeridi
 SS.storeBand = () => SS.storageOk === false ? `<div class="store-warn" role="alert">Kayıt yapılamıyor: tarayıcı depolaması kapalı ya da dolu. Sayfayı kapatınca bu oturumdaki ilerleme kaybolur.</div>` : '';
-const VIEWS = { map: mapView, home: homeView, jobs: jobsView, hangar: hangarView, market: marketView, cantina: cantinaView, clinic: clinicView, krell: krellView, log: logView };
+// Pazar görünümüne ek paneller: events.js 'view:market' süzgeci (html)
+const VIEWS = { map: mapView, home: homeView, jobs: jobsView, hangar: hangarView, market: () => SS.filter('view:market', marketView()), cantina: cantinaView, clinic: clinicView, krell: krellView, log: logView };
 function render() {
   if (!S) return titleScreen();
   SS.applyLook();
@@ -887,10 +890,10 @@ const ACT = {
   ability: d => { const msg = SS.useAbility(d.id); if (!msg) return; SS.sfx('big'); render(); SS.modal(`<div class="story">${face(d.id, 56)}<div><p class="eyebrow">${SS.ABILITIES[d.id].name}</p><h2>${SS.comp(d.id).name}</h2></div></div><p>${esc(msg)}</p><div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`); },
   room: d => { if (SS.buyRoom(d.id)) { SS.sfx('big'); SS.toast(`${SS.ROOMS[d.id].name} kuruldu.`, 'good'); render(); } },
   useInv: d => { const msg = SS.useInv(d.g, d.t); if (msg) { SS.toast(msg, /yok|değil/.test(msg) ? 'bad' : 'good'); render(); } },
-  menu: () => SS.modal(`<p class="eyebrow">Menü · ${esc(S.name)} · Gün ${S.day}</p><h2>PELIKAN-OS</h2>
+  menu: () => { SS.modal(`<p class="eyebrow">Menü · ${esc(S.name)} · Gün ${S.day}</p><h2>PELIKAN-OS</h2>
     <div class="menu-list">${btn('Oyuna dön', 'close', {}, 'primary block')}${btn('Rehber: ne, nerede, ne işe yarar', 'rehber', {}, 'ghost block')}${btn('Nasıl oynanır', 'guide', { s: S.view === 'map' ? 'map' : S.view }, 'ghost block')}${btn('Seyir Defteri ve ayarlar', 'view', { v: 'log' }, 'ghost block')}${S.tut == null ? btn('Öğreticiyi yeniden başlat', 'restartTut', {}, 'ghost block') : ''}${btn(prefs.muted ? 'Sesi aç' : 'Sesi kapat', 'muteMenu', {}, 'ghost block')}${btn('Kaydet ve ana menüye dön', 'toMenu', {}, 'ghost block')}${btn('Yeni oyun başlat', 'askWipe', {}, 'ghost block danger-t')}</div>
-    <small>Oyun her işlemde otomatik kaydedilir. Ana menüden kaldığın yerden devam edebilirsin.</small>`, '', { dismiss: true }),
-  muteMenu: () => { prefs.muted = !prefs.muted; savePrefs(); ACT.menu(); },
+    <small>Oyun her işlemde otomatik kaydedilir. Ana menüden kaldığın yerden devam edebilirsin.</small>`, '', { dismiss: true }); SS.emit('panel:menu'); }, // olay: events.js
+  muteMenu: () => { prefs.muted = !prefs.muted; savePrefs(); ACT.menu(); SS.emit('prefs:sound'); },
   toMenu: () => { SS.save(); window.S = null; SS.resetTransient && SS.resetTransient(); Q.length = 0; SS.closeModal(); titleScreen(); },
   roomSel: d => { S.roomSel = d.r; SS.sfx('click'); render(); },
   skipTut: d => {
@@ -979,7 +982,7 @@ const ACT = {
     const cost = SS.upCost(u, lv); if (!SS.spend(cost)) return;
     S.ship[u.id] = lv + 1; S.upSpent += cost; SS.sfx('big'); SS.toast(`${u.name} seviye ${S.ship[u.id]}`, 'good'); SS.checkAch(); render();
   },
-  buyShip: d => { if (!SS.buyShip(d.b === '1')) return SS.toast('Bu gemiyi şu an alamazsın.', 'bad'); SS.sfx('big'); SS.flow(); },
+  buyShip: d => { if (!SS.ask('ship:allow', d)) return; if (!SS.buyShip(d.b === '1')) return SS.toast('Bu gemiyi şu an alamazsın.', 'bad'); SS.sfx('big'); SS.flow(); },
   eat: d => {
     const f = SS.FOOD.find(x => x.id === d.id);
     if (d.free) { if (!S.freeRation) return; S.freeRation = false; } else if (!SS.spend(SS.foodPrice(f))) return;
@@ -1024,7 +1027,7 @@ const ACT = {
   style: d => { prefs.style = d.s; savePrefs(); SS.sfx('click'); render(); },
   theme: d => { prefs.theme = d.t; savePrefs(); SS.sfx('click'); render(); },
   tone: d => { S.tone = d.t; SS.sfx('click'); render(); },
-  mute: () => { prefs.muted = !prefs.muted; savePrefs(); render(); },
+  mute: () => { prefs.muted = !prefs.muted; savePrefs(); render(); SS.emit('prefs:sound'); },
   askWipe: () => SS.modal(`<h2>Yeni oyun?</h2><p>Mevcut kayıt silinir: gün ${S.day}, ${fmt(S.cash)} nakit, ${fmt(S.loan)} borç.</p><div class="row">${btn('Sil ve baştan başla', 'wipe', {}, 'danger')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`, '', { dismiss: true }),
   wipe: () => { SS.wipe(); window.S = null; SS.resetTransient && SS.resetTransient(); Q.length = 0; SS.closeModal(); titleScreen(); },
   pickCrew: d => { if (!SS.COMPANIONS.some(c => c.id === d.id)) return; const i = T.crew.indexOf(d.id); if (i >= 0) T.crew.splice(i, 1); else T.crew.push(d.id); titleScreen(); },

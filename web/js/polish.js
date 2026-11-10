@@ -182,9 +182,8 @@ ACT.relicTrade = () => {
   SS.save(); SS.flow();
   SS.toast(`${names.join(' + ')} → ${SS.RELICS[target].name}`, 'good');
 };
-const _market = SS.VIEWS.market;
-SS.VIEWS.market = () => {
-  let h = _market();
+// Pazara koleksiyon masası (events.js 'view:market' süzgeci)
+SS.on('view:market', h => {
   const idx = SS.tradeRelics(), target = SS.tradeTarget();
   if (target && (idx.length || Object.keys(S.album).length)) {
     const setsN = Object.keys(S.setsDone || {}).length;
@@ -193,7 +192,7 @@ SS.VIEWS.market = () => {
       <div class="row">${btn(`Takas et (kargoda ${idx.length} eser)`, 'relicTrade', {}, 'sm primary', idx.length < 2)}</div>`, { code: 'TKS' });
   }
   return h;
-};
+}, { order: 10 });
 
 /* =========================================================
    A1 · GEMİ ALIMI ÖNCESİ MASRAF UYARISI
@@ -206,10 +205,10 @@ SS.shipReserve = tier => {
   const m = SS.M(), cm = m.cm, daily = Math.round(m.oxygen * (S.home === 2 ? 1.3 : 1)) + Math.round(14 * cm) + Math.round(SS.crewDaily()) + Math.round([12, 16, 22][S.home] * cm);
   return Math.round((SS.weeklyCost(tier) * 2 + daily * 14 + m.rent * SS.HOMES[S.home].rent + [0, 140, 300][S.home] * cm) / 50) * 50;
 };
-const _buyShip = ACT.buyShip;
-ACT.buyShip = d => {
-  if (d.ok) { SS.closeModal(); return _buyShip(d); }
-  const nx = SS.nextShip(); if (!nx || SS.shipBlock()) return _buyShip(d);
+// Gemi alımından önce son kontrol penceresi (events.js 'ship:allow'): onaylanınca (d.ok) alım sürer
+SS.on('ship:allow', d => {
+  if (d.ok) { SS.closeModal(); return; }
+  const nx = SS.nextShip(); if (!nx || SS.shipBlock()) return;
   const t = S.tier + 1, cost = SS.shipCost(), bank = d.b === '1' && S.cash < cost;
   const after = bank ? 0 : S.cash - cost, reserve = SS.shipReserve(t), wNow = SS.weeklyCost(S.tier), wNew = SS.weeklyCost(t);
   const inst = bank ? Math.max(300, Math.round((cost - S.cash) * SS.BANK.rate / 10) * 10) : 0;
@@ -222,7 +221,8 @@ ACT.buyShip = d => {
     <p class="muted">İlk 7 gece rıhtım ve gemi bakımı yarı fiyat. Yeni gemi daha büyük kazandırır ama masrafı da büyüktür.</p>
     ${after < reserve ? `<div class="alert">Satın aldıktan sonra elinde ${fmt(after)} kalacak; önerilen rezervin altında. Gecikme riskine dikkat: birkaç gün daha biriktirmek isteyebilirsin.</div>` : '<div class="alert info">Rezervin yeterli görünüyor.</div>'}
     <div class="row">${btn('Satın al', 'buyShip', { b: d.b || '0', ok: 1 }, 'primary')}${btn('Vazgeç', 'close', {}, 'ghost')}</div>`);
-};
+  return false;
+}, { order: 10 });
 
 /* =========================================================
    C10 · KUMARHANE: KASA AVANTAJI VE ŞANSLI GECE
@@ -387,7 +387,8 @@ SS.againBtn = type => {
 /* =========================================================
    ARAYÜZ · 9 erişilebilirlik
    ========================================================= */
-SS.a11yPanel = () => {
+SS.a11yPanel = () => SS.filter('panel:a11y', a11yBase()); // süzgeç: events.js (supporter.js önüne panel ekler)
+const a11yBase = () => {
   const tog = (k, label, desc) => `<div class="row-item"><div><b>${label}</b><small>${desc}</small></div><button class="chk ${prefs[k] ? 'on' : ''}" data-act="pref" data-k="${k}" aria-pressed="${!!prefs[k]}" aria-label="${label}">${prefs[k] ? '✓' : ''}</button></div>`;
   return panel('Kolaylık ve erişilebilirlik', `<div class="list">
     <div class="row-item"><div><b>Dil · Language</b><small>Türkçe / English</small></div><div class="row">${btn('TR', 'lang', { l: 'tr' }, SS.lang() === 'tr' ? 'primary sm' : 'ghost sm')}${btn('EN', 'lang', { l: 'en' }, SS.lang() === 'en' ? 'primary sm' : 'ghost sm')}</div></div>
@@ -403,8 +404,7 @@ SS.a11yPanel = () => {
 // Hareketi azalt: ayar hiç değiştirilmediyse telefonun ayarını izler; dokununca o anki durumun tersi kalıcı olarak seçilir
 ACT.motionPref = () => { prefs.reduceMotion = !SS.reduceMotion(); SS.savePrefs(); SS.applyLook(); SS.sfx && SS.sfx('click'); render(); };
 ACT.pref = d => { prefs[d.k] = !prefs[d.k]; SS.savePrefs(); SS.applyLook(); SS.sfx && SS.sfx('click'); render(); };
-const _look = SS.applyLook;
-SS.applyLook = () => { _look(); const r = document.documentElement; r.dataset.big = prefs.big ? '1' : ''; r.dataset.left = prefs.left ? '1' : ''; };
+SS.on('look:applied', () => { const r = document.documentElement; r.dataset.big = prefs.big ? '1' : ''; r.dataset.left = prefs.left ? '1' : ''; }, { order: 10 });
 SS.applyLook();
 SS.miniSpeed = () => prefs.slow ? .8 : 1;
 
@@ -470,20 +470,19 @@ SS.weekSumHtml = W => !W ? '' : `<div class="weeksum"><p class="label">${W.week}
 /* =========================================================
    YENİ KOLAYLIKLAR İPUCU (bir kez)
    ========================================================= */
-const _flow = SS.flow;
-SS.flow = () => {
+SS.on('flow:allow', () => {
   if (window.S && !S.over && !S.easeSeen && S.day >= 2 && S.tut == null && !SS.notes.length && !SS.pendingStory) {
     S.easeSeen = 1; SS.render();
-    return SS.modal(`<p class="eyebrow">İpucu · kolaylıklar</p><h2>İşini kolaylaştıracak düğmeler</h2>
+    SS.modal(`<p class="eyebrow">İpucu · kolaylıklar</p><h2>İşini kolaylaştıracak düğmeler</h2>
       <ul class="tips"><li><b>☾ Uyu</b> (alt çubuk): nerede olursan ol eve gidip akşam defterini açar.</li>
       <li><b>Rota</b> (haritanın altı): 5 durağa kadar plan yap; üst şeritteki ▶ seni sıradakine götürür.</li>
       <li><b>Borç</b> (üstteki çip): kalan borç, son gün ve önümüzdeki 28 günün ödeme takvimi.</li>
       <li><b>Konum adı</b> (sol üst): dokununca o yerin rehberi açılır.</li>
       <li><b>★ En verimli</b> iş kartında, <b>Benzer iş</b> iş bitince. Otomatik yakıt açık; ayarlar Seyir Defteri → Ayarlar'da.</li></ul>
       <div class="row">${btn('Anladım', 'close', {}, 'primary')}</div>`);
+    return false;
   }
-  return _flow();
-};
+}, { order: 10 });
 
 /* =========================================================
    ANDROID GERİ TUŞU: mini oyun → modal → harita → uygulamadan çık

@@ -13,8 +13,9 @@ if (!isApp() && 'serviceWorker' in navigator && (location.protocol === 'https:' 
 }
 
 /* ---------- paylaşım: telefonun paylaşım menüsü, yoksa kopyala penceresi ---------- */
-const fallbackShare = SS.share;
-SS.share = async ({ image, text }) => {
+// social.js SS.share bu stratejiye devreder (SS.shareVia); temel paylaşım SS.shareBasic
+const fallbackShare = SS.shareBasic;
+SS.shareVia = async ({ image, text }) => {
   if (SS.native()) return fallbackShare({ image, text });
   if (navigator.share) {
     try {
@@ -62,11 +63,10 @@ ACT.install = async () => {
     <p class="muted">Kaydın bu tarayıcıda tutulur; ana ekrandaki simge aynı kaydı açar. İnternet olmadan da açılır.</p>
     <div class="row">${btn('Tamam', 'close', {}, 'primary')}</div>`);
 };
-const _menu = ACT.menu;
-ACT.menu = d => {
-  _menu(d);
+// Menüye "Ana ekrana ekle" (events.js 'panel:menu')
+SS.on('panel:menu', () => {
   if (!SS.canInstall()) return;
   const list = document.querySelector('#modal .menu-list');
   if (list) list.insertAdjacentHTML('beforeend', btn('Ana ekrana ekle', 'install', {}, 'ghost block'));
-};
+}, { order: 10 });
 })(window.SS);
