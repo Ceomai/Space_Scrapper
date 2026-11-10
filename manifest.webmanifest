@@ -1,0 +1,21 @@
+{
+  "id": "./",
+  "name": "Space Scrapper",
+  "short_name": "Space Scrapper",
+  "description": "Borçlu bir hurdacının uzay istasyonundaki hayatı. Kancayla hurda avla, iş kovala, haneni doyur, gemini büyüt.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0c0a1d",
+  "theme_color": "#0c0a1d",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
