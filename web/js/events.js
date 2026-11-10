@@ -45,6 +45,14 @@
 //       10  fun.js     acil ilan tamamlandıysa sayaç + çıkartma
 //   'scrap:before' (d)    ui.js ACT.scrap başında (polish.js GUARD doğrulamasından sonra)
 //       10  polish.js  otomatik yakıt/satış, SS._lastDive
+//   'ad:needed' SORU (done, cancel)  expand.js SS.showRewardedAd başında; false → reklamsız, done() hemen döner
+//       10  supporter.js  destekçi paketi varsa reklam yok
+//   'ad:start' (ad)       reklam (yer tutucu ya da yerel) başlarken; ad = { ok: null } reklam başına tek nesne
+//       10  music.js   SS.inAd = true, müzik susar, 60 sn güvenlik zamanlayıcısı (ad.musicTm)
+//   'ad:end'   (ad)       reklam başına tam bir kez, done/cancel'dan hemen önce; ad.ok = true (izlendi) / false
+//       10  music.js   zamanlayıcıyı siler, SS.inAd = false, müzik döner
+//   'ad:native-done' (ok) yerel köprü window.SS_AD_DONE gelince, her şeyden önce (bekleyen reklam olmasa da)
+//       10  music.js   SS.inAd = false, müzik döner
 //   SS.HUNT_MODES[mode](o)  olay değil, kayıt: social.js SS.startHunt bu kipte bir işlev varsa ona devreder
 //       weekly  fun.js  Haftanın Avı
 //   SS.genGoals olay değil: expand.js onu bir strateji olarak sarmalıyor (aslını 12 kez yeniden deneyip S.goals'ı

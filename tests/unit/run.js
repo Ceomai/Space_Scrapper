@@ -273,6 +273,30 @@ test('Olaylar: ACT.job (izin → önce: acil → otomatik yakıt → iş → son
   assert.strictEqual(calls[1][2], 'Antrenman');
 });
 
+test('Olaylar: ödüllü reklam (ad:needed → ad:start → ad:end tam bir kez → done/cancel; ad:native-done önce)', () => {
+  const E = load(), SS = E.SS, log = [];
+  same(SS.hooks['ad:needed'].map(h => h.order), [10]);
+  same(SS.hooks['ad:start'].map(h => h.order), [10]);
+  same(SS.hooks['ad:end'].map(h => h.order), [10]);
+  same(SS.hooks['ad:native-done'].map(h => h.order), [10]);
+  newGame(E); SS.music.update = () => log.push(['music', SS.inAd]);
+  E.SS_NATIVE = { ads: true, post: m => log.push(['post', m.type]) };
+  SS.on('ad:start', ad => log.push(['start', ad.ok]), { order: 99 });
+  SS.on('ad:end', ad => log.push(['end', ad.ok, SS.inAd]), { order: 99 });
+  SS.on('ad:native-done', ok => log.push(['native', ok]), { order: 99 });
+  const done = () => log.push(['done']), cancel = () => log.push(['cancel']);
+  // başarı: müzik susar → başlar → yerel köprü → bitiş (ok) → done; ikinci SS_AD_DONE yalnızca native-done
+  SS.showRewardedAd(done, cancel); E.SS_AD_DONE(true); E.SS_AD_DONE(true);
+  same(log, [['music', true], ['start', null], ['post', 'ad'], ['music', false], ['native', true], ['music', false], ['end', true, false], ['done'], ['music', false], ['native', true]]);
+  // başarısız: cancel, done yok
+  log.length = 0; SS.showRewardedAd(done, cancel); E.SS_AD_DONE(false);
+  same(log.filter(x => ['end', 'done', 'cancel'].includes(x[0])), [['end', false, false], ['cancel']]);
+  // destekçi (ad:needed false): reklam ve müzik molası yok, done değeri döner
+  log.length = 0; const off = SS.on('ad:needed', () => false, { order: 1 });
+  assert.strictEqual(SS.showRewardedAd(() => { log.push(['done']); return 'R'; }, cancel), 'R');
+  same(log, [['done']]); off();
+});
+
 /* ---------- iş ödemeleri ve fiyatlar (ui.js'ten ayrıldı) ---------- */
 test('İş ödemeleri: sözleşme, teslimat, tamir, fiyatlar', () => {
   const S = newGame(W, ['pit']);

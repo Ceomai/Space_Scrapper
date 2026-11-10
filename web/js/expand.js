@@ -449,7 +449,15 @@ SS.adsLeft = () => window.S ? Math.max(0, SS.AD.perDay - ((S.today && S.today.ad
 // Yerel uygulama: 10 sn içinde reklam başlamazsa (SS_AD_STARTED gelmezse) "Reklam şu an yok" denir.
 SS.AD_WAIT = 10000;
 let adCancel = null;
+// Olaylar (events.js): 'ad:needed' sorusu false ise reklamsız done(); yoksa 'ad:start' (ad) → reklam → 'ad:end' (ad, ad.ok)
+// tam bir kez, done/cancel geri çağrılarından hemen önce. Yerel köprü SS_AD_DONE geldiğinde önce 'ad:native-done' (ok).
 SS.showRewardedAd = (done, cancel) => {
+  if (!SS.ask('ad:needed', done, cancel)) return done();
+  const ad = { ok: null }, done0 = done, cancel0 = cancel;
+  const end = ok => { if (ad.ok !== null) return; ad.ok = ok; SS.emit('ad:end', ad); };
+  SS.emit('ad:start', ad);
+  done = () => { end(true); done0(); };
+  cancel = () => { end(false); cancel0 && cancel0(); };
   const n = SS.native && SS.native();
   if (n && n.ads) {
     SS._adDone = done; SS._adCancel = cancel || null; n.post({ type: 'ad' });
@@ -473,7 +481,7 @@ SS.showRewardedAd = (done, cancel) => {
 ACT.adCancel = () => { if (adCancel) adCancel(); else SS.closeModal(); };
 // yerel uygulama reklamı göstermeye başlayınca bunu çağırır: 10 sn bekleme süresi durur
 window.SS_AD_STARTED = () => { clearTimeout(SS._adWait); };
-window.SS_AD_DONE = ok => { clearTimeout(SS._adWait); const d = SS._adDone, c = SS._adCancel; SS._adDone = null; SS._adCancel = null; if (ok && d) d(); else { if (!ok && d) SS.toast('Reklam tamamlanmadı; enerji verilmedi.', 'bad'); if (d) c && c(); } };
+window.SS_AD_DONE = ok => { SS.emit('ad:native-done', ok); clearTimeout(SS._adWait); const d = SS._adDone, c = SS._adCancel; SS._adDone = null; SS._adCancel = null; if (ok && d) d(); else { if (!ok && d) SS.toast('Reklam tamamlanmadı; enerji verilmedi.', 'bad'); if (d) c && c(); } };
 ACT.adEnergy = () => {
   if (SS.adsLeft() <= 0) return SS.toast('Bugünkü reklam hakların bitti. Yarın yenilenir.', 'bad');
   if (S.energy >= SS.maxEnergy()) return SS.toast('Enerjin zaten dolu.');

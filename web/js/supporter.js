@@ -36,8 +36,8 @@ SS.supporterPrice = () => (product && product.pricing && product.pricing.price) 
 
 /* ---------- avantajlar ---------- */
 // 1) reklamsız enerji: reklam ekranı atlanır, günlük hak sınırı aynı kalır
-const _show = SS.showRewardedAd;
-if (_show) SS.showRewardedAd = (done, cancel) => owned ? done() : _show(done, cancel);
+// (events.js 'ad:needed': false → reklam ve müzik molası hiç başlamaz, done() hemen çağrılır)
+SS.on('ad:needed', () => (owned ? false : undefined), { order: 10 });
 // 2) özel boyalar
 SS.PAINTS.push(
   { id: 'destekci', name: 'Destekçi altını', price: 0, hull: ['#f5c542', '#8a5a12', '#fff4cf'], unlock: 'supporter' },
