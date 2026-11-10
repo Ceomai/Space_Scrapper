@@ -10,19 +10,18 @@ const st = () => (S.stats = S.stats || {});
 /* =========================================================
    ACİL İLANLAR: kısa sürede kabul edilirse %60 fazla öder, süresi dolunca kalkar
    ========================================================= */
-const _refresh = SS.refreshBoard;
-SS.refreshBoard = force => {
-  const before = S.board;
-  _refresh(force);
-  if (S.board === before || S.time > 1230) return;
+// Pano yenilenince (events.js 'board:new'); eski sarmalayıcıdaki "S.board değişmediyse çık" denetimi olayın kendisinde
+SS.on('board:new', () => {
+  if (S.time > 1230) return;
   const cand = S.board.filter(b => ['deliver', 'repair', 'order'].includes(b.type) && !b.special && !b.hot);
   if (SS.noRush || !cand.length || Math.random() > .45) return;
   const b = pick(cand);
   b.rush = true; b.until = S.time + (b.type === 'order' ? 150 : 100); b.pay = Math.round(b.pay * 1.4);
-};
+}, { order: 10 });
 const expire = () => { for (const b of S.board || []) if (b.rush && !b.done && S.time > b.until) { b.done = true; b.expired = true; } };
-const _pass = SS.passTime;
-SS.passTime = mins => { _pass(mins); expire(); SS.checkDecals && SS.checkDecals(); };
+// Zaman ilerleyince (events.js 'time:after'): önce acil ilan süresi, sonra çıkartmalar
+SS.on('time:after', expire, { order: 10 });
+SS.on('time:after', () => { SS.checkDecals && SS.checkDecals(); }, { order: 20 });
 SS.rushTag = b => b.rush && !b.done ? `<span class="tag hot">ACİL +%40 · ${SS.clock(b.until)}'e kadar</span>` : '';
 const _job = ACT.job;
 ACT.job = d => {

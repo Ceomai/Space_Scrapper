@@ -27,6 +27,12 @@
 //       10  polish.js  ertelenen masraf, ödenmemiş masraf ve arıza kalemleri (L[1]'e eklenir)
 //   'goals:after' ()      core.js SS.checkGoals'tan sonra (günlük hedefler işlendi).
 //       10  polish.js  kilometre taşı denetimi (SS.checkMile)
+//   'time:after' (mins)   core.js SS.passTime'dan sonra (S.time ilerledi). Sıcak yol: işleyiciler hafif olmalı.
+//       10  fun.js     süresi dolan acil ilanları kapatır
+//       20  fun.js     çıkartma denetimi (SS.checkDecals)
+//   'board:new' (board)   world.js SS.refreshBoard yeni bir pano kurduğunda (S.board = board atandıktan hemen sonra;
+//                         pano yenilenmediyse yayılmaz). Math.random kullanan işleyicilerin sırası oyunu değiştirir.
+//       10  fun.js     acil ilan seçimi (%45, ücret ×1.4)
 //   SS.genGoals olay değil: expand.js onu bir strateji olarak sarmalıyor (aslını 12 kez yeniden deneyip S.goals'ı
 //   değiştirir); bir gözlemci değil, üretici yerine geçme.
 window.SS = window.SS || {};
@@ -34,19 +40,20 @@ window.SS = window.SS || {};
 const hooks = SS.hooks = SS.hooks || {};
 let seq = 0;
 
+// Her olayın listesi sıralı tutulur ve yalnızca on/off'ta yeniden kurulur (yaz-kopyala): emit/filter her çağrıda
+// kopyalamadan dolaşabilir; dolaşırken yapılan on/off o anki çağrıyı etkilemez. (SS.passTime sıcak yol.)
 SS.on = (name, fn, { order = 0 } = {}) => {
-  const list = hooks[name] || (hooks[name] = []);
   const h = { fn, order, id: ++seq, failed: false };
-  list.push(h);
   // kararlı sıralama: önce order, eşitse kayıt sırası
-  list.sort((a, b) => a.order - b.order || a.id - b.id);
-  return () => { const i = list.indexOf(h); if (i >= 0) list.splice(i, 1); };
+  hooks[name] = (hooks[name] || []).concat(h).sort((a, b) => a.order - b.order || a.id - b.id);
+  return () => { if (hooks[name]) hooks[name] = hooks[name].filter(x => x !== h); };
 };
 
 SS.emit = (name, ...args) => {
   const list = hooks[name];
   if (!list || !list.length) return;
-  for (const h of list.slice()) {
+  for (let i = 0; i < list.length; i++) {
+    const h = list[i];
     try { h.fn(...args); }
     catch (e) {
       if (!h.failed) { h.failed = true; console.error(`[SS.emit] '${name}' işleyicisi hata verdi (order ${h.order}):`, e); }
@@ -57,7 +64,8 @@ SS.emit = (name, ...args) => {
 SS.filter = (name, value, ...args) => {
   const list = hooks[name];
   if (!list || !list.length) return value;
-  for (const h of list.slice()) {
+  for (let i = 0; i < list.length; i++) {
+    const h = list[i];
     try { const v = h.fn(value, ...args); if (v !== undefined) value = v; }
     catch (e) {
       if (!h.failed) { h.failed = true; console.error(`[SS.filter] '${name}' işleyicisi hata verdi (order ${h.order}):`, e); }

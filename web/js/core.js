@@ -30,7 +30,7 @@ SS.M = () => {
 SS.DAY_START = 420; SS.DAY_END = 1500;
 SS.clock = (t = S.time) => { const h = Math.floor(t / 60) % 24, m = t % 60; return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`; };
 SS.timeOk = mins => S.time + mins <= SS.DAY_END;
-SS.passTime = mins => { S.time += Math.round(mins); };
+SS.passTime = mins => { S.time += Math.round(mins); SS.emit('time:after', mins); }; // olay: events.js
 SS.win = () => Math.max(0, Math.min(5, Math.floor((S.time - SS.DAY_START) / 180)));
 SS.winLabel = (w = SS.win()) => `${SS.clock(SS.DAY_START + w * 180)}–${SS.clock(SS.DAY_START + (w + 1) * 180)}`;
 SS.DUR = { scrap: 120, deliver: [60, 80, 120, 150], repair: [45, 60, 80, 100], sortShort: 45, sortLong: 75, talk: 45, nap: 90, train: 120, workshop: 45, order: 20, decision: 90 };

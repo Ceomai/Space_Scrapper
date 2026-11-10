@@ -201,6 +201,31 @@ test('Olaylar: SS.sleep (önce → gövde → newDay → sonra), ledger süzgeci
   same(log.slice(-1), [['goals:after', true]]);
 });
 
+test('Olaylar: passTime → time:after (acil süresi → çıkartma), refreshBoard → board:new yalnızca yenilenince', () => {
+  const E = load(), SS = E.SS;
+  same(SS.hooks['time:after'].map(h => h.order), [10, 20]);
+  same(SS.hooks['board:new'].map(h => h.order), [10]);
+  const S = newGame(E), log = [];
+  S.board = [{ id: 'r1', type: 'deliver', rush: true, until: S.time + 10, done: false, pay: 100 }];
+  SS.on('time:after', m => log.push(['t-first', m, S.board[0].done]), { order: -1 });
+  SS.on('time:after', () => log.push(['t-mid', S.board[0].expired === true]), { order: 15 });
+  SS.on('time:after', () => log.push(['t-last']), { order: 99 });
+  SS.passTime(30);
+  same(log, [['t-first', 30, false], ['t-mid', true], ['t-last']]);
+  log.length = 0;
+  SS.on('board:new', B => log.push(['b-first', B === S.board, B.some(b => b.rush)]), { order: -1 });
+  SS.on('board:new', B => log.push(['b-last', B === S.board]), { order: 99 });
+  SS.refreshBoard();
+  same(log, [], 'aynı pencerede pano yenilenmez, olay yayılmaz');
+  SS.refreshBoard(true);
+  same(log, [['b-first', true, false], ['b-last', true]]);
+  // acil ilan işleyicisi (10) Math.random ile seçer: random 0 → her zaman acil
+  E.Math.random = () => 0; log.length = 0; S.lic = { deliver: 1, repair: 1, sort: 1, order: 1 }; S.time = 480;
+  SS.on('board:new', B => log.push(['b-mid', B.some(b => b.rush)]), { order: 15 });
+  SS.refreshBoard(true);
+  same(log[1], ['b-mid', true]);
+});
+
 /* ---------- iş ödemeleri ve fiyatlar (ui.js'ten ayrıldı) ---------- */
 test('İş ödemeleri: sözleşme, teslimat, tamir, fiyatlar', () => {
   const S = newGame(W, ['pit']);

@@ -140,6 +140,7 @@ SS.refreshBoard = (force) => {
   if (S.dailyJob) B.forEach(b => { if (b.type !== S.dailyJob || b.hot) return; b.hot = true; if (b.type === 'sort') b.per = Math.round(b.per * 1.25); else b.pay = Math.round(b.pay * 1.25); });
   if (S.tolgaJob && L('deliver') && L('repair')) { B.unshift(Math.random() < .5 ? mkDeliver(rint(1, 2), true) : mkRepair(rint(1, 2), true)); S.tolgaJob = false; }
   S.board = B;
+  SS.emit('board:new', B); // olay: events.js (yalnızca pano yenilendiğinde)
 };
 SS.orderHave = o => S.cargo.filter(c => c.kind === o.kind).length;
 SS.fulfilOrder = id => {
